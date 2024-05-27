@@ -1,0 +1,74 @@
+[
+  {
+    "cue": "5582468101214",
+    "fechaEntrega": "10/10/2023",
+    "estado": "Vigente",
+    "cantidad": 20,
+    "rango": "558013000041-558013000060",
+    "distancia": "18KM",
+    "coordenadas": {
+      "latitud": 12.236597168047487,
+      "longitud": -86.43110045184575
+    }
+  },
+  {
+    "cue": "5583691215180",
+    "fechaEntrega": "15/03/2024",
+    "estado": "Expirada",
+    "cantidad": 30,
+    "rango": "558013000061-558013000090",
+    "distancia": "5KM",
+    "coordenadas": {
+      "latitud": 12.427437,
+      "longitud": -86.878138
+    }
+  },
+  {
+    "cue": "5584824305269",
+    "fechaEntrega": "20/06/2024",
+    "estado": "Vigente",
+    "cantidad": 25,
+    "rango": "558013000091-558013000115",
+    "distancia": "22KM",
+    "coordenadas": {
+      "latitud": 12.211075,
+      "longitud": -86.340864
+    }
+  },
+  {
+    "cue": "5585071520251",
+    "fechaEntrega": "05/12/2023",
+    "estado": "Expirada",
+    "cantidad": 15,
+    "rango": "558013000116-558013000130",
+    "distancia": "10KM",
+    "coordenadas": {
+      "latitud": 12.211234,
+      "longitud": -86.342144
+    }
+  },
+  {
+    "cue": "5586091827364",
+    "fechaEntrega": "25/08/2023",
+    "estado": "Vigente",
+    "cantidad": 35,
+    "rango": "558013000131-558013000165",
+    "distancia": "12KM",
+    "coordenadas": {
+      "latitud": 12.209785,
+      "longitud": -86.342360
+    }
+  },
+  {
+    "cue": "5587122130342",
+    "fechaEntrega": "08/04/2024",
+    "estado": "Expirada",
+    "cantidad": 20,
+    "rango": "558013000166-558013000185",
+    "distancia": "25KM",
+    "coordenadas": {
+      "latitud": 12.210576,
+      "longitud": -86.341025
+    }
+  }
+]
