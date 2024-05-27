@@ -10,13 +10,12 @@ class ThemeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadTheme();
   }
 
-  Future<void> loadTheme() async {
+  Future<void> loadTheme(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? themeMode = prefs.getString('themeMode') ?? 'light';
-    updateTheme(themeMode);
+    updateTheme(themeMode, context);
   }
 
   Future<void> changeTheme(ThemeData theme, String themeMode) async {
@@ -25,54 +24,31 @@ class ThemeController extends GetxController {
     await prefs.setString('themeMode', themeMode);
   }
 
-  void updateTheme(String themeMode) {
+  void updateTheme(String themeMode, BuildContext context) {
     ThemeData theme;
     switch (themeMode) {
-      case 'lightMediumContrast':
-        theme = ThemeData.light(); // Tema predeterminado
-        break;
-      case 'lightHighContrast':
-        theme = ThemeData.light();
-        break;
-      case 'darkMediumContrast':
-        theme = ThemeData.dark();
-        break;
-      case 'darkHighContrast':
-        theme = ThemeData.dark();
-        break;
-        case 'dark':
-        theme = ThemeData.dark();
+      case 'dark':
+        theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark();
         break;
       default:
-        theme = ThemeData.light();
+        theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light();
     }
     themeData.value = theme;
   }
 
-  void updateThemeWithContext(BuildContext context) {
-    SharedPreferences.getInstance().then((prefs) {
-      String? themeMode = prefs.getString('themeMode') ?? 'light';
-      ThemeData theme;
-      switch (themeMode) {
-        case 'lightMediumContrast':
-          theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).lightMediumContrast();
-          break;
-        case 'lightHighContrast':
-          theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).lightHighContrast();
-          break;
-        case 'darkMediumContrast':
-          theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).darkMediumContrast();
-          break;
-        case 'darkHighContrast':
-          theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).darkHighContrast();
-          break;
-            case 'dark':
-          theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark();
-          break;
-        default:
-          theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light();
-      }
-      themeData.value = theme;
-    });
+  void toggleTheme(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? currentThemeMode = prefs.getString('themeMode') ?? 'light';
+    if (currentThemeMode == 'light') {
+      changeTheme(
+        MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark(),
+        'dark',
+      );
+    } else {
+      changeTheme(
+        MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light(),
+        'light',
+      );
+    }
   }
 }

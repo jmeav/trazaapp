@@ -11,7 +11,7 @@ import 'package:trazaapp/login/controller/login_controller.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final LoginController loginController = Get.put(LoginController());
-  loginController.checkFirstTime(); // Asegura que el valor esté inicializado
+   loginController.checkFirstTime(); // Asegura que el valor esté inicializado
 
   runApp(MyApp());
 }
@@ -49,12 +49,8 @@ class InitialView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      themeController.updateThemeWithContext(context);
-    });
-
     return FutureBuilder(
-      future: themeController.loadTheme(),
+      future: themeController.loadTheme(context),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           final initialRoute = loginController.isFirstTime.value ? '/splash' : '/home';

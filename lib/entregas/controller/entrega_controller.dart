@@ -4,7 +4,6 @@ import 'package:trazaapp/entregas/model/entregas.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:convert';
 import 'package:trazaapp/utils/util.dart';
-import 'dart:math' as math;
 
 class EntregaController extends GetxController {
   var entregas = <Entrega>[].obs;
@@ -70,6 +69,11 @@ class EntregaController extends GetxController {
     updateDistances();
   }
 
+    Future<void> refreshData() async {
+    await fetchUserLocation();
+    await fetchEntregas();
+  }
+
   void updateDistances() {
     final updatedEntregas = entregas.map((entrega) {
       final distance = calculateDistance(
@@ -80,7 +84,7 @@ class EntregaController extends GetxController {
       );
 
       return entrega.copyWith(
-        distanciaCalculada: (distance / 1000).toStringAsFixed(2) + 'KM',
+        distanciaCalculada: '${(distance / 1000).toStringAsFixed(6)}KM',
       );
     }).toList();
 

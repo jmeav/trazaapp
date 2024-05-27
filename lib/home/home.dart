@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/entregas/controller/entrega_controller.dart';
+import 'package:trazaapp/theme/theme_controller.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -9,26 +10,32 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final EntregaController entregaController = Get.put(EntregaController());
+    final ThemeController themeController = Get.put(ThemeController());
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Dashboard'),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.settings),
-            tooltip: 'Configuración de temas',
-            onPressed: () {
-              Get.toNamed('/customize_theme');
-            },
-          ),
+          Obx(() {
+            return IconButton(
+              icon: Icon(
+                themeController.themeData.value.brightness == Brightness.light 
+                    ? Icons.brightness_3 
+                    : Icons.wb_sunny
+              ),
+              tooltip: 'Cambiar tema',
+              onPressed: () {
+               themeController.toggleTheme(context);
+              },
+            );
+          }),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            // Gráfico
             SizedBox(
               height: 200,
               child: Padding(
@@ -58,7 +65,6 @@ class HomeView extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16),
-            // Resumen
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -68,7 +74,6 @@ class HomeView extends StatelessWidget {
               ],
             ),
             SizedBox(height: 16),
-            // Botones de acción
             Expanded(
               child: ListView(
                 children: [
