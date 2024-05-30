@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/entregas/controller/entrega_controller.dart';
@@ -18,7 +16,6 @@ class EntregasView extends StatelessWidget {
           return const Center(
             child: Text(
               'No tienes entregas pendientes.',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
           );
         } else {
@@ -29,6 +26,20 @@ class EntregasView extends StatelessWidget {
               itemCount: controller.entregas.length,
               itemBuilder: (context, index) {
                 final entrega = controller.entregas[index];
+                final distanciaCalculadaStr = entrega.distanciaCalculada.replaceAll('KM', '').trim();
+                final distanciaCalculadaDouble = double.tryParse(distanciaCalculadaStr) ?? 0.0;
+                final isInRange = distanciaCalculadaDouble <= 0.15;
+                final isMidRange = distanciaCalculadaDouble > 0.15 && distanciaCalculadaDouble <= 0.3;
+
+                Color buttonColor;
+                if (isInRange) {
+                  buttonColor = Colors.green.shade600; // Suave verde
+                } else if (isMidRange) {
+                  buttonColor = Colors.blue.shade300; // Suave azul
+                } else {
+                  buttonColor = Colors.red.shade300; // Suave rojo
+                }
+
                 return Card(
                   margin: const EdgeInsets.all(8.0),
                   child: Padding(
@@ -42,12 +53,19 @@ class EntregasView extends StatelessWidget {
                         Text('Cantidad: ${entrega.cantidad}'),
                         Text('Rango: ${entrega.rango}'),
                         Text('Distancia: ${entrega.distanciaCalculada}'),
-                        Row(
+                                               Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: buttonColor,
+                              ),
                               onPressed: () {
-                                print('Latitud: ${entrega.coordenadas.latitud}, Longitud: ${entrega.coordenadas.longitud}');
+                                Get.toNamed('/formbovinos', arguments: {
+                                  'cue': entrega.cue,
+                                  'rango': entrega.rango,
+                                  'cantidad': entrega.cantidad,
+                                });
                               },
                               child: const Text('Realizar'),
                             ),

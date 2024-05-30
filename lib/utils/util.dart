@@ -54,7 +54,7 @@ void showCustomNotification({
 }
 
 
-// Fórmula del Haversine ajustada con el incremento del 21.05% en base a pruebas de media 
+// Fórmula del Haversine ajustada con el incremento del 21.05% en base a pruebas de media con diferencia en maps para mayor precicion
 double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
   const R = 6371e3; // Radio de la Tierra en metros
   final phi1 = lat1 * math.pi / 180; // φ, λ en radianes

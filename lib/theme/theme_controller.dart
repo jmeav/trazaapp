@@ -51,4 +51,12 @@ class ThemeController extends GetxController {
       );
     }
   }
+
+  Color get spinKitRingColor {
+    // Obtener el color primario del tema actual
+    Color primaryColor = themeData.value.primaryColor;
+    // Determinar si es un color claro u oscuro y ajustar el color del SpinKitRing en consecuencia
+    return primaryColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+  }
+  
 }

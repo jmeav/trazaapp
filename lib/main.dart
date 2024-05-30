@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/entregas/view/entregas_view.dart';
+import 'package:trazaapp/formbovinos/view/formbovinos_view.dart';
 import 'package:trazaapp/home/home.dart';
 import 'package:trazaapp/home/view/splash_screen.dart';
 import 'package:trazaapp/login/view/login_view.dart';
-import 'package:trazaapp/theme/configthemes.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 import 'package:trazaapp/login/controller/login_controller.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart'; // Importa flutter_spinkit
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,8 +36,8 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/splash', page: () => SplashScreen()),
           GetPage(name: '/login', page: () => const LoginView()),
           GetPage(name: '/home', page: () => const HomeView()),
-          GetPage(name: '/customize_theme', page: () => ThemeCustomizationView()),
           GetPage(name: '/entrega', page: () => EntregasView()),  // Nueva ruta
+          GetPage(name: '/formbovinos', page: () => FormBovinosView()),
           // Añade aquí las demás rutas
         ],
       );
@@ -59,13 +61,21 @@ class InitialView extends StatelessWidget {
           });
           return Scaffold(
             body: Center(
-              child: CircularProgressIndicator(),
+              child: SpinKitRing( // Utiliza SpinKitRing de flutter_spinkit
+color: themeController.spinKitRingColor,
+                size: 50.0, // Puedes ajustar el tamaño según tus necesidades
+              ),
+
             ),
           );
         } else {
           return Scaffold(
             body: Center(
-              child: CircularProgressIndicator(),
+              child: SpinKitRing( // Utiliza SpinKitRing de flutter_spinkit
+color: themeController.spinKitRingColor,
+                size: 50.0, // Puedes ajustar el tamaño según tus necesidades
+              ),
+
             ),
           );
         }

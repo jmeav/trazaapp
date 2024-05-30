@@ -4,7 +4,6 @@ class Entrega {
   final String estado;
   final int cantidad;
   final String rango;
-  late final String distancia;
   final Coordenadas coordenadas;
   final String distanciaCalculada; // Nueva propiedad
 
@@ -14,7 +13,6 @@ class Entrega {
     required this.estado,
     required this.cantidad,
     required this.rango,
-    required this.distancia,
     required this.coordenadas,
     this.distanciaCalculada = '', // Inicializada como una cadena vacía
   });
@@ -26,7 +24,6 @@ class Entrega {
       estado: json['estado'],
       cantidad: json['cantidad'],
       rango: json['rango'],
-      distancia: json['distancia'],
       coordenadas: Coordenadas.fromJson(json['coordenadas']),
     );
   }
@@ -37,7 +34,6 @@ class Entrega {
     String? estado,
     int? cantidad,
     String? rango,
-    String? distancia,
     Coordenadas? coordenadas,
     String? distanciaCalculada,
   }) {
@@ -47,7 +43,6 @@ class Entrega {
       estado: estado ?? this.estado,
       cantidad: cantidad ?? this.cantidad,
       rango: rango ?? this.rango,
-      distancia: distancia ?? this.distancia,
       coordenadas: coordenadas ?? this.coordenadas,
       distanciaCalculada: distanciaCalculada ?? this.distanciaCalculada,
     );
