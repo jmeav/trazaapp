@@ -26,10 +26,13 @@ class EntregasView extends StatelessWidget {
               itemCount: controller.entregas.length,
               itemBuilder: (context, index) {
                 final entrega = controller.entregas[index];
-                final distanciaCalculadaStr = entrega.distanciaCalculada.replaceAll('KM', '').trim();
-                final distanciaCalculadaDouble = double.tryParse(distanciaCalculadaStr) ?? 0.0;
+                final distanciaCalculadaStr =
+                    entrega.distanciaCalculada.replaceAll('KM', '').trim();
+                final distanciaCalculadaDouble =
+                    double.tryParse(distanciaCalculadaStr) ?? 0.0;
                 final isInRange = distanciaCalculadaDouble <= 0.15;
-                final isMidRange = distanciaCalculadaDouble > 0.15 && distanciaCalculadaDouble <= 0.3;
+                final isMidRange = distanciaCalculadaDouble > 0.15 &&
+                    distanciaCalculadaDouble <= 0.3;
 
                 Color buttonColor;
                 if (isInRange) {
@@ -49,11 +52,15 @@ class EntregasView extends StatelessWidget {
                       children: [
                         Text('Cue: ${entrega.cue}'),
                         Text('Fecha Entrega: ${entrega.fechaEntrega}'),
-                        Text('Estado: ${entrega.estado}', style: TextStyle(color: entrega.estado == 'Vigente' ? Colors.green : Colors.red)),
+                        Text('Estado: ${entrega.estado}',
+                            style: TextStyle(
+                                color: entrega.estado == 'Vigente'
+                                    ? Colors.green
+                                    : Colors.red)),
                         Text('Cantidad: ${entrega.cantidad}'),
                         Text('Rango: ${entrega.rango}'),
                         Text('Distancia: ${entrega.distanciaCalculada}'),
-                                               Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             ElevatedButton(
@@ -67,7 +74,13 @@ class EntregasView extends StatelessWidget {
                                   'cantidad': entrega.cantidad,
                                 });
                               },
-                              child: const Text('Realizar'),
+                              child: const Text(
+                                'Realizar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
                         ),

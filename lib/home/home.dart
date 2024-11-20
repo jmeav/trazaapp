@@ -9,12 +9,14 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String rol = 'HB Operadora';
+    int asignados = 50;
     final EntregaController entregaController = Get.put(EntregaController());
     final ThemeController themeController = Get.put(ThemeController());
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dashboard'),
+        title: Text('Hola, $rol!'),
         elevation: 0,
         actions: [
           Obx(() {
@@ -77,6 +79,7 @@ class HomeView extends StatelessWidget {
             Expanded(
               child: ListView(
                 children: [
+                  Text('Tienes $asignados aretes asigandos'),
                   Obx(() => ActionCard(
                         label: 'Entregas Pendientes (${entregaController.entregasPendientesCount})',
                         onTap: () {

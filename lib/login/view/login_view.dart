@@ -15,6 +15,13 @@ class _LoginViewState extends State<LoginView> {
   final TextEditingController codigoController = TextEditingController();
   bool loading = false;
 
+ @override
+  void initState() {
+    super.initState();
+    imeiController.text = '8927368326889';
+    codigoController.text = '2024';
+  }
+  
   Future<void> login() async {
     controller.saveDeviceInfo(imeiController.text, codigoController.text);
     controller.login(imeiController.text, codigoController.text);

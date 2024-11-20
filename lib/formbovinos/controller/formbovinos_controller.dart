@@ -5,7 +5,7 @@ class FormBovinosController extends GetxController {
   var currentPage = 0.obs;
   var bovinoInfo = <String, BovinoData>{}.obs;
   PageController pageController = PageController();
-
+  var sendingData = false.obs; // Cambiar a observable
   var quickFillEdad = ''.obs;
   var quickFillSexo = ''.obs;
   var quickFillRaza = ''.obs;
@@ -76,7 +76,7 @@ class FormBovinosController extends GetxController {
       bovino.edad.value = '';
       bovino.sexo.value = '';
       bovino.raza.value = '';
-    });
+  });
   }
 }
 
