@@ -1,7 +1,7 @@
 [
   {
     "cue": "5582468101214",
-    "fechaEntrega": "10/10/2023",
+    "fechaEntrega": "2023-10-10",
     "estado": "Vigente",
     "cantidad": 3,
     "rango": "558013000041-558013000043",
@@ -12,7 +12,7 @@
   },
   {
     "cue": "5583691215180",
-    "fechaEntrega": "15/03/2024",
+    "fechaEntrega": "2024-03-15",
     "estado": "Expirada",
     "cantidad": 30,
     "rango": "558013000061-558013000090",
@@ -23,7 +23,7 @@
   },
   {
     "cue": "5584824305269",
-    "fechaEntrega": "20/06/2024",
+    "fechaEntrega": "2024-06-20",
     "estado": "Vigente",
     "cantidad": 25,
     "rango": "558013000091-558013000115",
@@ -34,7 +34,7 @@
   },
   {
     "cue": "5585071520251",
-    "fechaEntrega": "05/12/2023",
+    "fechaEntrega": "2023-12-05",
     "estado": "Expirada",
     "cantidad": 15,
     "rango": "558013000116-558013000130",
@@ -45,7 +45,7 @@
   },
   {
     "cue": "5586091827364",
-    "fechaEntrega": "25/08/2023",
+    "fechaEntrega": "2023-08-25",
     "estado": "Vigente",
     "cantidad": 35,
     "rango": "558013000131-558013000165",
@@ -56,7 +56,7 @@
   },
   {
     "cue": "5587122130342",
-    "fechaEntrega": "08/04/2024",
+    "fechaEntrega": "2024-04-08",
     "estado": "Expirada",
     "cantidad": 20,
     "rango": "558013000166-558013000185",

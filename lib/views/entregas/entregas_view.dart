@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:trazaapp/entregas/controller/entrega_controller.dart';
+import 'package:trazaapp/controller/entrega_controller.dart';
 
 class EntregasView extends StatelessWidget {
   final EntregaController controller = Get.find<EntregaController>();
@@ -27,9 +27,9 @@ class EntregasView extends StatelessWidget {
               itemBuilder: (context, index) {
                 final entrega = controller.entregas[index];
                 final distanciaCalculadaStr =
-                    entrega.distanciaCalculada.replaceAll('KM', '').trim();
+                    entrega.distanciaCalculada?.replaceAll('KM', '').trim();
                 final distanciaCalculadaDouble =
-                    double.tryParse(distanciaCalculadaStr) ?? 0.0;
+                    double.tryParse(distanciaCalculadaStr!) ?? 0.0;
                 final isInRange = distanciaCalculadaDouble <= 0.15;
                 final isMidRange = distanciaCalculadaDouble > 0.15 &&
                     distanciaCalculadaDouble <= 0.3;
@@ -58,7 +58,7 @@ class EntregasView extends StatelessWidget {
                                     ? Colors.green
                                     : Colors.red)),
                         Text('Cantidad: ${entrega.cantidad}'),
-                        Text('Rango: ${entrega.rango}'),
+                        Text('Rango: ${entrega.rangoFinal}'),
                         Text('Distancia: ${entrega.distanciaCalculada}'),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -70,7 +70,7 @@ class EntregasView extends StatelessWidget {
                               onPressed: () {
                                 Get.toNamed('/formbovinos', arguments: {
                                   'cue': entrega.cue,
-                                  'rango': entrega.rango,
+                                  'rango': entrega.rangoFinal,
                                   'cantidad': entrega.cantidad,
                                 });
                               },

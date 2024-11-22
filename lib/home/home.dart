@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:trazaapp/entregas/controller/entrega_controller.dart';
+import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 
 class HomeView extends StatelessWidget {

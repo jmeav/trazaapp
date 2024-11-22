@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 @HiveType(typeId: 2)
 class Entregas {
@@ -29,6 +30,9 @@ class Entregas {
   @HiveField(8)
   final double longitud;
 
+  @HiveField(9)
+  final String? distanciaCalculada;
+
   Entregas({
     required this.cupa,
     required this.cue,
@@ -39,20 +43,53 @@ class Entregas {
     required this.rangoFinal,
     required this.latitud,
     required this.longitud,
+    this.distanciaCalculada,
   });
 
+  /// Método `copyWith`
+  Entregas copyWith({
+    String? cupa,
+    String? cue,
+    DateTime? fechaEntrega,
+    String? estado,
+    int? cantidad,
+    int? rangoInicial,
+    int? rangoFinal,
+    double? latitud,
+    double? longitud,
+    String? distanciaCalculada,
+  }) {
+    return Entregas(
+      cupa: cupa ?? this.cupa,
+      cue: cue ?? this.cue,
+      fechaEntrega: fechaEntrega ?? this.fechaEntrega,
+      estado: estado ?? this.estado,
+      cantidad: cantidad ?? this.cantidad,
+      rangoInicial: rangoInicial ?? this.rangoInicial,
+      rangoFinal: rangoFinal ?? this.rangoFinal,
+      latitud: latitud ?? this.latitud,
+      longitud: longitud ?? this.longitud,
+      distanciaCalculada: distanciaCalculada ?? this.distanciaCalculada,
+    );
+  }
+
+  /// Métodos JSON para Hive
   factory Entregas.fromJson(Map<String, dynamic> json) {
     final rango = json['rango']?.split('-') ?? ['0', '0'];
+   
+   final fechaEntrega = DateTime.parse(json['fechaEntrega']);
+
     return Entregas(
       cupa: json['cupa'] ?? '',
       cue: json['cue'] ?? '',
-      fechaEntrega: DateTime.parse(json['fechaEntrega']),
+      fechaEntrega: fechaEntrega,
       estado: json['estado'] ?? 'pendiente',
       cantidad: json['cantidad'] ?? 0,
       rangoInicial: int.parse(rango.first),
       rangoFinal: int.parse(rango.last),
       latitud: json['coordenadas']?['latitud'] ?? 0.0,
       longitud: json['coordenadas']?['longitud'] ?? 0.0,
+      distanciaCalculada: json['distanciaCalculada'],
     );
   }
 
@@ -60,7 +97,7 @@ class Entregas {
     return {
       'cupa': cupa,
       'cue': cue,
-      'fechaEntrega': fechaEntrega.toIso8601String(),
+      'fechaEntrega': DateFormat('dd/MM/yyyy').format(fechaEntrega),
       'estado': estado,
       'cantidad': cantidad,
       'rango': '$rangoInicial-$rangoFinal',
@@ -68,6 +105,7 @@ class Entregas {
         'latitud': latitud,
         'longitud': longitud,
       },
+      'distanciaCalculada': distanciaCalculada,
     };
   }
 }

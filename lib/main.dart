@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:trazaapp/data/models/bovino.dart';
-import 'package:trazaapp/data/models/entregas.dart';
+import 'package:trazaapp/data/models/entregas/entregas.dart';
+import 'package:trazaapp/data/models/entregas/entregas_adapter.dart';
 import 'package:trazaapp/data/models/establecimiento.dart';
 import 'package:trazaapp/data/models/home_stat.dart';
 import 'package:trazaapp/data/models/productor.dart';
-import 'package:trazaapp/entregas/view/entregas_view.dart';
+import 'package:trazaapp/utils/importer.dart'; // Importamos la función de importer.dart
+import 'package:trazaapp/views/entregas/entregas_view.dart';
 import 'package:trazaapp/formbovinos/view/formbovinos_view.dart';
 import 'package:trazaapp/home/home.dart';
 import 'package:trazaapp/home/view/splash_screen.dart';
@@ -14,9 +16,6 @@ import 'package:trazaapp/login/view/login_view.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 import 'package:trazaapp/login/controller/login_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +25,7 @@ void main() async {
 
   // Registra los adaptadores de Hive
   // Hive.registerAdapter(HomeStatAdapter());
-  // Hive.registerAdapter(EntregasAdapter());
+  Hive.registerAdapter(EntregasAdapter());
   // Hive.registerAdapter(BovinoAdapter());
   // Hive.registerAdapter(EstablecimientoAdapter());
   // Hive.registerAdapter(ProductorAdapter());
@@ -37,6 +36,9 @@ void main() async {
   await Hive.openBox<Bovino>('bovinos');
   await Hive.openBox<Establecimiento>('establecimientos');
   await Hive.openBox<Productor>('productores');
+
+  // Importar datos de prueba
+  await importEntregasData(); // Llamada a la función de importer.dart
 
   // Inicializa los controladores de GetX
   final LoginController loginController = Get.put(LoginController());
@@ -65,7 +67,6 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/home', page: () => const HomeView()),
           GetPage(name: '/entrega', page: () => EntregasView()), // Nueva ruta
           GetPage(name: '/formbovinos', page: () => FormBovinosView()),
-          // Añade aquí las demás rutas
         ],
       );
     });
@@ -90,9 +91,8 @@ class InitialView extends StatelessWidget {
           return Scaffold(
             body: Center(
               child: SpinKitRing(
-                // Utiliza SpinKitRing de flutter_spinkit
                 color: themeController.spinKitRingColor,
-                size: 50.0, // Puedes ajustar el tamaño según tus necesidades
+                size: 50.0,
               ),
             ),
           );
@@ -100,9 +100,8 @@ class InitialView extends StatelessWidget {
           return Scaffold(
             body: Center(
               child: SpinKitRing(
-                // Utiliza SpinKitRing de flutter_spinkit
                 color: themeController.spinKitRingColor,
-                size: 50.0, // Puedes ajustar el tamaño según tus necesidades
+                size: 50.0,
               ),
             ),
           );
