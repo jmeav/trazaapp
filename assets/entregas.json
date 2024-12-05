@@ -1,68 +1,80 @@
 [
   {
     "cue": "5582468101214",
+    "cupa": "0061210340023T",
     "fechaEntrega": "2023-10-10",
-    "estado": "Vigente",
+    "estado": "Pendiente",
     "cantidad": 3,
     "rango": "558013000041-558013000043",
     "coordenadas": {
       "latitud": 12.109924018386636,
       "longitud": -86.25609360535525
-    }
+    },
+    "codipsa": "1111"
   },
   {
     "cue": "5583691215180",
+    "cupa": "0074519231145H",
     "fechaEntrega": "2024-03-15",
-    "estado": "Expirada",
+    "estado": "Pendiente",
     "cantidad": 30,
     "rango": "558013000061-558013000090",
     "coordenadas": {
       "latitud": 12.427437,
       "longitud": -86.878138
-    }
+    },
+    "codipsa": "1111"
   },
   {
     "cue": "5584824305269",
+    "cupa": "0036790245801R",
     "fechaEntrega": "2024-06-20",
-    "estado": "Vigente",
+    "estado": "Pendiente",
     "cantidad": 25,
     "rango": "558013000091-558013000115",
     "coordenadas": {
       "latitud": 12.211075,
       "longitud": -86.340864
-    }
+    },
+    "codipsa": "1111"
   },
   {
     "cue": "5585071520251",
+    "cupa": "0084512047219L",
     "fechaEntrega": "2023-12-05",
-    "estado": "Expirada",
+    "estado": "Pendiente",
     "cantidad": 15,
     "rango": "558013000116-558013000130",
     "coordenadas": {
       "latitud": 12.211234,
       "longitud": -86.342144
-    }
+    },
+    "codipsa": "1111"
   },
   {
     "cue": "5586091827364",
+    "cupa": "0048129305618N",
     "fechaEntrega": "2023-08-25",
-    "estado": "Vigente",
+    "estado": "Pendiente",
     "cantidad": 35,
     "rango": "558013000131-558013000165",
     "coordenadas": {
       "latitud": 12.109992,
       "longitud": -86.253911
-    }
+    },
+    "codipsa": "1111"
   },
   {
     "cue": "5587122130342",
+    "cupa": "0093124580719M",
     "fechaEntrega": "2024-04-08",
-    "estado": "Expirada",
+    "estado": "Pendiente",
     "cantidad": 20,
     "rango": "558013000166-558013000185",
     "coordenadas": {
       "latitud": 12.210576,
       "longitud": -86.341025
-    }
+    },
+    "codipsa": "1111"
   }
 ]

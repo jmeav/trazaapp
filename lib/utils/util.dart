@@ -6,22 +6,59 @@ import 'package:intl/intl.dart';
 import 'dart:math' as math;
 
 
-TextTheme createTextTheme(
-    BuildContext context, String bodyFontString, String displayFontString) {
-  TextTheme baseTextTheme = Theme.of(context).textTheme;
-  TextTheme bodyTextTheme = GoogleFonts.getTextTheme(bodyFontString, baseTextTheme);
-  TextTheme displayTextTheme =
-      GoogleFonts.getTextTheme(displayFontString, baseTextTheme);
-  TextTheme textTheme = displayTextTheme.copyWith(
-    bodyLarge: bodyTextTheme.bodyLarge,
-    bodyMedium: bodyTextTheme.bodyMedium,
-    bodySmall: bodyTextTheme.bodySmall,
-    labelLarge: bodyTextTheme.labelLarge,
-    labelMedium: bodyTextTheme.labelMedium,
-    labelSmall: bodyTextTheme.labelSmall,
+TextTheme createTextTheme(BuildContext context, String primaryFont, String secondaryFont) {
+  return TextTheme(
+    displayLarge: TextStyle(
+      inherit: true,
+      fontFamily: primaryFont,
+      fontSize: 57,
+      fontWeight: FontWeight.w400,
+      height: 1.1,
+      color: Theme.of(context).colorScheme.onSurface,
+    ),
+    displayMedium: TextStyle(
+      inherit: true,
+      fontFamily: primaryFont,
+      fontSize: 45,
+      fontWeight: FontWeight.w400,
+      height: 1.1,
+      color: Theme.of(context).colorScheme.onSurface,
+    ),
+    displaySmall: TextStyle(
+      inherit: true,
+      fontFamily: primaryFont,
+      fontSize: 36,
+      fontWeight: FontWeight.w400,
+      height: 1.1,
+      color: Theme.of(context).colorScheme.onSurface,
+    ),
+    bodyLarge: TextStyle(
+      inherit: true,
+      fontFamily: secondaryFont,
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+      color: Theme.of(context).colorScheme.onSurface,
+    ),
+    bodyMedium: TextStyle(
+      inherit: true,
+      fontFamily: secondaryFont,
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+      color: Theme.of(context).colorScheme.onSurface,
+    ),
+    bodySmall: TextStyle(
+      inherit: true,
+      fontFamily: secondaryFont,
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+      color: Theme.of(context).colorScheme.onSurface,
+    ),
   );
-  return textTheme;
 }
+
 
 
 String obtenerFechaActual() {

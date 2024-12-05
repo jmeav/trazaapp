@@ -3,11 +3,12 @@ import 'entregas.dart';
 
 class EntregasAdapter extends TypeAdapter<Entregas> {
   @override
-  final int typeId = 2; // Asegúrate de que coincida con el typeId en @HiveType
+  final int typeId = 2;
 
   @override
   Entregas read(BinaryReader reader) {
     return Entregas(
+      entregaId: reader.read() as String,
       cupa: reader.read() as String,
       cue: reader.read() as String,
       fechaEntrega: reader.read() as DateTime,
@@ -17,12 +18,14 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
       rangoFinal: reader.read() as int,
       latitud: reader.read() as double,
       longitud: reader.read() as double,
-      distanciaCalculada: reader.read() as String?, // Permite valores nulos
+      distanciaCalculada: reader.read() as String?,
+      codipsa: reader.read() as String, // Nuevo campo
     );
   }
 
   @override
   void write(BinaryWriter writer, Entregas obj) {
+    writer.write(obj.entregaId);
     writer.write(obj.cupa);
     writer.write(obj.cue);
     writer.write(obj.fechaEntrega);
@@ -32,6 +35,7 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
     writer.write(obj.rangoFinal);
     writer.write(obj.latitud);
     writer.write(obj.longitud);
-    writer.write(obj.distanciaCalculada ?? ''); // Maneja valores nulos
+    writer.write(obj.distanciaCalculada ?? '');
+    writer.write(obj.codipsa); // Nuevo campo
   }
 }

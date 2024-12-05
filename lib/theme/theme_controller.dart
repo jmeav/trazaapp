@@ -25,15 +25,16 @@ class ThemeController extends GetxController {
   }
 
   void updateTheme(String themeMode, BuildContext context) {
-    ThemeData theme;
-    switch (themeMode) {
-      case 'dark':
-        theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark();
-        break;
-      default:
-        theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light();
-    }
-    themeData.value = theme;
+  ThemeData theme;
+switch (themeMode) {
+  case 'dark':
+    theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark();
+    break;
+  default:
+    theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light();
+}
+themeData.value = theme;
+
   }
 
   void toggleTheme(BuildContext context) async {

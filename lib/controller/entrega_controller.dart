@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
+import 'package:trazaapp/data/models/bovino/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 import 'package:trazaapp/utils/util.dart';
 
@@ -20,7 +22,6 @@ class EntregaController extends GetxController {
     headingAccuracy: 0.0,
   ).obs;
 
-  // Hive Box para Entregas
   final Box<Entregas> entregasBox = Hive.box<Entregas>('entregas');
 
   @override
@@ -30,37 +31,44 @@ class EntregaController extends GetxController {
     fetchEntregas();
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    refreshData();
+  }
+
+  /// Refresca los datos de ubicación y entregas
+  Future<void> refreshData() async {
+    await fetchUserLocation();
+    await fetchEntregas();
+  }
+
   /// Obtiene la ubicación actual del usuario
   Future<void> fetchUserLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Verificar si el servicio de ubicación está habilitado
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('El servicio de ubicación está deshabilitado.');
-    }
-
-    // Verificar permisos de ubicación
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Los permisos de ubicación están denegados.');
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw Exception('El servicio de ubicación está deshabilitado.');
       }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Los permisos de ubicación están denegados.');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Los permisos de ubicación están permanentemente denegados.');
+      }
+
+      userLocation.value = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
+      updateDistances();
+    } catch (e) {
+      print('Error al obtener ubicación: $e');
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Los permisos de ubicación están permanentemente denegados.');
-    }
-
-    // Obtener la posición actual del usuario
-    userLocation.value = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-
-    // Recalcular distancias con la nueva ubicación
-    updateDistances();
   }
 
   /// Carga las entregas desde Hive
@@ -75,44 +83,73 @@ class EntregaController extends GetxController {
     fetchEntregas();
   }
 
-  /// Actualiza una entrega existente en Hive
-  Future<void> updateEntrega(int index, Entregas updatedEntrega) async {
-    await entregasBox.putAt(index, updatedEntrega);
-    fetchEntregas();
+  /// Actualiza el estado de una entrega existente
+  Future<void> updateEntregaEstado(String entregaId, String nuevoEstado) async {
+    final index = entregas.indexWhere((entrega) => entrega.entregaId == entregaId);
+    if (index != -1) {
+      final entregaActualizada = entregas[index].copyWith(estado: nuevoEstado);
+      await entregasBox.putAt(index, entregaActualizada);
+      fetchEntregas();
+    } else {
+      print('Error: No se encontró la entrega con ID $entregaId.');
+    }
   }
 
-  /// Elimina una entrega de Hive
-  Future<void> deleteEntrega(int index) async {
-    await entregasBox.deleteAt(index);
-    fetchEntregas();
+  /// Elimina una entrega y los bovinos asociados
+  Future<void> deleteEntregaYBovinos(String entregaId) async {
+    try {
+      final entrega = entregas.firstWhere((e) => e.entregaId == entregaId);
+
+      // Actualizar estado de la entrega
+      await updateEntregaEstado(entregaId, 'Pendiente');
+
+      // Eliminar bovinos asociados
+      final bovinoBox = await Hive.openBox<Bovino>('bovinos');
+      final bovinosToDelete = bovinoBox.values
+          .where((bovino) => bovino.cue == entrega.cue)
+          .toList();
+
+      for (var bovino in bovinosToDelete) {
+        await bovinoBox.delete(bovino.arete);
+      }
+
+      refreshData();
+      print('Entrega y bovinos eliminados con éxito.');
+    } catch (e) {
+      print('Error al eliminar entrega y bovinos: $e');
+      Get.snackbar('Error', 'No se pudo eliminar la entrega.',
+          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red);
+    }
   }
 
-  /// Refresca los datos (ubicación y entregas)
-  Future<void> refreshData() async {
-    await fetchUserLocation();
-    await fetchEntregas();
-  }
-
+  /// Calcula y actualiza las distancias para cada entrega
   void updateDistances() {
-  final updatedEntregas = entregas.map((entrega) {
-    final distance = calculateDistance(
-      userLocation.value.latitude,
-      userLocation.value.longitude,
-      entrega.latitud, // Usamos latitud del nuevo modelo
-      entrega.longitud, // Usamos longitud del nuevo modelo
-    );
+    entregas.value = entregas.map((entrega) {
+      try {
+        final distance = calculateDistance(
+          userLocation.value.latitude,
+          userLocation.value.longitude,
+          entrega.latitud,
+          entrega.longitud,
+        );
 
-    // Actualizamos la distancia calculada
-    return entrega.copyWith(
-      distanciaCalculada: '${(distance / 1000).toStringAsFixed(2)} KM',
-    );
-  }).toList();
+        return entrega.copyWith(
+            distanciaCalculada: '${(distance / 1000).toStringAsFixed(2)} KM');
+      } catch (e) {
+        print('Error al calcular distancia: $e');
+        return entrega;
+      }
+    }).toList();
+  }
 
-  // Actualizamos la lista de entregas
-  entregas.value = updatedEntregas;
-}
+  /// Getters para listas y conteos
+  List<Entregas> get entregasPendientes =>
+      entregas.where((entrega) => entrega.estado == 'Pendiente').toList();
 
+  List<Entregas> get entregasListas =>
+      entregas.where((entrega) => entrega.estado == 'Lista').toList();
 
-  /// Obtiene el número de entregas pendientes
-  int get entregasPendientesCount => entregas.length;
+  int get entregasPendientesCount => entregasPendientes.length;
+
+  int get entregasListasCount => entregasListas.length;
 }

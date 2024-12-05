@@ -15,11 +15,15 @@ Future<void> importEntregasData() async {
     final String response = await rootBundle.loadString('assets/entregas.json');
     final List<dynamic> jsonData = json.decode(response);
 
+    // Contador para el ID incremental
+    int idCounter = 1;
+
     // Convertir y guardar los datos en Hive
     for (var item in jsonData) {
       final rango = item['rango']?.split('-') ?? ['0', '0'];
       final entrega = Entregas(
-        cupa: '', // Campo vacío porque no está en el JSON
+        entregaId: idCounter.toString(), // Asignar el ID incremental como string
+        cupa: item['cupa'] ?? '',
         cue: item['cue'],
         fechaEntrega: DateTime.parse(item['fechaEntrega']),
         estado: item['estado'],
@@ -28,9 +32,11 @@ Future<void> importEntregasData() async {
         rangoFinal: int.parse(rango.last),
         latitud: item['coordenadas']['latitud'],
         longitud: item['coordenadas']['longitud'],
+        distanciaCalculada: item['distanciaCalculada'], codipsa: item['codipsa'], // Puede ser nulo
       );
 
       await entregasBox.add(entrega);
+      idCounter++; // Incrementar el contador para el próximo ID
     }
 
     print('Datos importados correctamente.');

@@ -9,10 +9,10 @@ class EntregasView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Entregas Pendientes'),
+        title: const Text('Gestión Pendientes'),
       ),
       body: Obx(() {
-        if (controller.entregas.isEmpty) {
+        if (controller.entregasPendientes.isEmpty) {
           return const Center(
             child: Text(
               'No tienes entregas pendientes.',
@@ -23,9 +23,9 @@ class EntregasView extends StatelessWidget {
             displacement: 1,
             onRefresh: controller.refreshData,
             child: ListView.builder(
-              itemCount: controller.entregas.length,
+              itemCount: controller.entregasPendientes.length,
               itemBuilder: (context, index) {
-                final entrega = controller.entregas[index];
+                final entrega = controller.entregasPendientes[index];
                 final distanciaCalculadaStr =
                     entrega.distanciaCalculada?.replaceAll('KM', '').trim();
                 final distanciaCalculadaDouble =
@@ -69,8 +69,13 @@ class EntregasView extends StatelessWidget {
                               ),
                               onPressed: () {
                                 Get.toNamed('/formbovinos', arguments: {
+                                  'entregaId': entrega
+                                      .entregaId, // ID único de la entrega
                                   'cue': entrega.cue,
-                                  'rango': entrega.rangoFinal,
+                                  'rangoInicial':
+                                      entrega.rangoInicial, // Rango inicial
+                                  'rangoFinal':
+                                      entrega.rangoFinal, // Rango final
                                   'cantidad': entrega.cantidad,
                                 });
                               },

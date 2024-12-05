@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
+import 'package:trazaapp/presentation/entlistas/entenviar_view.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 
 class HomeView extends StatelessWidget {
@@ -13,6 +14,9 @@ class HomeView extends StatelessWidget {
     int asignados = 50;
     final EntregaController entregaController = Get.put(EntregaController());
     final ThemeController themeController = Get.put(ThemeController());
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+      entregaController.refreshData(); // Actualiza datos al mostrar la vista
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -22,13 +26,12 @@ class HomeView extends StatelessWidget {
           Obx(() {
             return IconButton(
               icon: Icon(
-                themeController.themeData.value.brightness == Brightness.light 
-                    ? Icons.brightness_3 
-                    : Icons.wb_sunny
-              ),
+                  themeController.themeData.value.brightness == Brightness.light
+                      ? Icons.brightness_3
+                      : Icons.wb_sunny),
               tooltip: 'Cambiar tema',
               onPressed: () {
-               themeController.toggleTheme(context);
+                themeController.toggleTheme(context);
               },
             );
           }),
@@ -79,16 +82,23 @@ class HomeView extends StatelessWidget {
             Expanded(
               child: ListView(
                 children: [
-                  Text('Tienes $asignados aretes asigandos'),
+                    ActionCard(label: 'Gestionar Bolson (500)'),
                   Obx(() => ActionCard(
-                        label: 'Entregas Pendientes (${entregaController.entregasPendientesCount})',
+                        label:
+                            'Gestionar Pendientes (${entregaController.entregasPendientesCount})',
                         onTap: () {
                           Get.toNamed('/entrega');
                         },
                       )),
-                  ActionCard(label: 'Altas Enviadas (3)'),
-                  ActionCard(label: 'Actualizaciones (1)'),
-                  ActionCard(label: 'Notificaciones de bajas (3)'),
+                  Obx(() => ActionCard(
+                    label:
+                        'Gestionar Listas (${entregaController.entregasListasCount})',
+                    onTap: () {
+                      Get.to(() => EnviarView());
+                    },
+                  )),
+                  ActionCard(label: 'Notificar Movimiento'),
+                  ActionCard(label: 'Notificar Baja'),
                 ],
               ),
             ),
