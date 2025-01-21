@@ -80,6 +80,7 @@ flutter:
   assets:
     - assets/images/
     - assets/entregas.json
+    - assets/bag.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
-import 'package:trazaapp/presentation/entpendientes/review_view.dart';
+import 'package:trazaapp/presentation/pending_ent/rev_view.dart';
 
 class EnviarView extends StatelessWidget {
   final EntregaController controller = Get.find<EntregaController>();

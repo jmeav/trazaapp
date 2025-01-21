@@ -130,7 +130,6 @@ class FormBovinosView extends StatelessWidget {
                                         'Faltan datos en algunos bovinos.');
                                     return;
                                   }
-
                                   // Si no hay errores, imprimir información y guardar
                                   print(
                                       "Información recopilada de los bovinos:");

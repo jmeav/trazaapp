@@ -2,7 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
-import 'package:trazaapp/presentation/entlistas/entenviar_view.dart';
+import 'package:trazaapp/controller/managebag_controller.dart'; // Importa el controlador del Bag
+import 'package:trazaapp/presentation/finished_ent/finished_view.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 
 class HomeView extends StatelessWidget {
@@ -11,11 +12,14 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String rol = 'HB Operadora';
-    int asignados = 50;
+
     final EntregaController entregaController = Get.put(EntregaController());
+    final ManageBagController bagController = Get.put(ManageBagController()); // Inicializa el controlador del Bag
     final ThemeController themeController = Get.put(ThemeController());
-     WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       entregaController.refreshData(); // Actualiza datos al mostrar la vista
+      bagController.loadBagData(); // Carga los datos del Bag
     });
 
     return Scaffold(
@@ -82,7 +86,14 @@ class HomeView extends StatelessWidget {
             Expanded(
               child: ListView(
                 children: [
-                    ActionCard(label: 'Gestionar Bolson (500)'),
+                  // Gestionar Bolson (Usa el controlador para mostrar la cantidad disponible)
+                  Obx(() => ActionCard(
+                        label:
+                            'Gestionar Bolson (${bagController.cantidadDisponible})',
+                        onTap: () {
+                          Get.toNamed('/managebag'); // Navega a la vista de gestión del Bag
+                        },
+                      )),
                   Obx(() => ActionCard(
                         label:
                             'Gestionar Pendientes (${entregaController.entregasPendientesCount})',
@@ -91,12 +102,12 @@ class HomeView extends StatelessWidget {
                         },
                       )),
                   Obx(() => ActionCard(
-                    label:
-                        'Gestionar Listas (${entregaController.entregasListasCount})',
-                    onTap: () {
-                      Get.to(() => EnviarView());
-                    },
-                  )),
+                        label:
+                            'Gestionar Listas (${entregaController.entregasListasCount})',
+                        onTap: () {
+                          Get.to(() => EnviarView());
+                        },
+                      )),
                   ActionCard(label: 'Notificar Movimiento'),
                   ActionCard(label: 'Notificar Baja'),
                 ],
@@ -108,6 +119,7 @@ class HomeView extends StatelessWidget {
     );
   }
 }
+
 
 class SummaryCard extends StatelessWidget {
   final String title;
