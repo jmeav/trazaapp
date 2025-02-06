@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
-import 'package:trazaapp/data/models/bovino/bovino.dart';
+import 'package:trazaapp/controller/managebag_controller.dart';
+import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 import 'package:trazaapp/utils/util.dart';
 
@@ -95,32 +96,44 @@ class EntregaController extends GetxController {
     }
   }
 
-  /// Elimina una entrega y los bovinos asociados
-  Future<void> deleteEntregaYBovinos(String entregaId) async {
-    try {
-      final entrega = entregas.firstWhere((e) => e.entregaId == entregaId);
+Future<void> deleteEntregaYBovinos(String entregaId) async {
+  try {
+    final entregaIndex = entregasBox.values.toList().indexWhere((e) => e.entregaId == entregaId);
 
-      // Actualizar estado de la entrega
-      await updateEntregaEstado(entregaId, 'Pendiente');
-
-      // Eliminar bovinos asociados
-      final bovinoBox = await Hive.openBox<Bovino>('bovinos');
-      final bovinosToDelete = bovinoBox.values
-          .where((bovino) => bovino.cue == entrega.cue)
-          .toList();
-
-      for (var bovino in bovinosToDelete) {
-        await bovinoBox.delete(bovino.arete);
-      }
-
-      refreshData();
-      print('Entrega y bovinos eliminados con éxito.');
-    } catch (e) {
-      print('Error al eliminar entrega y bovinos: $e');
-      Get.snackbar('Error', 'No se pudo eliminar la entrega.',
-          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red);
+    if (entregaIndex == -1) {
+      Get.snackbar('Error', 'No se encontró la entrega.');
+      return;
     }
+
+    final entrega = entregasBox.getAt(entregaIndex)!;
+
+    // Restaurar los datos del bag si la entrega proviene de él
+    final bagController = Get.find<ManageBagController>();
+    await bagController.restoreBag(entrega.cantidad, entrega.rangoInicial);
+
+    // Eliminar bovinos asociados
+    final bovinoBox = await Hive.openBox<Bovino>('bovinos');
+    final bovinosToDelete = bovinoBox.values
+        .where((bovino) => bovino.cue == entrega.cue)
+        .toList();
+
+    for (var bovino in bovinosToDelete) {
+      await bovinoBox.delete(bovino.arete);
+    }
+
+    // Eliminar la entrega
+    await entregasBox.deleteAt(entregaIndex);
+    
+    refreshData();
+    Get.snackbar('Eliminado', 'Entrega eliminada correctamente.');
+  } catch (e) {
+    print('Error al eliminar entrega y bovinos: $e');
+    Get.snackbar('Error', 'No se pudo eliminar la entrega.',
+        snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red);
   }
+}
+
+
 
   /// Calcula y actualiza las distancias para cada entrega
   void updateDistances() {

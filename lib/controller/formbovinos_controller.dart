@@ -1,8 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:trazaapp/controller/entrega_controller.dart';
-import 'package:trazaapp/data/models/bovino/bovino.dart';
+import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 
 class FormBovinosController extends GetxController {
@@ -106,7 +105,7 @@ class FormBovinosController extends GetxController {
       );
       bovinoInfo[key] = updatedBovino;
     });
-    update(); // Notificar cambios
+    update(); // Notificar cambios REVISAR 
     Get.snackbar('Llenado Rápido', 'Datos aplicados correctamente.');
   }
 
@@ -123,38 +122,35 @@ class FormBovinosController extends GetxController {
   }
 
 void saveBovinos() async {
-  checkEntregasBox();
   try {
     // Validar que todos los campos estén completos
     for (var bovino in bovinoInfo.values) {
       if (bovino.edad <= 0 || bovino.sexo.isEmpty || bovino.raza.isEmpty) {
-        throw Exception(
-            'Faltan datos en el bovino con arete ${bovino.arete}.');
+        throw Exception('Faltan datos en el bovino con arete ${bovino.arete}.');
       }
     }
 
     sendingData.value = true;
 
-    // Guardar los bovinos en la caja Hive
+    // Guardar los bovinos en Hive
     for (var bovino in bovinoInfo.values) {
       await bovinoBox.put(bovino.arete, bovino);
     }
 
-    // Usar updateEntregaEstado para actualizar el estado de la entrega
-    final entrega = entregasBox.values.firstWhere(
-      (e) => e.entregaId == entregaId,
-      orElse: () => throw Exception('No se encontró la entrega con ID=$entregaId.'),
-    );
+    // Buscar la entrega en Hive
+    final entregaIndex = entregasBox.values.toList().indexWhere((e) => e.entregaId == entregaId);
 
-    // Actualizar estado a "Lista"
-    await Get.find<EntregaController>().updateEntregaEstado(entregaId, 'Lista');
+    if (entregaIndex != -1) {
+      // Actualizar el estado de la entrega a "Lista"
+      final entrega = entregasBox.getAt(entregaIndex)!;
+      final entregaActualizada = entrega.copyWith(estado: 'Lista');
+      await entregasBox.putAt(entregaIndex, entregaActualizada);
+    }
 
-    // Notificar éxito
     sendingData.value = false;
     Get.snackbar('Guardado', 'Los datos se guardaron correctamente.');
     Get.offNamed('/home');
   } catch (e) {
-    // Manejo de errores
     sendingData.value = false;
     Get.snackbar('Error', 'Error al guardar: $e');
     print('Error en saveBovinos: $e');

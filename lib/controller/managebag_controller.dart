@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:trazaapp/data/models/bag/bag.dart';
+import 'package:trazaapp/data/models/bag/bag_operadora.dart';
 import 'package:hive/hive.dart';
+import 'package:trazaapp/data/models/entregas/entregas.dart';
 
 class ManageBagController extends GetxController {
   // Controllers para los campos de texto
@@ -25,17 +26,42 @@ class ManageBagController extends GetxController {
     loadBagData();
   }
 
-  // Cargar los datos del bolsón desde Hive
-  // Cargar datos del Bag
+  /// Cargar los datos del Bag desde Hive
   Future<void> loadBagData() async {
     final box = Hive.box<Bag>('bag');
     if (box.isNotEmpty) {
-      bag = box.getAt(0)!; // Asumiendo que hay un Bag disponible
+      bag = box.getAt(0)!;
       cantidadDisponible.value = bag.cantidad;
+      rangoAsignado.value =
+          '${bag.rangoInicial} - ${bag.rangoInicial + bag.cantidad - 1}';
     }
   }
 
-  // Asignar bag
+  Future<void> restoreBag(int cantidad, int rangoInicialEliminado) async {
+    final box = Hive.box<Bag>('bag');
+
+    if (box.isNotEmpty) {
+      bag = box.getAt(0)!;
+
+      // Restaurar la cantidad y ajustar el rangoInicial
+      final nuevoBag = bag.copyWith(
+        cantidad: bag.cantidad + cantidad,
+        rangoInicial: bag.rangoInicial > rangoInicialEliminado
+            ? rangoInicialEliminado
+            : bag.rangoInicial,
+      );
+
+      await box.putAt(0, nuevoBag);
+
+      // ✅ Recargar los datos del bag para actualizar la UI
+      await loadBagData();
+
+      print(
+          'Bag restaurado: cantidad=${nuevoBag.cantidad}, rango=${rangoAsignado.value}');
+    }
+  }
+
+  /// Asignar bag
   Future<void> asignarBag() async {
     final int cantidadAsignar = int.tryParse(cantidadController.text) ?? 0;
 
@@ -47,19 +73,43 @@ class ManageBagController extends GetxController {
     final int rangoInicial = bag.rangoInicial;
     final int rangoFinal = rangoInicial + cantidadAsignar - 1;
 
+    // Crear una nueva entrega desde un Bag
+    final nuevaEntrega = Entregas(
+      entregaId: DateTime.now().millisecondsSinceEpoch.toString(),
+      cue: cueController.text,
+      cupa: cupaController.text,
+      estado: 'Pendiente',
+      cantidad: cantidadAsignar,
+      rangoInicial: rangoInicial,
+      rangoFinal: rangoFinal,
+      fechaEntrega: DateTime.now(),
+      latitud: 1, // Valor temporal, ajustar según la lógica de la aplicación
+      longitud: 1, // Valor temporal, ajustar según la lógica de la aplicación
+      nombreProductor: '', // Ajustar según la lógica de la aplicación
+      establecimiento: '', // Ajustar según la lógica de la aplicación
+      dias: 0, // Ajustar según la lógica de la aplicación
+      nombreEstablecimiento: '', // Ajustar según la lógica de la aplicación
+      existencia: 0, // Ajustar según la lógica de la aplicación
+    );
+
+    // Guardar en Hive la nueva entrega
+    final entregasBox = Hive.box<Entregas>('entregas');
+    await entregasBox.add(nuevaEntrega);
+
     // Actualizar bag
     bag = bag.copyWith(
       rangoInicial: rangoFinal + 1,
       cantidad: bag.cantidad - cantidadAsignar,
     );
 
-    // Guardar en Hive
+    // Guardar el bag actualizado en Hive
     final box = Hive.box<Bag>('bag');
     await box.putAt(0, bag);
 
-    // Actualizar observables
+    // Actualizar UI
     cantidadDisponible.value = bag.cantidad;
-    rangoAsignado.value = '$rangoInicial-$rangoFinal';
+    rangoAsignado.value =
+        '${bag.rangoInicial} - ${bag.rangoInicial + bag.cantidad - 1}';
 
     // Limpiar campos
     departamentoController.clear();
@@ -68,6 +118,15 @@ class ManageBagController extends GetxController {
     cueController.clear();
     cantidadController.clear();
 
-    Get.snackbar('Éxito', 'Rango asignado: $rangoInicial-$rangoFinal');
+    // Redirigir a FormBovinosView con los datos de la nueva entrega
+    Get.toNamed('/formbovinos', arguments: {
+      'entregaId': nuevaEntrega.entregaId,
+      'cue': nuevaEntrega.cue,
+      'rangoInicial': nuevaEntrega.rangoInicial,
+      'rangoFinal': nuevaEntrega.rangoFinal,
+      'cantidad': nuevaEntrega.cantidad,
+    });
+
+    Get.snackbar('Éxito', 'Bovinos listos para registrar.');
   }
 }

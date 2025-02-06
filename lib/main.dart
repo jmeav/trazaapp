@@ -2,26 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:trazaapp/data/models/bag/bag.dart';
-import 'package:trazaapp/data/models/bovino/bovino.dart';
-import 'package:trazaapp/data/models/bovino/bovino_adapter.dart';
+import 'package:trazaapp/data/models/bag/bag_operadora.dart';
+import 'package:trazaapp/data/models/bovinos/bovino.dart';
+import 'package:trazaapp/data/models/bovinos/bovino_adapter.dart';
+import 'package:trazaapp/data/models/departamentos/departamento.dart';
+import 'package:trazaapp/data/models/departamentos/departamento_adapter.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 import 'package:trazaapp/data/models/entregas/entregas_adapter.dart';
-import 'package:trazaapp/data/models/bag/bag_adapter.dart';
-import 'package:trazaapp/data/models/establecimiento.dart';
+import 'package:trazaapp/data/models/bag/bag_operadora_adapter.dart';
+import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
+import 'package:trazaapp/data/models/establecimiento/establecimiento_adapter.dart';
 import 'package:trazaapp/data/models/home_stat.dart';
-import 'package:trazaapp/data/models/productor.dart';
-import 'package:trazaapp/presentation/manage_bag/managebag_view.dart';
-import 'package:trazaapp/utils/import_bag.dart';
-import 'package:trazaapp/utils/import_entregas.dart'; // Importamos la función de importer.dart
-import 'package:trazaapp/presentation/pending_ent/pending_view.dart';
-import 'package:trazaapp/presentation/formbovinos/formbovinos_view.dart';
-import 'package:trazaapp/presentation/home/home.dart';
+import 'package:trazaapp/data/models/municipios/minicipio_adapter.dart';
+import 'package:trazaapp/data/models/municipios/municipio.dart';
+import 'package:trazaapp/data/models/productores/productor.dart';
+import 'package:trazaapp/data/models/productores/productor_adapter.dart';
+import 'package:trazaapp/presentation/catalogscreen/catalogscreen.dart';
+import 'package:trazaapp/presentation/finishedscreen/finished_view.dart';
+import 'package:trazaapp/presentation/managebagscreen/managebag_view.dart';
+import 'package:trazaapp/presentation/pendingscreen/pending_view.dart';
+import 'package:trazaapp/presentation/formbovinoscreen/formbovinos_view.dart';
+import 'package:trazaapp/presentation/homescreen/home.dart';
 import 'package:trazaapp/presentation/splashscreen/splash_screen.dart';
 import 'package:trazaapp/login/view/login_view.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 import 'package:trazaapp/login/controller/login_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:trazaapp/utils/configscreen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +40,11 @@ void main() async {
   // Registra los adaptadores de Hive
   Hive.registerAdapter(EntregasAdapter());
   Hive.registerAdapter(BovinoAdapter());
+  Hive.registerAdapter(EstablecimientoAdapter());
+  Hive.registerAdapter(ProductorAdapter());
   Hive.registerAdapter(BagAdapter());
+  Hive.registerAdapter(DepartamentoAdapter());
+  Hive.registerAdapter(MunicipioAdapter());
 
   // Abre las cajas necesarias
   await Hive.openBox<HomeStat>('homeStat');
@@ -41,20 +53,14 @@ void main() async {
   await Hive.openBox<Establecimiento>('establecimientos');
   await Hive.openBox<Productor>('productores');
   await Hive.openBox<Bag>('bag');
-
-  // Importar datos de prueba
-  await importEntregasData();
-  await importBagData(); // Nueva función para importar Bag
+  await Hive.openBox<Departamento>('departamentos');
+  await Hive.openBox<Municipio>('municipios');
 
   // Inicializa los controladores de GetX
   final LoginController loginController = Get.put(LoginController());
   loginController.checkFirstTime();
 
-  if (loginController.isFirstTime.value) {
-    await importEntregasData();
-  }
-
-  // Limpiar SharedPreferences al iniciar (solo en pruebas)
+  // Limpia SharedPreferences al iniciar (solo en pruebas)
   final prefs = await SharedPreferences.getInstance();
   await prefs.clear();
   print("SharedPreferences borrados con éxito.");
@@ -62,7 +68,7 @@ void main() async {
   runApp(MyApp());
 }
 
- class MyApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
   final ThemeController themeController = Get.put(ThemeController());
 
   @override
@@ -73,16 +79,16 @@ void main() async {
         theme: themeController.themeData.value,
         initialRoute: '/initial',
         getPages: [
-          GetPage(
-            name: '/initial',
-            page: () => InitialView(),
-          ),
+          GetPage(name: '/initial', page: () => InitialView()),
           GetPage(name: '/splash', page: () => SplashScreen()),
           GetPage(name: '/login', page: () => const LoginView()),
           GetPage(name: '/home', page: () => const HomeView()),
-          GetPage(name: '/entrega', page: () => EntregasView()), // Nueva ruta
+          GetPage(name: '/entrega', page: () => EntregasView()),
           GetPage(name: '/formbovinos', page: () => FormBovinosView()),
           GetPage(name: '/managebag', page: () => ManageBagView()),
+          GetPage(name: '/sendview', page: () => EnviarView()),
+          GetPage(name: '/catalogs', page: () => CatalogosScreen()),
+          GetPage(name: '/configs', page: () => ConfiguracionesScreen()),
         ],
       );
     });

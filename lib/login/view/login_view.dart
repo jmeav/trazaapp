@@ -19,7 +19,7 @@ class _LoginViewState extends State<LoginView> {
   void initState() {
     super.initState();
     imeiController.text = '8927368326889';
-    codigoController.text = '1111';
+    codigoController.text = '3709';
   }
   
   Future<void> login() async {

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/controller/managebag_controller.dart'; // Importa el controlador del Bag
-import 'package:trazaapp/presentation/finished_ent/finished_view.dart';
+import 'package:trazaapp/presentation/finishedscreen/finished_view.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 
 class HomeView extends StatelessWidget {
@@ -27,19 +27,14 @@ class HomeView extends StatelessWidget {
         title: Text('Hola, $rol!'),
         elevation: 0,
         actions: [
-          Obx(() {
-            return IconButton(
-              icon: Icon(
-                  themeController.themeData.value.brightness == Brightness.light
-                      ? Icons.brightness_3
-                      : Icons.wb_sunny),
-              tooltip: 'Cambiar tema',
-              onPressed: () {
-                themeController.toggleTheme(context);
-              },
-            );
-          }),
-        ],
+    IconButton(
+      icon: Icon(Icons.settings),
+      tooltip: 'Configuraciones',
+      onPressed: () {
+        Get.toNamed('/configs'); // Navega a la nueva pantalla
+      },
+    ),
+  ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -105,10 +100,12 @@ class HomeView extends StatelessWidget {
                         label:
                             'Gestionar Listas (${entregaController.entregasListasCount})',
                         onTap: () {
-                          Get.to(() => EnviarView());
+                       
                         },
                       )),
-                  ActionCard(label: 'Notificar Movimiento'),
+                  ActionCard(label: 'Notificar Movimiento', onTap: () {
+                       
+                        },),
                   ActionCard(label: 'Notificar Baja'),
                 ],
               ),

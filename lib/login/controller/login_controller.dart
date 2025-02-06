@@ -9,6 +9,7 @@ class LoginController extends GetxController {
   var imei = ''.obs;
   var codigoOficial = ''.obs;
   var cedula = ''.obs;
+  var token = '1'.obs;
 
   @override
   void onInit() {
