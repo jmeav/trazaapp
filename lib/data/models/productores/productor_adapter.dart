@@ -15,18 +15,21 @@ class ProductorAdapter extends TypeAdapter<Productor> {
       idProductor: fields[0] as String,
       productor: fields[1] as String,
       nombreProductor: fields[2] as String,
+      lastUpdate: fields[3] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Productor obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.idProductor)
       ..writeByte(1)
       ..write(obj.productor)
       ..writeByte(2)
-      ..write(obj.nombreProductor);
+      ..write(obj.nombreProductor)
+      ..writeByte(3)
+      ..write(obj.lastUpdate);
   }
 }

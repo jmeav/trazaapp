@@ -17,25 +17,26 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
       fechaEntrega: fields[1] as DateTime,
       cupa: fields[2] as String,
       cue: fields[3] as String,
-      estado: fields[4] as String,
-      rangoInicial: fields[5] as int,
-      rangoFinal: fields[6] as int,
-      cantidad: fields[7] as int,
-      nombreProductor: fields[8] as String,
-      establecimiento: fields[9] as String,
-      dias: fields[10] as int,
-      nombreEstablecimiento: fields[11] as String,
-      latitud: fields[12] as double,
-      longitud: fields[13] as double,
-      existencia: fields[14] as int,
-      distanciaCalculada: fields[15] as String?,
+      rangoInicial: fields[4] as int,
+      rangoFinal: fields[5] as int,
+      cantidad: fields[6] as int,
+      nombreProductor: fields[7] as String,
+      establecimiento: fields[8] as String,
+      dias: fields[9] as int,
+      nombreEstablecimiento: fields[10] as String,
+      latitud: fields[11] as double,
+      longitud: fields[12] as double,
+      existencia: fields[13] as int,
+      distanciaCalculada: fields[14] as String?,
+      estado: fields[15] as String,
+      lastUpdate: fields[16] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, Entregas obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(17) // Cantidad total de campos
       ..writeByte(0)
       ..write(obj.entregaId)
       ..writeByte(1)
@@ -45,28 +46,30 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
       ..writeByte(3)
       ..write(obj.cue)
       ..writeByte(4)
-      ..write(obj.estado)
-      ..writeByte(5)
       ..write(obj.rangoInicial)
-      ..writeByte(6)
+      ..writeByte(5)
       ..write(obj.rangoFinal)
-      ..writeByte(7)
+      ..writeByte(6)
       ..write(obj.cantidad)
-      ..writeByte(8)
+      ..writeByte(7)
       ..write(obj.nombreProductor)
-      ..writeByte(9)
+      ..writeByte(8)
       ..write(obj.establecimiento)
-      ..writeByte(10)
+      ..writeByte(9)
       ..write(obj.dias)
-      ..writeByte(11)
+      ..writeByte(10)
       ..write(obj.nombreEstablecimiento)
-      ..writeByte(12)
+      ..writeByte(11)
       ..write(obj.latitud)
-      ..writeByte(13)
+      ..writeByte(12)
       ..write(obj.longitud)
-      ..writeByte(14)
+      ..writeByte(13)
       ..write(obj.existencia)
+      ..writeByte(14)
+      ..write(obj.distanciaCalculada)
       ..writeByte(15)
-      ..write(obj.distanciaCalculada);
+      ..write(obj.estado)
+      ..writeByte(16)
+      ..write(obj.lastUpdate);
   }
 }

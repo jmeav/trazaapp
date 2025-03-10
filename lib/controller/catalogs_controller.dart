@@ -1,122 +1,262 @@
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/departamentos/departamento.dart';
 import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
 import 'package:trazaapp/data/models/municipios/municipio.dart';
+import 'package:trazaapp/data/models/productores/productor.dart';
+import 'package:trazaapp/data/models/entregas/entregas.dart';
+import 'package:trazaapp/data/models/bag/bag_operadora.dart';
+import 'package:trazaapp/data/models/razas/raza.dart';
 import 'package:trazaapp/data/repositories/catalogs/departamentos_repo.dart';
 import 'package:trazaapp/data/repositories/catalogs/establecimientos_repo.dart';
 import 'package:trazaapp/data/repositories/catalogs/municipios_repo.dart';
+import 'package:trazaapp/data/repositories/catalogs/productores_repo.dart';
+import 'package:trazaapp/data/repositories/catalogs/razas.dart';
+import 'package:trazaapp/data/repositories/entregas/entregas_bag_repo.dart';
+import 'package:trazaapp/data/repositories/entregas/entregas_repo.dart';
+
 
 class CatalogosController extends GetxController {
   var isDownloading = false.obs;
   var progressText = ''.obs;
+  var habilitadoOperadora = "".obs;
 
-  var establecimientos = <Establecimiento>[].obs;
+
   var departamentos = <Departamento>[].obs;
   var municipios = <Municipio>[].obs;
+  var establecimientos = <Establecimiento>[].obs;
+  var productores = <Productor>[].obs;
+  var entregas = <Entregas>[].obs;
+    var razas = <Raza>[].obs; // Lista para almacenar razas
+  var bag = Rxn<Bag>();
 
-  final EstablecimientosRepository _establecimientosRepo = EstablecimientosRepository();
+  var municipiosFiltrados = <Municipio>[].obs;
+  var establecimientosFiltrados = <Establecimiento>[].obs;
+
+  var lastUpdateDepartamentos = ''.obs;
+  var lastUpdateMunicipios = ''.obs;
+  var lastUpdateEstablecimientos = ''.obs;
+  var lastUpdateProductores = ''.obs;
+  var lastUpdateEntregas = ''.obs;
+  var lastUpdateRazas = ''.obs; // Última actualización de Razas
+  var lastUpdateBag = ''.obs;
+
   final DepartamentosRepository _departamentosRepo = DepartamentosRepository();
   final MunicipiosRepository _municipiosRepo = MunicipiosRepository();
+  final EstablecimientosRepository _establecimientosRepo =
+      EstablecimientosRepository();
+  final ProductoresRepository _productoresRepo = ProductoresRepository();
+  final EntregasRepository _entregasRepo = EntregasRepository();
+  final BagRepository _bagRepo = BagRepository();
+  final RazasRepository _razasRepo = RazasRepository(); // Repositorio de Razas
 
-  @override
-  void onInit() {
-    super.onInit();
-    checkCatalogStatus();
+
+@override
+void onInit() {
+  super.onInit();
+  _loadConfig(); // Cargar habilitadoOperadora
+  checkCatalogStatus();
+}
+
+void _loadConfig() {
+  var box = Hive.box<AppConfig>('appConfig');
+  var config = box.get('config');
+
+  if (config != null) {
+    habilitadoOperadora.value = config.habilitadoOperadora;
   }
+}
+
 
   void checkCatalogStatus() async {
-    var boxEst = await Hive.openBox<Establecimiento>('establecimientos');
-    var boxDep = await Hive.openBox<Departamento>('departamentos');
-    var boxMun = await Hive.openBox<Municipio>('municipios');
+    var boxDep = Hive.box<Departamento>('departamentos');
+    var boxMun = Hive.box<Municipio>('municipios');
+    var boxEst = Hive.box<Establecimiento>('establecimientos');
+    var boxProd = Hive.box<Productor>('productores');
+    var boxEnt = Hive.box<Entregas>('entregas');
+    var boxRaz = Hive.box<Raza>('razas'); // Caja para Razas
+    var boxBag = Hive.box<Bag>('bag');
 
-    establecimientos.assignAll(boxEst.values.whereType<Establecimiento>().toList());
-    departamentos.assignAll(boxDep.values.whereType<Departamento>().toList());
-    municipios.assignAll(boxMun.values.whereType<Municipio>().toList());
+    departamentos.assignAll(boxDep.values.toList());
+    municipios.assignAll(boxMun.values.toList());
+    establecimientos.assignAll(boxEst.values.toList());
+    productores.assignAll(boxProd.values.toList());
+    entregas.assignAll(boxEnt.values.toList());
+    razas.assignAll(boxRaz.values.toList()); // Cargar razas desde Hive
+    bag.value = boxBag.isNotEmpty ? boxBag.getAt(0) : null;
+
+    var updatesBox = await Hive.openBox('catalog_updates');
+
+    lastUpdateDepartamentos.value =
+        updatesBox.get('Departamentos', defaultValue: 'Nunca');
+    lastUpdateMunicipios.value =
+        updatesBox.get('Municipios', defaultValue: 'Nunca');
+    lastUpdateEstablecimientos.value =
+        updatesBox.get('Establecimientos', defaultValue: 'Nunca');
+    lastUpdateProductores.value =
+        updatesBox.get('Productores', defaultValue: 'Nunca');
+    lastUpdateEntregas.value =
+        updatesBox.get('Entregas', defaultValue: 'Nunca');
+    lastUpdateRazas.value = updatesBox.get('Razas', defaultValue: 'Nunca');
+    lastUpdateBag.value = updatesBox.get('Bag', defaultValue: 'Nunca');
   }
 
-  Future<void> downloadAllCatalogs({required String token, required String codhabilitado}) async {
-    await downloadDepartamentos(token: token, codhabilitado: codhabilitado);
-    await downloadMunicipios(token: token, codhabilitado: codhabilitado);
-    await downloadEstablecimientos(token: token, codhabilitado: codhabilitado);
+Future<void> downloadAllCatalogs(
+    {required String token, required String codhabilitado}) async {
+  if (habilitadoOperadora.value == "1") {
+    await Future.wait([
+      downloadDepartamentos(token: token, codhabilitado: codhabilitado),
+      downloadMunicipios(token: token, codhabilitado: codhabilitado),
+      downloadEstablecimientos(token: token, codhabilitado: codhabilitado),
+      downloadProductores(token: token, codhabilitado: codhabilitado),
+      downloadEntregas(token: token, codhabilitado: codhabilitado),
+      downloadRazas(token: token, codhabilitado: codhabilitado), // Nueva función
+      downloadBag(token: token, codhabilitado: codhabilitado),
+    ]);
+  } else {
+    await downloadEntregas(token: token, codhabilitado: codhabilitado);
+  }
+  progressText.value = "";
+}
+
+
+  Future<void> downloadRazas(
+      {required String token, required String codhabilitado}) async {
+    await _downloadCatalog(
+      title: "Razas",
+      fetchFunction: (t, c) => _razasRepo.fetchRazas(token: t, codhabilitado: c),
+      box: Hive.box<Raza>('razas'),
+      list: razas,
+      lastUpdate: lastUpdateRazas,
+      token: token,
+      codhabilitado: codhabilitado,
+    );
   }
 
-  Future<void> downloadEstablecimientos({required String token, required String codhabilitado}) async {
+  Future<void> _downloadCatalog<T>({
+    required String title,
+    required Future<List<T>> Function(String, String) fetchFunction,
+    required Box<T> box,
+    required RxList<T> list,
+    required RxString lastUpdate,
+    required String token,
+    required String codhabilitado,
+  }) async {
     try {
       isDownloading.value = true;
-      progressText.value = "Descargando Establecimientos...";
+      progressText.value = "Descargando $title...";
 
-      var data = await _establecimientosRepo.fetchEstablecimientos(
-        token: token,
-        codhabilitado: codhabilitado,
-      );
+      var data = await fetchFunction(token, codhabilitado);
 
-      establecimientos.assignAll(data);
-
-      var box = await Hive.openBox<Establecimiento>('establecimientos');
       await box.clear();
-      for (var item in data) {
-        item.lastUpdate = DateTime.now();
-        await box.add(item);
-      }
+      await box.addAll(data);
 
-      progressText.value = "Establecimientos descargados con éxito";
+      list.assignAll(data);
+
+      var updatesBox = await Hive.openBox('catalog_updates');
+      await updatesBox.put(title, DateTime.now().toIso8601String());
+
+      lastUpdate.value = DateTime.now().toIso8601String();
+      progressText.value = "$title descargado con éxito";
     } catch (e) {
-      progressText.value = "Error al descargar Establecimientos: $e";
+      progressText.value = "Error al descargar $title: $e";
     } finally {
       isDownloading.value = false;
     }
   }
 
-  Future<void> downloadDepartamentos({required String token, required String codhabilitado}) async {
-    try {
-      isDownloading.value = true;
-      progressText.value = "Descargando Departamentos...";
-
-      var data = await _departamentosRepo.fetchDepartamentos(
-        token: token,
-        codhabilitado: codhabilitado,
-      );
-
-      departamentos.assignAll(data);
-
-      var box = await Hive.openBox<Departamento>('departamentos');
-      await box.clear();
-      for (var item in data) {
-        item.lastUpdate = DateTime.now();
-        await box.add(item);
-      }
-
-      progressText.value = "Departamentos descargados con éxito";
-    } catch (e) {
-      progressText.value = "Error al descargar Departamentos: $e";
-    } finally {
-      isDownloading.value = false;
-    }
+  Future<void> downloadDepartamentos(
+      {required String token, required String codhabilitado}) async {
+    await _downloadCatalog(
+      title: "Departamentos",
+      fetchFunction: (t, c) =>
+          _departamentosRepo.fetchDepartamentos(token: t, codhabilitado: c),
+      box: Hive.box<Departamento>('departamentos'),
+      list: departamentos,
+      lastUpdate: lastUpdateDepartamentos,
+      token: token,
+      codhabilitado: codhabilitado,
+    );
   }
 
-  Future<void> downloadMunicipios({required String token, required String codhabilitado}) async {
+  Future<void> downloadMunicipios(
+      {required String token, required String codhabilitado}) async {
+    await _downloadCatalog(
+      title: "Municipios",
+      fetchFunction: (t, c) =>
+          _municipiosRepo.fetchMunicipios(token: t, codhabilitado: c),
+      box: Hive.box<Municipio>('municipios'),
+      list: municipios,
+      lastUpdate: lastUpdateMunicipios,
+      token: token,
+      codhabilitado: codhabilitado,
+    );
+  }
+
+  Future<void> downloadEstablecimientos(
+      {required String token, required String codhabilitado}) async {
+    await _downloadCatalog(
+      title: "Establecimientos",
+      fetchFunction: (t, c) => _establecimientosRepo.fetchEstablecimientos(
+          token: t, codhabilitado: c),
+      box: Hive.box<Establecimiento>('establecimientos'),
+      list: establecimientos,
+      lastUpdate: lastUpdateEstablecimientos,
+      token: token,
+      codhabilitado: codhabilitado,
+    );
+  }
+
+  Future<void> downloadProductores(
+      {required String token, required String codhabilitado}) async {
+    await _downloadCatalog(
+      title: "Productores",
+      fetchFunction: (t, c) =>
+          _productoresRepo.fetchProductores(token: t, codhabilitado: c),
+      box: Hive.box<Productor>('productores'),
+      list: productores,
+      lastUpdate: lastUpdateProductores,
+      token: token,
+      codhabilitado: codhabilitado,
+    );
+  }
+
+  Future<void> downloadEntregas(
+      {required String token, required String codhabilitado}) async {
+    await _downloadCatalog(
+      title: "Entregas",
+      fetchFunction: (t, c) =>
+          _entregasRepo.fetchEntregas(token: t, codhabilitado: c),
+      box: Hive.box<Entregas>('entregas'),
+      list: entregas,
+      lastUpdate: lastUpdateEntregas,
+      token: token,
+      codhabilitado: codhabilitado,
+    );
+  }
+
+  Future<void> downloadBag(
+      {required String token, required String codhabilitado}) async {
     try {
       isDownloading.value = true;
-      progressText.value = "Descargando Municipios...";
+      progressText.value = "Descargando Bag...";
 
-      var data = await _municipiosRepo.fetchMunicipios(
-        token: token,
-        codhabilitado: codhabilitado,
-      );
+      Bag data = await _bagRepo.fetchBag(token: token, codhabilitado: codhabilitado);
 
-      municipios.assignAll(data);
-
-      var box = await Hive.openBox<Municipio>('municipios');
+      var box = await Hive.openBox<Bag>('bag');
       await box.clear();
-      for (var item in data) {
-        item.lastUpdate = DateTime.now();
-        await box.add(item);
-      }
+      await box.put(0, data);
 
-      progressText.value = "Municipios descargados con éxito";
+      bag.value = data;
+
+      var updatesBox = await Hive.openBox('catalog_updates');
+      await updatesBox.put("Bag", DateTime.now().toIso8601String());
+
+      lastUpdateBag.value = DateTime.now().toIso8601String();
+      progressText.value = "Bag descargado con éxito";
     } catch (e) {
-      progressText.value = "Error al descargar Municipios: $e";
+      progressText.value = "Error al descargar Bag: $e";
     } finally {
       isDownloading.value = false;
     }

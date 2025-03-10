@@ -16,47 +16,49 @@ class Entregas {
   final String cue;
 
   @HiveField(4)
-  final String estado;
-
-  @HiveField(5)
   final int rangoInicial;
 
-  @HiveField(6)
+  @HiveField(5)
   final int rangoFinal;
 
-  @HiveField(7)
+  @HiveField(6)
   final int cantidad;
 
-  @HiveField(8)
+  @HiveField(7)
   final String nombreProductor;
 
-  @HiveField(9)
+  @HiveField(8)
   final String establecimiento;
 
-  @HiveField(10)
+  @HiveField(9)
   final int dias;
 
-  @HiveField(11)
+  @HiveField(10)
   final String nombreEstablecimiento;
 
-  @HiveField(12)
+  @HiveField(11)
   final double latitud;
 
-  @HiveField(13)
+  @HiveField(12)
   final double longitud;
 
-  @HiveField(14)
+  @HiveField(13)
   final int existencia;
 
-  @HiveField(15)
+  @HiveField(14)
   final String? distanciaCalculada; // Campo opcional
+
+  @HiveField(15)
+  final String estado; // Estado de la entrega
+
+  @HiveField(16)
+  DateTime lastUpdate; // Fecha de última actualización
 
   Entregas({
     required this.entregaId,
     required this.fechaEntrega,
     required this.cupa,
     required this.cue,
-    required this.estado,
     required this.rangoInicial,
     required this.rangoFinal,
     required this.cantidad,
@@ -68,15 +70,16 @@ class Entregas {
     required this.longitud,
     required this.existencia,
     this.distanciaCalculada,
+    required this.estado,
+    required this.lastUpdate,
   });
 
-  /// Método copyWith para crear una copia modificada del objeto
+  /// Método copyWith para modificar propiedades sin alterar el original
   Entregas copyWith({
     String? entregaId,
     DateTime? fechaEntrega,
     String? cupa,
     String? cue,
-    String? estado,
     int? rangoInicial,
     int? rangoFinal,
     int? cantidad,
@@ -88,13 +91,14 @@ class Entregas {
     double? longitud,
     int? existencia,
     String? distanciaCalculada,
+    String? estado,
+    DateTime? lastUpdate,
   }) {
     return Entregas(
       entregaId: entregaId ?? this.entregaId,
       fechaEntrega: fechaEntrega ?? this.fechaEntrega,
       cupa: cupa ?? this.cupa,
       cue: cue ?? this.cue,
-      estado: estado ?? this.estado,
       rangoInicial: rangoInicial ?? this.rangoInicial,
       rangoFinal: rangoFinal ?? this.rangoFinal,
       cantidad: cantidad ?? this.cantidad,
@@ -106,6 +110,8 @@ class Entregas {
       longitud: longitud ?? this.longitud,
       existencia: existencia ?? this.existencia,
       distanciaCalculada: distanciaCalculada ?? this.distanciaCalculada,
+      estado: estado ?? this.estado,
+      lastUpdate: lastUpdate ?? this.lastUpdate,
     );
   }
 
@@ -113,21 +119,22 @@ class Entregas {
   factory Entregas.fromJson(Map<String, dynamic> json) {
     return Entregas(
       entregaId: json['ID'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      fechaEntrega: DateTime.parse(json['FECHAENTRAGA']),
+      fechaEntrega: DateTime.tryParse(json['FECHAENTRAGA'] ?? '') ?? DateTime.now(),
       cupa: json['CUPA'] ?? '',
       cue: json['CUE'] ?? '',
-      estado: json['ESTADO'] ?? 'pendiente',
       rangoInicial: int.tryParse(json['RANGO_INICIAL'] ?? '0') ?? 0,
       rangoFinal: int.tryParse(json['RANGO_FINAL'] ?? '0') ?? 0,
       cantidad: int.tryParse(json['CANTIDAD'] ?? '0') ?? 0,
       nombreProductor: json['NOMBREPRODUCTOR'] ?? '',
       establecimiento: json['DESTABLECIMIENTO'] ?? '',
       dias: int.tryParse(json['DIAS'] ?? '0') ?? 0,
-      nombreEstablecimiento: json['NOMBREESTABLECIMIENTO'] ?? '',
+      nombreEstablecimiento: json['NOMBREESTABLECIMIENTO']?.trim() ?? '',
       latitud: double.tryParse(json['Latitud'] ?? '0.0') ?? 0.0,
       longitud: double.tryParse(json['Longitud'] ?? '0.0') ?? 0.0,
       existencia: int.tryParse(json['EXISTENCIA'] ?? '0') ?? 0,
       distanciaCalculada: json['distanciaCalculada'],
+      estado: json['ESTADO'] ?? 'pendiente',
+      lastUpdate: DateTime.now(),
     );
   }
 
@@ -138,7 +145,6 @@ class Entregas {
       'FECHAENTRAGA': DateFormat('yyyy-MM-dd').format(fechaEntrega),
       'CUPA': cupa,
       'CUE': cue,
-      'ESTADO': estado,
       'RANGO_INICIAL': rangoInicial.toString(),
       'RANGO_FINAL': rangoFinal.toString(),
       'CANTIDAD': cantidad.toString(),
@@ -150,6 +156,8 @@ class Entregas {
       'Longitud': longitud.toString(),
       'EXISTENCIA': existencia.toString(),
       'distanciaCalculada': distanciaCalculada,
+      'ESTADO': estado,
+      'lastUpdate': lastUpdate.toIso8601String(),
     };
   }
 }

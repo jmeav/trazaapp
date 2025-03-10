@@ -11,10 +11,14 @@ class Productor {
   @HiveField(2)
   final String nombreProductor;
 
+  @HiveField(3)
+  DateTime? lastUpdate;
+
   Productor({
     required this.idProductor,
     required this.productor,
     required this.nombreProductor,
+    this.lastUpdate,
   });
 
   factory Productor.fromJson(Map<String, dynamic> json) {
@@ -22,6 +26,7 @@ class Productor {
       idProductor: json['IDPRODUCTOR'] ?? '',
       productor: json['PRODUCTOR'] ?? '',
       nombreProductor: json['NOMBREPRODUCTOR'] ?? '',
+      lastUpdate: DateTime.now(),
     );
   }
 
@@ -30,6 +35,7 @@ class Productor {
       'IDPRODUCTOR': idProductor,
       'PRODUCTOR': productor,
       'NOMBREPRODUCTOR': nombreProductor,
+      'LAST_UPDATE': lastUpdate?.toIso8601String(),
     };
   }
 }

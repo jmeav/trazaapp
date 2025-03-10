@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
+import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/controller/formbovinos_controller.dart';
+import 'package:trazaapp/data/models/razas/raza.dart';
 
 class FormBovinosView extends StatelessWidget {
   final FormBovinosController controller = Get.put(FormBovinosController());
+
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +17,6 @@ class FormBovinosView extends StatelessWidget {
         title: const Text('Información individual'),
       ),
       body: Obx(() {
-        // Mostrar spinner mientras los datos se cargan
         if (controller.rangos.isEmpty || controller.bovinoInfo.isEmpty) {
           return const Center(
             child: SpinKitCircle(
@@ -74,8 +76,7 @@ class FormBovinosView extends StatelessWidget {
                     controller: controller.pageController,
                     onPageChanged: (index) {
                       controller.currentPage.value = index;
-                      controller
-                          .update(); // Actualiza la vista cuando se cambia de página
+                      controller.update();
                     },
                     itemCount: controller.rangos.length,
                     itemBuilder: (context, index) {
@@ -111,7 +112,6 @@ class FormBovinosView extends StatelessWidget {
                           onPressed: controller.currentPage.value ==
                                   controller.rangos.length - 1
                               ? () async {
-                                  // Validar datos antes de guardar
                                   bool hasErrors = false;
 
                                   controller.bovinoInfo
@@ -130,23 +130,7 @@ class FormBovinosView extends StatelessWidget {
                                         'Faltan datos en algunos bovinos.');
                                     return;
                                   }
-                                  // Si no hay errores, imprimir información y guardar
-                                  print(
-                                      "Información recopilada de los bovinos:");
-                                  controller.bovinoInfo
-                                      .forEach((arete, bovino) {
-                                    print("Arete: $arete");
-                                    print("Cue: ${bovino.cue}");
-                                    print("Cupa: ${bovino.cupa}");
-                                    print("Edad: ${bovino.edad}");
-                                    print("Sexo: ${bovino.sexo}");
-                                    print("Raza: ${bovino.raza}");
-                                    print(
-                                        "Estado Arete: ${bovino.estadoArete}");
-                                    print("-------------------");
-                                  });
 
-                                  // Continuar con el guardado
                                   controller.sendingData.value = true;
                                   controller.saveBovinos();
                                   controller.sendingData.value = false;
@@ -186,133 +170,6 @@ class FormBovinosView extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickFillDialog(BuildContext context) {
-    final controller = Get.find<FormBovinosController>();
-    return Dialog(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Center(
-              child: Text(
-                'Llenado Rápido',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  height: 50,
-                  width: 80,
-                  child: TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Edad'),
-                    onChanged: (value) =>
-                        controller.quickFillEdad.value = value,
-                  ),
-                ),
-                Container(
-                  height: 65,
-                  width: 90,
-                  child: Obx(() {
-                    return DropdownButton<String>(
-                      value: controller.quickFillSexo.value.isEmpty
-                          ? null
-                          : controller.quickFillSexo.value,
-                      hint: const Text('Sexo'),
-                      onChanged: (String? newValue) {
-                        controller.quickFillSexo.value = newValue ?? '';
-                      },
-                      items: const <String>['Macho', 'Hembra']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    );
-                  }),
-                ),
-                Container(
-                  height: 65,
-                  width: 120,
-                  child: Obx(() {
-                    return DropdownButton<String>(
-                      value: controller.quickFillRaza.value.isEmpty
-                          ? null
-                          : controller.quickFillRaza.value,
-                      hint: const Text('Raza'),
-                      onChanged: (String? newValue) {
-                        controller.quickFillRaza.value = newValue ?? '';
-                      },
-                      items: const <String>[
-                        'Angus',
-                        'Hereford',
-                        'Holstein',
-                        'Charolais'
-                      ].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    );
-                  }),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancelar'),
-                ),
-                Row(
-                  children: [
-                    Tooltip(
-                      message: 'Borrar Llenado Rápido',
-                      child: IconButton(
-                        icon: Icon(Icons.clear, color: Colors.red[400]),
-                        onPressed: () {
-                          controller.clearQuickFill();
-                          Navigator.of(context).pop();
-                          Get.snackbar('Llenado Rápido',
-                              'Datos borrados correctamente.');
-                        },
-                      ),
-                    ),
-                    Tooltip(
-                      message: 'Aplicar Llenado Rápido',
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.check,
-                          color: Colors.green[600],
-                        ),
-                        onPressed: () {
-                          controller.applyQuickFill();
-                          Navigator.of(context).pop();
-                          Get.snackbar('Llenado Rápido',
-                              'Datos aplicados correctamente.');
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildFormPage(String bovinoID) {
     final bovinoData = controller.bovinoInfo[bovinoID]!;
 
@@ -333,7 +190,7 @@ class FormBovinosView extends StatelessWidget {
               final updatedEdad = int.tryParse(value) ?? 0;
               final updatedBovino = bovinoData.copyWith(edad: updatedEdad);
               controller.bovinoInfo[bovinoID] = updatedBovino;
-              controller.update(); // Notificar cambios
+              controller.update();
             },
           ),
           const SizedBox(height: 16),
@@ -344,8 +201,9 @@ class FormBovinosView extends StatelessWidget {
             onChanged: (String? newValue) {
               bovinoData.sexo = newValue ?? '';
               controller.bovinoInfo[bovinoID] = bovinoData;
+              controller.update();
             },
-            items: const <String>['Macho', 'Hembra']
+            items: const <String>['M', 'H']
                 .map<DropdownMenuItem<String>>((String value) {
               return DropdownMenuItem<String>(
                 value: value,
@@ -354,59 +212,162 @@ class FormBovinosView extends StatelessWidget {
             }).toList(),
           ),
           const SizedBox(height: 16),
-          DropdownButton<String>(
-            value: bovinoData.raza.isEmpty ? null : bovinoData.raza,
-            hint: const Text('Raza'),
-            isExpanded: true,
-            onChanged: (String? newValue) {
-              bovinoData.raza = newValue ?? '';
-              controller.bovinoInfo[bovinoID] = bovinoData;
-            },
-            items: const <String>['Angus', 'Hereford', 'Holstein', 'Charolais']
-                .map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
+          Obx(() {
+            return DropdownButton<String>(
+              value: bovinoData.raza.isEmpty ? null : bovinoData.raza,
+              hint: const Text('Raza'),
+              isExpanded: true,
+              onChanged: (String? newValue) {
+                bovinoData.raza = newValue ?? '';
+                controller.bovinoInfo[bovinoID] = bovinoData;
+                controller.update();
+              },
+              items: controller.razas.map<DropdownMenuItem<String>>((Raza raza) {
+                return DropdownMenuItem<String>(
+                  value: raza.nombre,
+                  child: Text(raza.nombre),
+                );
+              }).toList(),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+  
+Widget _buildQuickFillDialog(BuildContext context) {
+  final controller = Get.find<FormBovinosController>();
+
+  return Dialog(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Center(
+            child: Text(
+              'Llenado Rápido',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Estado: ${bovinoData.estadoArete}',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: bovinoData.estadoArete == 'Bueno'
-                      ? Colors.green
-                      : Colors.red,
+              SizedBox(
+                width: 80,
+                child: TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Edad'),
+                  onChanged: (value) => controller.quickFillEdad.value = value,
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  bovinoData.estadoArete == 'Bueno'
-                      ? Icons.check_circle
-                      : Icons.cancel,
-                  color: bovinoData.estadoArete == 'Bueno'
-                      ? Colors.green
-                      : Colors.red,
-                ),
-                onPressed: () {
-                  final updatedEstado =
-                      bovinoData.estadoArete == 'Bueno' ? 'Dañado' : 'Bueno';
-                  final updatedBovino = bovinoData.copyWith(
-                    estadoArete: updatedEstado,
+              SizedBox(
+                width: 90,
+                child: Obx(() {
+                  return DropdownButton<String>(
+                    value: controller.quickFillSexo.value.isEmpty
+                        ? null
+                        : controller.quickFillSexo.value,
+                    hint: const Text('Sexo'),
+                    onChanged: (String? newValue) {
+                      controller.quickFillSexo.value = newValue ?? '';
+                    },
+                    items: const <String>['M', 'H']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
                   );
-                  controller.bovinoInfo[bovinoID] = updatedBovino;
-                  controller.update(); // Notificar cambios
+                }),
+              ),
+              SizedBox(
+                width: 120,
+                child: Obx(() {
+                  return DropdownButton<String>(
+                    value: controller.quickFillRaza.value.isEmpty
+                        ? null
+                        : controller.quickFillRaza.value,
+                    hint: const Text('Raza'),
+                    isExpanded: true,
+                    onChanged: (String? newValue) {
+                      controller.quickFillRaza.value = newValue ?? '';
+                    },
+                    items: controller.razas
+                        .map<DropdownMenuItem<String>>((Raza raza) {
+                      return DropdownMenuItem<String>(
+                        value: raza.nombre,
+                        child: Text(raza.nombre),
+                      );
+                    }).toList(),
+                  );
+                }),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
                 },
+                child: const Text('Cancelar'),
+              ),
+              Row(
+                children: [
+                  Tooltip(
+                    message: 'Borrar Llenado Rápido',
+                    child: IconButton(
+                      icon: Icon(Icons.clear, color: Colors.red[400]),
+                      onPressed: () {
+                        controller.clearQuickFill();
+                        Navigator.of(context).pop();
+                        Get.snackbar(
+                          'Llenado Rápido',
+                          'Datos borrados correctamente.',
+                          duration: const Duration(seconds: 2),
+                        );
+                      },
+                    ),
+                  ),
+                  Tooltip(
+                    message: 'Aplicar Llenado Rápido',
+                    child: IconButton(
+                      icon: Icon(Icons.check, color: Colors.green[600]),
+                      onPressed: () {
+                        if (controller.quickFillRaza.value.isNotEmpty &&
+                            !controller.razas.any(
+                                (r) => r.nombre == controller.quickFillRaza.value)) {
+                          Get.snackbar(
+                            'Error',
+                            'La raza seleccionada no es válida.',
+                            duration: const Duration(seconds: 2),
+                          );
+                          return;
+                        }
+                        controller.applyQuickFill();
+                        Navigator.of(context).pop();
+                        Get.snackbar(
+                          'Llenado Rápido',
+                          'Datos aplicados correctamente.',
+                          duration: const Duration(seconds: 2),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 }

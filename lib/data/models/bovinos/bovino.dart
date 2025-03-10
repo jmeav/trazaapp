@@ -21,6 +21,9 @@ class Bovino {
   String raza;
 
   @HiveField(6)
+  String traza; // Nuevo campo agregado
+
+  @HiveField(7)
   String estadoArete;
 
   Bovino({
@@ -30,10 +33,16 @@ class Bovino {
     required this.edad,
     required this.sexo,
     required this.raza,
+    required this.traza,
     required this.estadoArete,
   });
 
-  // Método copyWith
+  // Getter para calcular la fecha de nacimiento dinámicamente
+  DateTime get fechaNacimiento {
+    return DateTime.now().subtract(Duration(days: edad * 30)); // Aproximación de un mes a 30 días
+  }
+
+  // Método copyWith para permitir copias con cambios
   Bovino copyWith({
     String? arete,
     String? cue,
@@ -41,6 +50,7 @@ class Bovino {
     int? edad,
     String? sexo,
     String? raza,
+    String? traza,
     String? estadoArete,
   }) {
     return Bovino(
@@ -50,6 +60,7 @@ class Bovino {
       edad: edad ?? this.edad,
       sexo: sexo ?? this.sexo,
       raza: raza ?? this.raza,
+      traza: traza ?? this.traza,
       estadoArete: estadoArete ?? this.estadoArete,
     );
   }

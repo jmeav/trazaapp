@@ -1,63 +1,76 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive/hive.dart';
+import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/theme/theme.dart';
 import 'package:trazaapp/utils/util.dart';
 
 class ThemeController extends GetxController {
   var themeData = ThemeData.light().obs;
+  late Box<AppConfig> box;
 
   @override
-  void onInit() {
+  Future<void> onInit() async {
     super.onInit();
+    if (!Hive.isBoxOpen('appConfig')) {
+      box = await Hive.openBox<AppConfig>('appConfig');
+    } else {
+      box = Hive.box<AppConfig>('appConfig');
+    }
+    await loadTheme();
   }
-
-  Future<void> loadTheme(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? themeMode = prefs.getString('themeMode') ?? 'light';
-    updateTheme(themeMode, context);
+  
+  Future<void> loadTheme() async {
+    if (box.containsKey('config')) {
+      var config = box.get('config');
+      updateTheme(config?.themeMode ?? 'light');
+    } else {
+      updateTheme('light');
+    }
   }
 
   Future<void> changeTheme(ThemeData theme, String themeMode) async {
     themeData.value = theme;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('themeMode', themeMode);
+    var config = box.get('config') ?? AppConfig(
+      imei: '',
+      codHabilitado: '',
+      nombre: '',
+      cedula: '',
+      email: '',
+      movil: '',
+      idOrganizacion: '',
+      categoria: '',
+      habilitadoOperadora: '',
+      isFirstTime: false,
+      themeMode: themeMode, token: '',
+    );
+    config.themeMode = themeMode;
+    await box.put('config', config);  // Guarda el objeto AppConfig directamente
   }
 
-  void updateTheme(String themeMode, BuildContext context) {
-  ThemeData theme;
-switch (themeMode) {
-  case 'dark':
-    theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark();
-    break;
-  default:
-    theme = MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light();
-}
-themeData.value = theme;
-
-  }
-
-  void toggleTheme(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? currentThemeMode = prefs.getString('themeMode') ?? 'light';
-    if (currentThemeMode == 'light') {
-      changeTheme(
-        MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark(),
-        'dark',
-      );
+  void updateTheme(String themeMode) {
+    final context = Get.context ?? Get.overlayContext;
+    if (context != null) {
+      themeData.value = themeMode == 'dark'
+          ? MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark()
+          : MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light();
     } else {
-      changeTheme(
-        MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light(),
-        'light',
-      );
+      themeData.value = themeMode == 'dark' ? ThemeData.dark() : ThemeData.light();
     }
   }
 
-  Color get spinKitRingColor {
-    // Obtener el color primario del tema actual
-    Color primaryColor = themeData.value.primaryColor;
-    // Determinar si es un color claro u oscuro y ajustar el color del SpinKitRing en consecuencia
-    return primaryColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+  void toggleTheme(BuildContext context) async {
+    String currentTheme = themeData.value.brightness == Brightness.dark ? 'dark' : 'light';
+    String newTheme = currentTheme == 'light' ? 'dark' : 'light';
+    await changeTheme(
+      newTheme == 'dark'
+          ? MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).dark()
+          : MaterialTheme(createTextTheme(context, 'Aldrich', 'Courier Prime')).light(),
+      newTheme,
+    );
   }
-  
+
+  Color get spinKitRingColor {
+    return themeData.value.primaryColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+  }
 }

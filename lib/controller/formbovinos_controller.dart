@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
+import 'package:trazaapp/data/models/razas/raza.dart';
 
 class FormBovinosController extends GetxController {
   var currentPage = 0.obs;
@@ -15,9 +17,12 @@ class FormBovinosController extends GetxController {
 
   late Box<Bovino> bovinoBox;
   late Box<Entregas> entregasBox;
+  late String entregaId;
+  var rangos = <String>[].obs;
+  var razas = <Raza>[].obs; // Lista de razas obtenidas del catálogo
 
-  late String entregaId; // ID de la entrega seleccionada
-  var rangos = <String>[].obs; // Lista de IDs generados para los bovinos
+  final catalogosController = Get.find<CatalogosController>(); // Usamos el catálogo existente
+  final CatalogosController controller = Get.put(CatalogosController()); // ⬅️ Agregar esto
 
   @override
   void onInit() async {
@@ -27,29 +32,26 @@ class FormBovinosController extends GetxController {
       bovinoBox = await Hive.openBox<Bovino>('bovinos');
       entregasBox = await Hive.openBox<Entregas>('entregas');
 
+      // Cargar razas desde el catálogo
+      razas.assignAll(catalogosController.razas);
+
       // Obtener los argumentos de la navegación
       final args = Get.arguments as Map<String, dynamic>;
-
-      // Validar argumentos
       if (!args.containsKey('entregaId')) {
         throw Exception('Argumento "entregaId" no proporcionado.');
       }
 
       entregaId = args['entregaId'];
 
-      // Buscar la entrega en la caja por su campo entregaId
       final entrega = entregasBox.values.firstWhere(
         (e) => e.entregaId == entregaId,
         orElse: () =>
             throw Exception('No se encontró la entrega con ID=$entregaId.'),
       );
 
-      print('Entrega seleccionada: ID=$entregaId, Datos=${entrega.toJson()}');
-
-      // Generar rangos de aretes
       final generatedRangos =
           generateRangos(entrega.rangoInicial, entrega.rangoFinal);
-      rangos.assignAll(generatedRangos); // Asignar rangos de manera reactiva
+      rangos.assignAll(generatedRangos);
 
       // Inicializar los datos de los bovinos
       for (var id in rangos) {
@@ -61,6 +63,7 @@ class FormBovinosController extends GetxController {
           estadoArete: 'Bueno',
           cue: entrega.cue,
           cupa: entrega.cupa,
+          traza: '',
         );
       }
     } catch (e) {
@@ -94,18 +97,20 @@ class FormBovinosController extends GetxController {
 
   void applyQuickFill() {
     bovinoInfo.forEach((key, bovino) {
-      // Validar y convertir la edad
       final edad = int.tryParse(quickFillEdad.value) ?? bovino.edad;
+      final razaValida = razas.any((r) => r.nombre == quickFillRaza.value)
+          ? quickFillRaza.value
+          : '';
+
       final updatedBovino = bovino.copyWith(
         edad: quickFillEdad.value.isNotEmpty ? edad : bovino.edad,
         sexo:
             quickFillSexo.value.isNotEmpty ? quickFillSexo.value : bovino.sexo,
-        raza:
-            quickFillRaza.value.isNotEmpty ? quickFillRaza.value : bovino.raza,
+        raza: razaValida,
       );
       bovinoInfo[key] = updatedBovino;
     });
-    update(); // Notificar cambios REVISAR 
+    update();
     Get.snackbar('Llenado Rápido', 'Datos aplicados correctamente.');
   }
 
@@ -121,42 +126,43 @@ class FormBovinosController extends GetxController {
     Get.snackbar('Llenado Rápido', 'Datos borrados correctamente.');
   }
 
-void saveBovinos() async {
-  try {
-    // Validar que todos los campos estén completos
-    for (var bovino in bovinoInfo.values) {
-      if (bovino.edad <= 0 || bovino.sexo.isEmpty || bovino.raza.isEmpty) {
-        throw Exception('Faltan datos en el bovino con arete ${bovino.arete}.');
+  void saveBovinos() async {
+    try {
+      // Validar que todos los campos estén completos
+      for (var bovino in bovinoInfo.values) {
+        if (bovino.edad <= 0 || bovino.sexo.isEmpty || bovino.raza.isEmpty) {
+          throw Exception(
+              'Faltan datos en el bovino con arete ${bovino.arete}.');
+        }
       }
+
+      sendingData.value = true;
+
+      // Guardar los bovinos en Hive
+      for (var bovino in bovinoInfo.values) {
+        await bovinoBox.put(bovino.arete, bovino);
+      }
+
+      // Buscar la entrega en Hive
+      final entregaIndex = entregasBox.values
+          .toList()
+          .indexWhere((e) => e.entregaId == entregaId);
+
+      if (entregaIndex != -1) {
+        final entrega = entregasBox.getAt(entregaIndex)!;
+        final entregaActualizada = entrega.copyWith(estado: 'Lista');
+        await entregasBox.putAt(entregaIndex, entregaActualizada);
+      }
+
+      sendingData.value = false;
+      Get.snackbar('Guardado', 'Los datos se guardaron correctamente.');
+      Get.offNamed('/home');
+    } catch (e) {
+      sendingData.value = false;
+      Get.snackbar('Error', 'Error al guardar: $e');
+      print('Error en saveBovinos: $e');
     }
-
-    sendingData.value = true;
-
-    // Guardar los bovinos en Hive
-    for (var bovino in bovinoInfo.values) {
-      await bovinoBox.put(bovino.arete, bovino);
-    }
-
-    // Buscar la entrega en Hive
-    final entregaIndex = entregasBox.values.toList().indexWhere((e) => e.entregaId == entregaId);
-
-    if (entregaIndex != -1) {
-      // Actualizar el estado de la entrega a "Lista"
-      final entrega = entregasBox.getAt(entregaIndex)!;
-      final entregaActualizada = entrega.copyWith(estado: 'Lista');
-      await entregasBox.putAt(entregaIndex, entregaActualizada);
-    }
-
-    sendingData.value = false;
-    Get.snackbar('Guardado', 'Los datos se guardaron correctamente.');
-    Get.offNamed('/home');
-  } catch (e) {
-    sendingData.value = false;
-    Get.snackbar('Error', 'Error al guardar: $e');
-    print('Error en saveBovinos: $e');
   }
-}
-
 
   void checkEntregasBox() {
     print('Contenido de entregasBox:');
