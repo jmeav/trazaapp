@@ -109,71 +109,87 @@ class ManageBagController extends GetxController {
     }
     update();
   }
-
-  /// Asignar bolsón
-  Future<void> asignarBag() async {
-    final int cantidadAsignar = int.tryParse(cantidadController.text) ?? 0;
-
-    if (cantidadAsignar <= 0 || cantidadAsignar > cantidadDisponible.value) {
-      Get.snackbar('Error', 'Cantidad no válida.');
-      return;
-    }
-
-    final int rangoInicial = bag.rangoInicial;
-    final int rangoFinal = rangoInicial + cantidadAsignar - 1;
-
-    final nuevaEntrega = Entregas(
-      entregaId: DateTime.now().millisecondsSinceEpoch.toString(),
-      cue: cueController.text,
-      cupa: cupaController.text,
-      estado: 'Pendiente',
-      cantidad: cantidadAsignar,
-      rangoInicial: rangoInicial,
-      rangoFinal: rangoFinal,
-      fechaEntrega: DateTime.now(),
-      latitud: 0.0,
-      longitud: 0.0,
-      nombreProductor: cupaController.text.isNotEmpty ? cupaController.text : 'Desconocido',
-      establecimiento: cueController.text.isNotEmpty ? cueController.text : 'No asignado',
-      dias: 0,
-      nombreEstablecimiento: '',
-      existencia: cantidadAsignar,
-      distanciaCalculada: null,
-      lastUpdate: DateTime.now(),
-    );
-
-    final entregasBox = Hive.box<Entregas>('entregas');
-    await entregasBox.add(nuevaEntrega);
-
-    bag = bag.copyWith(
-      rangoInicial: rangoFinal + 1,
-      cantidad: bag.cantidad - cantidadAsignar,
-    );
-
-    final box = Hive.box<Bag>('bag');
-    await box.putAt(0, bag);
-
-    cantidadDisponible.value = bag.cantidad;
-    rangoAsignado.value =
-        '${bag.rangoInicial} - ${bag.rangoInicial + bag.cantidad - 1}';
-
-    departamentoController.clear();
-    municipioController.clear();
-    cupaController.clear();
-    cueController.clear();
-    cantidadController.clear();
-
-    Get.toNamed('/formbovinos', arguments: {
-      'entregaId': nuevaEntrega.entregaId,
-      'cue': nuevaEntrega.cue,
-      'rangoInicial': nuevaEntrega.rangoInicial,
-      'rangoFinal': nuevaEntrega.rangoFinal,
-      'cantidad': nuevaEntrega.cantidad,
-    });
-
-    Get.snackbar('Éxito', 'Bovinos listos para registrar.');
-  }
   
+ Future<void> asignarBag() async {
+  final int cantidadAsignar = int.tryParse(cantidadController.text) ?? 0;
+
+  if (cantidadAsignar <= 0 || cantidadAsignar > cantidadDisponible.value) {
+    Get.snackbar('Error', 'Cantidad no válida.');
+    return;
+  }
+
+  final int rangoInicial = bag.rangoInicial;
+  final int rangoFinal = rangoInicial + cantidadAsignar - 1; // ✅ Corrección del rango
+
+
+  // 🔹 Buscar el establecimiento por CUE (idEstablecimiento en el modelo)
+  final Establecimiento? establecimientoSeleccionado = establecimientos.firstWhereOrNull(
+    (e) => e.establecimiento.trim() == cueController.text.trim(),
+  );
+
+  // 🔹 Buscar el productor por CUPA
+  final Productor? productorSeleccionado = productores.firstWhereOrNull(
+    (p) => p.productor.trim() == cupaController.text.trim(),
+  );
+
+  
+  // Convertir latitud y longitud a double
+  final double latitud = double.tryParse(establecimientoSeleccionado?.latitud ?? '0.0') ?? 0.0;
+  final double longitud = double.tryParse(establecimientoSeleccionado?.longitud ?? '0.0') ?? 0.0;
+
+  final nuevaEntrega = Entregas(
+    entregaId: DateTime.now().millisecondsSinceEpoch.toString(),
+    cue: cueController.text,
+    cupa: cupaController.text,
+    estado: 'Pendiente',
+    cantidad: cantidadAsignar,
+    rangoInicial: rangoInicial,
+    rangoFinal: rangoFinal,
+    fechaEntrega: DateTime.now(),
+    latitud: latitud,
+    longitud: longitud,
+    nombreProductor: productorSeleccionado?.nombreProductor ?? 'Desconocido',
+    establecimiento: cueController.text.isNotEmpty ? cueController.text : 'No asignado',
+    dias: 0,
+    nombreEstablecimiento: establecimientoSeleccionado?.nombreEstablecimiento ?? 'No encontrado',
+    existencia: cantidadAsignar,
+    distanciaCalculada: null,
+    lastUpdate: DateTime.now(),
+  );
+
+  final entregasBox = Hive.box<Entregas>('entregas');
+  await entregasBox.add(nuevaEntrega);
+
+  bag = bag.copyWith(
+    rangoInicial: rangoFinal + 1,
+    cantidad: bag.cantidad - cantidadAsignar,
+  );
+
+  final box = Hive.box<Bag>('bag');
+  await box.putAt(0, bag);
+
+  cantidadDisponible.value = bag.cantidad;
+  rangoAsignado.value =
+      '${bag.rangoInicial} - ${bag.rangoInicial + bag.cantidad - 1}';
+
+  departamentoController.clear();
+  municipioController.clear();
+  cupaController.clear();
+  cueController.clear();
+  cantidadController.clear();
+
+  Get.toNamed('/formbovinos', arguments: {
+    'entregaId': nuevaEntrega.entregaId,
+    'cue': nuevaEntrega.cue,
+    'rangoInicial': nuevaEntrega.rangoInicial,
+    'rangoFinal': nuevaEntrega.rangoFinal,
+    'cantidad': nuevaEntrega.cantidad,
+  });
+
+  Get.snackbar('Éxito', 'Bovinos listos para registrar.');
+}
+
+
   /// Restaurar Bag cuando se elimina una entrega
   Future<void> restoreBag(int cantidad, int rangoInicialEliminado) async {
     final box = Hive.box<Bag>('bag');

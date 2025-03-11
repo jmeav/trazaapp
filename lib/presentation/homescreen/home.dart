@@ -5,7 +5,6 @@ import 'package:hive/hive.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/controller/managebag_controller.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
-
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
 
@@ -14,16 +13,9 @@ class HomeView extends StatelessWidget {
     final EntregaController entregaController = Get.put(EntregaController());
     final ManageBagController bagController = Get.put(ManageBagController());
 
-    // 🔹 Obtener la caja abierta (sin abrirla nuevamente)
     final box = Hive.box<AppConfig>('appConfig');
-
-    // 🔹 Obtener la configuración guardada (sin necesidad de abrir la caja)
     final AppConfig? config = box.get('config');
-
-    // 🔹 Si no hay datos, mostramos 'Usuario'
     final String nombreCompleto = config?.nombre ?? 'Usuario';
-
-    // 🔹 Extraemos solo el primer nombre
     final String primerNombre = nombreCompleto.split(' ').first;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -33,11 +25,11 @@ class HomeView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hola, $primerNombre!'), // 🔹 Mostramos el nombre del usuario
+        title: Text('Hola, $primerNombre!'),
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.settings),
+            icon: const Icon(Icons.settings),
             tooltip: 'Configuraciones',
             onPressed: () {
               Get.toNamed('/configs');
@@ -65,6 +57,7 @@ class HomeView extends StatelessWidget {
                     borderData: FlBorderData(show: false),
                     lineBarsData: [
                       LineChartBarData(
+                        color: Colors.black,
                         isCurved: true,
                         barWidth: 4,
                         isStrokeCapRound: true,
@@ -83,45 +76,74 @@ class HomeView extends StatelessWidget {
                   )),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  SummaryCard(title: 'Altas Registradas', count: 325),
-                  SummaryCard(title: 'Bajas Registradas', count: 25),
-                  SummaryCard(title: 'Movimientos Registrados', count: 12),
+                  SummaryCard(
+                    title: 'Altas Registradas',
+                    count: 325,
+                    icon: Icons.arrow_upward,
+                  ),
+                  SummaryCard(
+                    title: 'Bajas Registradas',
+                    count: 25,
+                    icon: Icons.arrow_downward,
+                  ),
+                  SummaryCard(
+                    title: 'Movimientos\n',
+                    count: 12,
+                    icon: Icons.swap_horiz,
+                  ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Expanded(
                 child: ListView(
                   children: [
                     Obx(() => ActionCard(
-                          label:
-                              'Gestionar Bolson (${bagController.cantidadDisponible})',
+                          label: 'Gestionar Aretes (${bagController.cantidadDisponible})',
                           onTap: () {
                             Get.toNamed('/managebag');
                           },
+                          icon: Icons.assignment,
                         )),
+                    ActionCard(
+                      label: 'Verificar CUE',
+                      onTap: () {
+                        Get.toNamed('/verifycue');
+                      },
+                      icon: Icons.emergency_share_rounded,
+                    ),
                     Obx(() => ActionCard(
-                          label:
-                              'Gestionar Pendientes (${entregaController.entregasPendientesCount})',
+                          label: 'Gestionar Entregas (${entregaController.entregasPendientesCount})',
                           onTap: () {
                             Get.toNamed('/entrega');
                           },
+                          icon: Icons.local_shipping,
                         )),
+                         ActionCard(
+                      label: 'Reposición Aretes',
+                      onTap: () {},
+                      icon: Icons.change_circle_rounded,
+                    ),
                     Obx(() => ActionCard(
-                          label:
-                              'Gestionar Listas (${entregaController.entregasListasCount})',
+                          label: 'Enviar Altas (${entregaController.entregasListasCount})',
                           onTap: () {
-                              Get.toNamed('/sendview');
+                            Get.toNamed('/sendview');
                           },
+                          icon: Icons.send,
                         )),
                     ActionCard(
-                      label: 'Notificar Movimiento',
+                      label: 'Consulta Bovino',
                       onTap: () {},
+                      icon: Icons.search,
                     ),
-                    ActionCard(label: 'Notificar Baja'),
+                    ActionCard(
+                      label: 'Bajas',
+                      onTap: () {},
+                      icon: Icons.thumb_down,
+                    ),
                   ],
                 ),
               ),
@@ -132,52 +154,91 @@ class HomeView extends StatelessWidget {
     );
   }
 }
-
 class SummaryCard extends StatelessWidget {
   final String title;
   final int count;
+  final IconData icon;
 
-  const SummaryCard({required this.title, required this.count});
+  const SummaryCard({
+    required this.title,
+    required this.count,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Container(
         width: 110,
-        padding: EdgeInsets.all(8),
+        padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(icon, size: 24),
+            const SizedBox(height: 4),
             Text(
               title,
               textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                // fontWeight: FontWeight.bold,
+              ),
             ),
-            SizedBox(height: 8),
-            Text('$count'),
+            const SizedBox(height: 8),
+            Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: 14,
+                // fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
 class ActionCard extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
+  final IconData icon;
 
-  const ActionCard({required this.label, this.onTap});
+  const ActionCard({
+    required this.label,
+    this.onTap,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        margin: EdgeInsets.symmetric(vertical: 8),
+        elevation: 4,
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(label),
+              Icon(icon, size: 24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    // fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 32),
             ],
           ),
         ),

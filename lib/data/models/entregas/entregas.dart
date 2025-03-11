@@ -46,13 +46,16 @@ class Entregas {
   final int existencia;
 
   @HiveField(14)
-  final String? distanciaCalculada; // Campo opcional
+  final String? distanciaCalculada;
 
   @HiveField(15)
-  final String estado; // Estado de la entrega
+  final String estado;
 
   @HiveField(16)
-  DateTime lastUpdate; // Fecha de última actualización
+  DateTime lastUpdate;
+
+  @HiveField(17) // Nuevo campo
+  final String tipo; // "manual" o "sistema"
 
   Entregas({
     required this.entregaId,
@@ -72,9 +75,10 @@ class Entregas {
     this.distanciaCalculada,
     required this.estado,
     required this.lastUpdate,
+    this.tipo = 'sistema', // Por defecto es "sistema"
   });
 
-  /// Método copyWith para modificar propiedades sin alterar el original
+  // Método copyWith
   Entregas copyWith({
     String? entregaId,
     DateTime? fechaEntrega,
@@ -93,6 +97,7 @@ class Entregas {
     String? distanciaCalculada,
     String? estado,
     DateTime? lastUpdate,
+    String? tipo,
   }) {
     return Entregas(
       entregaId: entregaId ?? this.entregaId,
@@ -112,6 +117,7 @@ class Entregas {
       distanciaCalculada: distanciaCalculada ?? this.distanciaCalculada,
       estado: estado ?? this.estado,
       lastUpdate: lastUpdate ?? this.lastUpdate,
+      tipo: tipo ?? this.tipo,
     );
   }
 

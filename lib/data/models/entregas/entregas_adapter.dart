@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'entregas.dart';
+import 'package:trazaapp/data/models/entregas/entregas.dart';
 
 class EntregasAdapter extends TypeAdapter<Entregas> {
   @override
@@ -30,13 +30,14 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
       distanciaCalculada: fields[14] as String?,
       estado: fields[15] as String,
       lastUpdate: fields[16] as DateTime,
+      tipo: fields[17] as String, // Nuevo campo
     );
   }
 
   @override
   void write(BinaryWriter writer, Entregas obj) {
     writer
-      ..writeByte(17) // Cantidad total de campos
+      ..writeByte(18) // Cantidad total de campos (ahora 18)
       ..writeByte(0)
       ..write(obj.entregaId)
       ..writeByte(1)
@@ -70,6 +71,8 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
       ..writeByte(15)
       ..write(obj.estado)
       ..writeByte(16)
-      ..write(obj.lastUpdate);
+      ..write(obj.lastUpdate)
+      ..writeByte(17)
+      ..write(obj.tipo); // Nuevo campo
   }
 }

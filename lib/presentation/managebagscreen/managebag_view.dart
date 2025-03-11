@@ -103,17 +103,19 @@ class ManageBagView extends StatelessWidget {
                     isNumeric: true),
                 const SizedBox(height: 16),
 
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.assignment_turned_in),
-                  label: const Text('Asignar Bag'),
-                  onPressed: () {
-                    if (_validarSeleccion()) {
-                      controller.asignarBag();
-                    } else {
-                      Get.snackbar('Error',
-                          'Debes seleccionar todas las opciones antes de continuar.');
-                    }
-                  },
+                Center(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.assignment_turned_in),
+                    label: const Text('Realizar Entrega'),
+                    onPressed: () {
+                      if (_validarSeleccion()) {
+                        controller.asignarBag();
+                      } else {
+                        Get.snackbar('Error',
+                            'Debes seleccionar todas las opciones antes de continuar.');
+                      }
+                    },
+                  ),
                 ),
               ],
             ),
@@ -124,38 +126,84 @@ class ManageBagView extends StatelessWidget {
   }
 
   /// Muestra la información del Bag disponible
-  Widget _buildBagInfo(BuildContext context) {
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+Widget _buildBagInfo(BuildContext context) {
+  return Card(
+    elevation: 10, // Sombra más pronunciada
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20), // Bordes más redondeados
+    ),
+    child: Container(
+      decoration: BoxDecoration(
+        // gradient: LinearGradient(
+        //   // colors: [
+        //   //   const Color.fromARGB(255, 96, 151, 248), // Color inicial del degradado
+        //   //   const Color.fromARGB(255, 103, 114, 142), // Color final del degradado
+        //   // ],
+        //   begin: Alignment.center,
+        //   end: Alignment.bottomCenter,
+        // ),
+        borderRadius: BorderRadius.circular(20), // Bordes redondeados
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Bolson Disponible',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+            // Icono decorativo
+            Row(mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.inventory, // Icono de inventario
+                  size: 30,
+                  // color: Colors.white,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Aretes Disponibles',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        // color: Colors.white, // Texto blanco
+                      ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
+            // Cantidad disponible
             Text(
-              'Cantidad disponible: ${controller.cantidadDisponible}',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Cantidad disponible:',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                // fontWeight: FontWeight.bold,
+                    // color: Colors.white.withOpacity(0.8), // Texto semi-transparente
+                  ),
             ),
-            const SizedBox(height: 8),
             Text(
-              'Rango disponible: ${controller.rangoAsignado.value}',
-              style: Theme.of(context).textTheme.titleMedium,
+              '${controller.cantidadDisponible}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    // fontWeight: FontWeight.bold,
+                    // color: Colors.white, // Texto blanco
+                  ),
+            ),
+            const SizedBox(height: 15),
+            // Rango disponible
+            Text(
+              'Rango disponible:',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    // color: Colors.white.withOpacity(0.8), // Texto semi-transparente
+                  ),
+            ),
+            Text(
+              '${controller.rangoAsignado.value}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    // fontWeight: FontWeight.bold,
+                    // color: Colors.white, // Texto blanco
+                  ),
             ),
           ],
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   /// Dropdown estilizado para selección de datos
   Widget _buildDropdown<T>({
     required String label,

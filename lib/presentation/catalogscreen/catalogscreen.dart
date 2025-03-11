@@ -7,8 +7,19 @@ import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 class CatalogosScreen extends StatelessWidget {
   final CatalogosController controller = Get.put(CatalogosController());
 
+
+    String _formatDateTime(String dateTimeString) {
+  try {
+    DateTime dateTime = DateTime.parse(dateTimeString);
+    return "${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}";
+  } catch (e) {
+    return "Fecha inválida";
+  }
+}
+
   @override
   Widget build(BuildContext context) {
+
     var box = Hive.box<AppConfig>('appConfig');
     var config = box.get('config');
 
@@ -204,12 +215,13 @@ class CatalogosScreen extends StatelessWidget {
               ),
               SizedBox(height: 5),
               Text(
-                lastUpdated == 'Nunca'
-                    ? 'Sin actualizar'
-                    : 'Última actualización: $lastUpdated',
-                style: TextStyle(fontSize: 12, color: Colors.white70),
-                textAlign: TextAlign.center,
-              ),
+  lastUpdated.isEmpty
+      ? 'Sin actualizar'
+      : 'Última actualización: ${_formatDateTime(lastUpdated)}',
+  style: TextStyle(fontSize: 12, color: Colors.white70),
+  textAlign: TextAlign.center,
+),
+
               if (isLoading)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),

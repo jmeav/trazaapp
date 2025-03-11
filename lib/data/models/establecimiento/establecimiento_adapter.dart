@@ -18,14 +18,16 @@ class EstablecimientoAdapter extends TypeAdapter<Establecimiento> {
       idDepartamento: fields[3] as String,
       idMunicipio: fields[4] as String,
       productor: fields[5] as String,
-      lastUpdate: fields[6] as DateTime?, // Leer el campo lastUpdate
+      latitud: fields[6] as String,
+      longitud: fields[7] as String,
+      lastUpdate: fields[8] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Establecimiento obj) {
     writer
-      ..writeByte(7) // Ahora hay 7 campos
+      ..writeByte(9) // Ahora hay 9 campos
       ..writeByte(0)
       ..write(obj.idEstablecimiento)
       ..writeByte(1)
@@ -39,6 +41,10 @@ class EstablecimientoAdapter extends TypeAdapter<Establecimiento> {
       ..writeByte(5)
       ..write(obj.productor)
       ..writeByte(6)
-      ..write(obj.lastUpdate); // Escribir el campo lastUpdate
+      ..write(obj.latitud)
+      ..writeByte(7)
+      ..write(obj.longitud)
+      ..writeByte(8)
+      ..write(obj.lastUpdate);
   }
 }

@@ -33,17 +33,21 @@ class ConfiguracionesScreen extends StatelessWidget {
                 ),
                 child: ListTile(
                   leading: Icon(
-                    themeController.themeData.value.brightness == Brightness.light
+                    themeController.themeData.value.brightness ==
+                            Brightness.light
                         ? Icons.dark_mode
                         : Icons.light_mode,
-                    color: Theme.of(context).primaryColor,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface, // <- Esto usa el color correcto para el modo
                   ),
-                  title: const Text(
+                  title: Text(
                     "Modo Oscuro",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   trailing: Switch(
-                    value: themeController.themeData.value.brightness == Brightness.dark,
+                    value: themeController.themeData.value.brightness ==
+                        Brightness.dark,
                     onChanged: (value) => themeController.toggleTheme(context),
                   ),
                 ),
@@ -57,7 +61,6 @@ class ConfiguracionesScreen extends StatelessWidget {
             _buildButton(
               icon: Icons.folder_open,
               text: "Administrar Catálogos",
-              color: Colors.blueAccent,
               onPressed: () => Get.toNamed('/catalogs'),
             ),
 
@@ -68,7 +71,6 @@ class ConfiguracionesScreen extends StatelessWidget {
             _buildButton(
               icon: Icons.logout,
               text: "Cerrar sesión",
-              color: Colors.red,
               onPressed: _logout,
             ),
           ],
@@ -96,13 +98,10 @@ class ConfiguracionesScreen extends StatelessWidget {
   Widget _buildButton({
     required IconData icon,
     required String text,
-    required Color color,
     required VoidCallback onPressed,
   }) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 3,
@@ -110,7 +109,7 @@ class ConfiguracionesScreen extends StatelessWidget {
       icon: Icon(icon, size: 22),
       label: Text(
         text,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500,),
       ),
       onPressed: onPressed,
     );
@@ -128,8 +127,10 @@ class ConfiguracionesScreen extends StatelessWidget {
     AppConfig? currentConfig = box.get('config');
 
     if (currentConfig != null) {
-      String imeiGuardado = currentConfig.imei; // 🔹 Guardamos el IMEI antes de borrar
-      String tokenGuardado = currentConfig.token; // 🔹 Guardamos el token antes de borrar
+      String imeiGuardado =
+          currentConfig.imei; // 🔹 Guardamos el IMEI antes de borrar
+      String tokenGuardado =
+          currentConfig.token; // 🔹 Guardamos el token antes de borrar
 
       AppConfig newConfig = currentConfig.copyWith(
         imei: imeiGuardado, // ✅ Mantenemos el IMEI
@@ -145,7 +146,8 @@ class ConfiguracionesScreen extends StatelessWidget {
       );
 
       await box.put('config', newConfig);
-      print("✅ Se ha cerrado sesión correctamente. IMEI y token siguen guardados.");
+      print(
+          "✅ Se ha cerrado sesión correctamente. IMEI y token siguen guardados.");
     }
 
     Get.offAllNamed('/login');

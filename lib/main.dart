@@ -32,6 +32,7 @@ import 'package:trazaapp/presentation/formbovinoscreen/formbovinos_view.dart';
 import 'package:trazaapp/presentation/homescreen/home.dart';
 import 'package:trazaapp/presentation/splashscreen/splash_screen.dart';
 import 'package:trazaapp/login/view/login_view.dart';
+import 'package:trazaapp/presentation/verifycuescreen/verifycue_view.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 import 'package:trazaapp/login/controller/login_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -105,6 +106,7 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/sendview', page: () => EnviarView()),
           GetPage(name: '/catalogs', page: () => CatalogosScreen()),
           GetPage(name: '/configs', page: () => ConfiguracionesScreen()),
+          GetPage(name: '/verifycue', page: () => VerifyEstablishmentView()),
         ],
       );
     });

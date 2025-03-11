@@ -360,16 +360,24 @@ class MaterialTheme {
   }
 
   ThemeData theme(ColorScheme colorScheme) => ThemeData(
-     useMaterial3: true,
-     brightness: colorScheme.brightness,
-     colorScheme: colorScheme,
-     textTheme: textTheme.apply(
-       bodyColor: colorScheme.onSurface,
-       displayColor: colorScheme.onSurface,
-     ),
-     scaffoldBackgroundColor: colorScheme.background,
-     canvasColor: colorScheme.surface,
-  );
+  useMaterial3: true,
+  brightness: colorScheme.brightness,
+  colorScheme: colorScheme,
+  textTheme: textTheme.apply(
+    bodyColor: colorScheme.onSurface,
+    displayColor: colorScheme.onSurface,
+  ),
+  scaffoldBackgroundColor: colorScheme.background,
+  canvasColor: colorScheme.surface,
+  appBarTheme: AppBarTheme(
+    titleTextStyle: TextStyle(
+      fontSize: 20, // Tamaño de fuente
+      fontWeight: FontWeight.bold, // Negrita
+      color: colorScheme.onSurface, // Color del texto
+    ),
+    elevation: 4, // Elevación del AppBar
+  ),
+);
 }
 
 class MaterialScheme {

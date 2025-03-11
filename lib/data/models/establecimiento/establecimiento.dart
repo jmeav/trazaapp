@@ -21,6 +21,12 @@ class Establecimiento {
   final String productor;
 
   @HiveField(6)
+  final String latitud;
+
+  @HiveField(7)
+  final String longitud;
+
+  @HiveField(8)
   DateTime? lastUpdate; // Campo para la última actualización
 
   Establecimiento({
@@ -30,6 +36,8 @@ class Establecimiento {
     required this.idDepartamento,
     required this.idMunicipio,
     required this.productor,
+    required this.latitud,
+    required this.longitud,
     this.lastUpdate,
   });
 
@@ -41,6 +49,8 @@ class Establecimiento {
       idDepartamento: json['IDDEPARTAMENTO'] ?? '',
       idMunicipio: json['IDMUNICIPIO'] ?? '',
       productor: json['PRODUCTOR'] ?? '',
+      latitud: json['Latitud']?.toString() ?? '0.0',  // Convertir a String directamente
+      longitud: json['Longitud']?.toString() ?? '0.0', // Convertir a String directamente
       lastUpdate: json['LAST_UPDATE'] != null
           ? DateTime.tryParse(json['LAST_UPDATE'])
           : null,
@@ -55,6 +65,8 @@ class Establecimiento {
       'IDDEPARTAMENTO': idDepartamento,
       'IDMUNICIPIO': idMunicipio,
       'PRODUCTOR': productor,
+      'Latitud': latitud,
+      'Longitud': longitud,
       'LAST_UPDATE': lastUpdate?.toIso8601String(),
     };
   }
