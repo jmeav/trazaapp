@@ -52,10 +52,32 @@ class Entregas {
   final String estado;
 
   @HiveField(16)
-  DateTime lastUpdate;
+  final DateTime lastUpdate;
 
-  @HiveField(17) // Nuevo campo
-  final String tipo; // "manual" o "sistema"
+  @HiveField(17)
+  final String tipo;
+
+  @HiveField(18)
+  final String fotoBovInicial;
+
+  @HiveField(19)
+  final String fotoBovFinal;
+
+  @HiveField(20)
+  final bool reposicion;
+
+  @HiveField(21)
+  final String observaciones;
+
+  @HiveField(22)
+  final String? idAlta;
+
+  // 🔹 Campos nuevos
+  @HiveField(23)
+  final String departamento;
+
+  @HiveField(24)
+  final String municipio;
 
   Entregas({
     required this.entregaId,
@@ -75,10 +97,16 @@ class Entregas {
     this.distanciaCalculada,
     required this.estado,
     required this.lastUpdate,
-    this.tipo = 'sistema', // Por defecto es "sistema"
+    this.tipo = 'sistema',
+    required this.fotoBovInicial,
+    required this.fotoBovFinal,
+    required this.reposicion,
+    required this.observaciones,
+    this.idAlta,
+    required this.departamento,
+    required this.municipio,
   });
 
-  // Método copyWith
   Entregas copyWith({
     String? entregaId,
     DateTime? fechaEntrega,
@@ -98,6 +126,13 @@ class Entregas {
     String? estado,
     DateTime? lastUpdate,
     String? tipo,
+    String? fotoBovInicial,
+    String? fotoBovFinal,
+    bool? reposicion,
+    String? observaciones,
+    String? idAlta,
+    String? departamento,
+    String? municipio,
   }) {
     return Entregas(
       entregaId: entregaId ?? this.entregaId,
@@ -118,10 +153,16 @@ class Entregas {
       estado: estado ?? this.estado,
       lastUpdate: lastUpdate ?? this.lastUpdate,
       tipo: tipo ?? this.tipo,
+      fotoBovInicial: fotoBovInicial ?? this.fotoBovInicial,
+      fotoBovFinal: fotoBovFinal ?? this.fotoBovFinal,
+      reposicion: reposicion ?? this.reposicion,
+      observaciones: observaciones ?? this.observaciones,
+      idAlta: idAlta ?? this.idAlta,
+      departamento: departamento ?? this.departamento,
+      municipio: municipio ?? this.municipio,
     );
   }
 
-  /// Creación del objeto a partir de un JSON
   factory Entregas.fromJson(Map<String, dynamic> json) {
     return Entregas(
       entregaId: json['ID'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -141,10 +182,17 @@ class Entregas {
       distanciaCalculada: json['distanciaCalculada'],
       estado: json['ESTADO'] ?? 'pendiente',
       lastUpdate: DateTime.now(),
+      tipo: json['tipo'] ?? 'sistema',
+      fotoBovInicial: json['fotoBovInicial'] ?? '',
+      fotoBovFinal: json['fotoBovFinal'] ?? '',
+      reposicion: json['reposicion'] ?? false,
+      observaciones: json['observaciones'] ?? '',
+      idAlta: json['idAlta'],
+      departamento: json['DEPARTAMENTO'] ?? 'DepX',
+      municipio: json['MUNICIPIO'] ?? 'MunX',
     );
   }
 
-  /// Conversión del objeto a JSON
   Map<String, dynamic> toJson() {
     return {
       'ID': entregaId,
@@ -164,6 +212,14 @@ class Entregas {
       'distanciaCalculada': distanciaCalculada,
       'ESTADO': estado,
       'lastUpdate': lastUpdate.toIso8601String(),
+      'tipo': tipo,
+      'fotoBovInicial': fotoBovInicial,
+      'fotoBovFinal': fotoBovFinal,
+      'reposicion': reposicion,
+      'observaciones': observaciones,
+      'idAlta': idAlta,
+      'DEPARTAMENTO': departamento,
+      'MUNICIPIO': municipio,
     };
   }
 }

@@ -15,6 +15,7 @@ import 'package:trazaapp/data/repositories/catalogs/productores_repo.dart';
 import 'package:trazaapp/data/repositories/catalogs/razas.dart';
 import 'package:trazaapp/data/repositories/entregas/entregas_bag_repo.dart';
 import 'package:trazaapp/data/repositories/entregas/entregas_repo.dart';
+import 'package:trazaapp/presentation/homescreen/home.dart';
 
 
 class CatalogosController extends GetxController {
@@ -114,10 +115,19 @@ Future<void> downloadAllCatalogs(
       downloadRazas(token: token, codhabilitado: codhabilitado), // Nueva función
       downloadBag(token: token, codhabilitado: codhabilitado),
     ]);
+      Get.offUntil(
+    GetPageRoute(
+      page: () => HomeView(), // 🔹 Reemplaza esto con la pantalla de inicio a la que quieres volver
+    ),
+    (route) => false, // 🔹 Esto se asegura de que elimina todas las pantallas hasta la de inicio
+  );
+
   } else {
     await downloadEntregas(token: token, codhabilitado: codhabilitado);
   }
   progressText.value = "";
+   // ✅ Cerrar la pantalla y limpiar los datos completamente
+
 }
 
 

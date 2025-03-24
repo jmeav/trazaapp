@@ -14,8 +14,9 @@ class BovinoAdapter extends TypeAdapter<Bovino> {
       edad: reader.readInt(),
       sexo: reader.readString(),
       raza: reader.readString(),
-      traza: reader.readString(), // Nuevo campo
+      traza: reader.readString(),
       estadoArete: reader.readString(),
+      entregaId: reader.readString(), // Nuevo campo agregado
     );
   }
 
@@ -27,7 +28,8 @@ class BovinoAdapter extends TypeAdapter<Bovino> {
     writer.writeInt(obj.edad);
     writer.writeString(obj.sexo);
     writer.writeString(obj.raza);
-    writer.writeString(obj.traza); // Nuevo campo
+    writer.writeString(obj.traza);
     writer.writeString(obj.estadoArete);
+    writer.writeString(obj.entregaId); // Ahora se guarda el `entregaId`
   }
 }

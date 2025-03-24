@@ -9,8 +9,8 @@ import 'package:trazaapp/data/models/productores/productor.dart';
 
 class ManageBagView extends StatelessWidget {
   final ManageBagController controller = Get.put(ManageBagController());
-    final CatalogosController controller2 = Get.put(CatalogosController()); // ⬅️ Agregar esto
-
+  final CatalogosController controller2 =
+      Get.put(CatalogosController()); // ⬅️ Agregar esto
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +26,11 @@ class ManageBagView extends StatelessWidget {
                 _buildBagInfo(context),
                 const SizedBox(height: 16),
 
-                // Selección de departamento y municipio
                 _buildDropdown<Departamento>(
                   label: 'Departamento',
                   options: controller.departamentos,
-                  selectedValue: controller.departamentoSeleccionado.value,
+                  selectedValue:
+                      controller.departamentoSeleccionado, // ✅ Cambiado
                   displayString: (d) => d.departamento,
                   onChanged: (departamento) {
                     controller.departamentoSeleccionado.value =
@@ -42,10 +42,11 @@ class ManageBagView extends StatelessWidget {
                 _buildDropdown<Municipio>(
                   label: 'Municipio',
                   options: controller.municipiosFiltrados,
-                  selectedValue: controller.municipioSeleccionado.value,
+                  selectedValue: controller.municipioSeleccionado, // ✅ Cambiado
                   displayString: (m) => m.municipio,
                   onChanged: (municipio) {
-                    controller.municipioSeleccionado.value = municipio.idMunicipio;
+                    controller.municipioSeleccionado.value =
+                        municipio.idMunicipio;
                   },
                 ),
 
@@ -53,14 +54,16 @@ class ManageBagView extends StatelessWidget {
                 if (controller.municipioSeleccionado.isNotEmpty)
                   Autocomplete<Establecimiento>(
                     optionsBuilder: (TextEditingValue textEditingValue) async {
-                      return await controller.buscarEstablecimientos(textEditingValue.text);
+                      return await controller
+                          .buscarEstablecimientos(textEditingValue.text);
                     },
                     displayStringForOption: (Establecimiento option) =>
                         '${option.nombreEstablecimiento} (${option.establecimiento})',
                     onSelected: (Establecimiento selection) {
                       controller.cueController.text = selection.establecimiento;
                     },
-                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                    fieldViewBuilder:
+                        (context, controller, focusNode, onFieldSubmitted) {
                       return TextField(
                         controller: controller,
                         focusNode: focusNode,
@@ -77,14 +80,16 @@ class ManageBagView extends StatelessWidget {
                 // Autocompletado para productores
                 Autocomplete<Productor>(
                   optionsBuilder: (TextEditingValue textEditingValue) async {
-                    return await controller.buscarProductores(textEditingValue.text);
+                    return await controller
+                        .buscarProductores(textEditingValue.text);
                   },
                   displayStringForOption: (Productor option) =>
                       '${option.nombreProductor} (${option.productor})',
                   onSelected: (Productor selection) {
                     controller.cupaController.text = selection.productor;
                   },
-                  fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                  fieldViewBuilder:
+                      (context, controller, focusNode, onFieldSubmitted) {
                     return TextField(
                       controller: controller,
                       focusNode: focusNode,
@@ -102,21 +107,37 @@ class ManageBagView extends StatelessWidget {
                     controller.cantidadController, 'Cantidad a asignar',
                     isNumeric: true),
                 const SizedBox(height: 16),
+               Center(
+  child: ElevatedButton.icon(
+    icon: const Icon(Icons.assignment_turned_in),
+    label: const Text('Realizar Entrega'),
+    onPressed: () async {
+      if (_validarSeleccion()) {
+        final cantidadText = controller.cantidadController.text;
 
-                Center(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.assignment_turned_in),
-                    label: const Text('Realizar Entrega'),
-                    onPressed: () {
-                      if (_validarSeleccion()) {
-                        controller.asignarBag();
-                      } else {
-                        Get.snackbar('Error',
-                            'Debes seleccionar todas las opciones antes de continuar.');
-                      }
-                    },
-                  ),
-                ),
+        if (cantidadText.isNotEmpty) {
+          final cantidad = int.tryParse(cantidadText);
+
+          if (cantidad != null) {
+            bool exito = await controller.asignarAretes(cantidad);
+
+            if (exito) {
+              controller.resetForm();
+              // 🔹 No es necesario llamar a `Get.back()` porque `asignarEntrega` ya lo hace
+            }
+          } else {
+            Get.snackbar('Error', 'La cantidad debe ser un número válido.');
+          }
+        } else {
+          Get.snackbar('Error', 'Debes ingresar una cantidad.');
+        }
+      } else {
+        Get.snackbar('Error', 'Debes seleccionar todas las opciones antes de continuar.');
+      }
+    },
+  ),
+),
+
               ],
             ),
           ),
@@ -126,126 +147,122 @@ class ManageBagView extends StatelessWidget {
   }
 
   /// Muestra la información del Bag disponible
-Widget _buildBagInfo(BuildContext context) {
-  return Card(
-    elevation: 10, // Sombra más pronunciada
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20), // Bordes más redondeados
-    ),
-    child: Container(
-      decoration: BoxDecoration(
-        // gradient: LinearGradient(
-        //   // colors: [
-        //   //   const Color.fromARGB(255, 96, 151, 248), // Color inicial del degradado
-        //   //   const Color.fromARGB(255, 103, 114, 142), // Color final del degradado
-        //   // ],
-        //   begin: Alignment.center,
-        //   end: Alignment.bottomCenter,
-        // ),
-        borderRadius: BorderRadius.circular(20), // Bordes redondeados
+  Widget _buildBagInfo(BuildContext context) {
+    return Card(
+      elevation: 10, // Sombra más pronunciada
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20), // Bordes más redondeados
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icono decorativo
-            Row(mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.inventory, // Icono de inventario
-                  size: 30,
-                  // color: Colors.white,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Aretes Disponibles',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        // color: Colors.white, // Texto blanco
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Cantidad disponible
-            Text(
-              'Cantidad disponible:',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                // fontWeight: FontWeight.bold,
-                    // color: Colors.white.withOpacity(0.8), // Texto semi-transparente
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20), // Bordes redondeados
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Icono decorativo
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inventory, // Icono de inventario
+                    size: 30,
+                    // color: Colors.white,
                   ),
-            ),
-            Text(
-              '${controller.cantidadDisponible}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  const SizedBox(width: 10),
+                  Text(
+                    'Aretes Disponibles',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          // color: Colors.white, // Texto blanco
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Cantidad disponible
+              Text(
+                'Cantidad disponible:',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    // fontWeight: FontWeight.bold,
+                    // color: Colors.white.withOpacity(0.8), // Texto semi-transparente
+                    ),
+              ),
+              Text(
+                '${controller.cantidadDisponible}',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     // fontWeight: FontWeight.bold,
                     // color: Colors.white, // Texto blanco
-                  ),
-            ),
-            const SizedBox(height: 15),
-            // Rango disponible
-            Text(
-              'Rango disponible:',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    ),
+              ),
+              const SizedBox(height: 15),
+              // Rango disponible
+              Text(
+                'Rango disponible:',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     // color: Colors.white.withOpacity(0.8), // Texto semi-transparente
-                  ),
-            ),
-            Text(
-              '${controller.rangoAsignado.value}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    ),
+              ),
+              Text(
+                '${controller.rangoAsignado.value}',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     // fontWeight: FontWeight.bold,
                     // color: Colors.white, // Texto blanco
-                  ),
-            ),
-          ],
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-  /// Dropdown estilizado para selección de datos
+    );
+  }
+
   Widget _buildDropdown<T>({
     required String label,
     required List<T> options,
-    required String selectedValue,
+    required RxString selectedValue, // ✅ Ahora usa un `RxString` directamente
     required String Function(T) displayString,
     String Function(T)? subtitleString,
     required Function(T) onChanged,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<T>(
-        value: options.isNotEmpty
-            ? options.firstWhereOrNull((e) => displayString(e) == selectedValue)
-            : null,
-        isExpanded: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-        ),
-        items: options.map((T option) {
-          return DropdownMenuItem<T>(
-            value: option,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(displayString(option),
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                if (subtitleString != null)
-                  Text(subtitleString(option),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-              ],
+    return Obx(() => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: DropdownButtonFormField<T>(
+            value: options.isNotEmpty
+                ? options.firstWhereOrNull((e) =>
+                    displayString(e) == selectedValue.value) // ✅ Usa `value`
+                : null,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: label,
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
             ),
-          );
-        }).toList(),
-        onChanged: (T? value) {
-          if (value != null) {
-            onChanged(value);
-          }
-        },
-      ),
-    );
+            items: options.map((T option) {
+              return DropdownMenuItem<T>(
+                value: option,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(displayString(option),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    if (subtitleString != null)
+                      Text(subtitleString(option),
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (T? value) {
+              if (value != null) {
+                onChanged(value);
+              }
+            },
+          ),
+        ));
   }
 
   /// Campo de texto estándar con validación

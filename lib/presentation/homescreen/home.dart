@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
@@ -10,7 +11,9 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final EntregaController entregaController = Get.put(EntregaController());
+final EntregaController entregaController = Get.isRegistered<EntregaController>()
+    ? Get.find<EntregaController>()
+    : Get.put(EntregaController());
     final ManageBagController bagController = Get.put(ManageBagController());
 
     final box = Hive.box<AppConfig>('appConfig');
@@ -18,10 +21,13 @@ class HomeView extends StatelessWidget {
     final String nombreCompleto = config?.nombre ?? 'Usuario';
     final String primerNombre = nombreCompleto.split(' ').first;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      entregaController.refreshData();
-      bagController.loadBagData();
-    });
+   WidgetsBinding.instance.addPostFrameCallback((_) async {
+  await Future.delayed(const Duration(milliseconds: 300));
+  await entregaController.refreshData(); // 🔁 Actualiza entregas y altas
+  await Future.delayed(const Duration(milliseconds: 100));
+  entregaController.getAltasParaEnviar(); // 🔄 Refresca el contador correctamente
+  bagController.loadBagData();
+});
 
     return Scaffold(
       appBar: AppBar(
@@ -48,7 +54,7 @@ class HomeView extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(
-                height: 200,
+                height: 100,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: LineChart(LineChartData(
@@ -98,55 +104,56 @@ class HomeView extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Expanded(
-                child: ListView(
-                  children: [
-                    Obx(() => ActionCard(
-                          label: 'Gestionar Aretes (${bagController.cantidadDisponible})',
-                          onTap: () {
-                            Get.toNamed('/managebag');
-                          },
-                          icon: Icons.assignment,
-                        )),
-                    ActionCard(
-                      label: 'Verificar CUE',
-                      onTap: () {
-                        Get.toNamed('/verifycue');
-                      },
-                      icon: Icons.emergency_share_rounded,
-                    ),
-                    Obx(() => ActionCard(
-                          label: 'Gestionar Entregas (${entregaController.entregasPendientesCount})',
-                          onTap: () {
-                            Get.toNamed('/entrega');
-                          },
-                          icon: Icons.local_shipping,
-                        )),
-                         ActionCard(
-                      label: 'Reposición Aretes',
-                      onTap: () {},
-                      icon: Icons.change_circle_rounded,
-                    ),
-                    Obx(() => ActionCard(
-                          label: 'Enviar Altas (${entregaController.entregasListasCount})',
-                          onTap: () {
-                            Get.toNamed('/sendview');
-                          },
-                          icon: Icons.send,
-                        )),
-                    ActionCard(
-                      label: 'Consulta Bovino',
-                      onTap: () {},
-                      icon: Icons.search,
-                    ),
-                    ActionCard(
-                      label: 'Bajas',
-                      onTap: () {},
-                      icon: Icons.thumb_down,
-                    ),
-                  ],
-                ),
-              ),
+             Expanded(
+  child: ListView(
+    children: [
+      Obx(() => ActionCard(
+            label: 'Gestionar Aretes (${bagController.cantidadDisponible})',
+            onTap: () {
+              Get.toNamed('/managebag');
+            },
+            icon: FontAwesomeIcons.tags, // 🏷️ Etiquetas (Aretes)
+          )),
+      ActionCard(
+        label: 'Verificar CUE',
+        onTap: () {
+          Get.toNamed('/verifycue');
+        },
+        icon: FontAwesomeIcons.qrcode, // 🔍 Escaneo/Código QR
+      ),
+      Obx(() => ActionCard(
+            label: 'Gestionar Entregas (${entregaController.entregasPendientesCount})',
+            onTap: () {
+              Get.toNamed('/entrega');
+            },
+            icon: FontAwesomeIcons.boxOpen, // 📦 Entregas de paquetes
+          )),
+      ActionCard(
+        label: 'Reposición Aretes',
+        onTap: () {},
+        icon: FontAwesomeIcons.recycle, // 🔃 Reposición de aretes
+      ),
+      Obx(() => ActionCard(
+            label: 'Enviar Altas (${entregaController.altasParaEnviarCount})',
+            onTap: () {
+              Get.toNamed('/sendview');
+            },
+            icon: FontAwesomeIcons.paperPlane, // 📤 Envío de información
+          )),
+      ActionCard(
+        label: 'Consulta Bovino',
+        onTap: () {},
+        icon: FontAwesomeIcons.cow, // 🐄 Consulta de bovinos
+      ),
+      ActionCard(
+        label: 'Bajas',
+        onTap: () {},
+        icon: FontAwesomeIcons.skullCrossbones, // ⚠️ Alertas de bajas
+      ),
+    ],
+  ),
+),
+
             ],
           ),
         ),

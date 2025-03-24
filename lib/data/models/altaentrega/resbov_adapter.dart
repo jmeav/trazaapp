@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
 
+
 class BovinoResumenAdapter extends TypeAdapter<BovinoResumen> {
   @override
   final int typeId = 11;
@@ -14,7 +15,7 @@ class BovinoResumenAdapter extends TypeAdapter<BovinoResumen> {
       raza: reader.readString(),
       traza: reader.readString(),
       estadoArete: reader.readString(),
-      fechaNacimiento: DateTime.fromMillisecondsSinceEpoch(reader.readInt()), // Se lee de Hive
+      fechaNacimiento: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
     );
   }
 
@@ -26,6 +27,6 @@ class BovinoResumenAdapter extends TypeAdapter<BovinoResumen> {
     writer.writeString(obj.raza);
     writer.writeString(obj.traza);
     writer.writeString(obj.estadoArete);
-    writer.writeInt(obj.fechaNacimiento.millisecondsSinceEpoch); // Se guarda en Hive
+    writer.writeInt(obj.fechaNacimiento.millisecondsSinceEpoch);
   }
 }

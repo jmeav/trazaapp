@@ -18,10 +18,10 @@ class AltaEntrega {
   final String cue;
 
   @HiveField(5)
-  final String departamento; // Campo agregado
+  final String departamento;
 
   @HiveField(6)
-  final String municipio; // Campo agregado
+  final String municipio;
 
   @HiveField(7)
   final double latitud;
@@ -39,7 +39,32 @@ class AltaEntrega {
   final String tipoAlta;
 
   @HiveField(12)
+  final String token;
+
+  @HiveField(13)
+  final String codhabilitado;
+
+  @HiveField(14)
+  final String idorganizacion;
+
+  @HiveField(15)
+  final String fotoBovInicial;
+
+  @HiveField(16)
+  final String fotoBovFinal;
+
+  @HiveField(17)
+  final bool reposicion;
+
+  @HiveField(18)
+  final String observaciones;
+
+  @HiveField(19)
   final List<BovinoResumen> detalleBovinos;
+  
+  @HiveField(20)
+ final String estadoAlta; // Puede ser "Lista", "Enviada", etc.
+
 
   AltaEntrega({
     required this.idAlta,
@@ -54,7 +79,15 @@ class AltaEntrega {
     this.distanciaCalculada,
     required this.fechaAlta,
     required this.tipoAlta,
+    required this.token,
+    required this.codhabilitado,
+    required this.idorganizacion,
+    required this.fotoBovInicial,
+    required this.fotoBovFinal,
+    required this.reposicion,
+    required this.observaciones,
     required this.detalleBovinos,
+    required this.estadoAlta,
   });
 
   AltaEntrega copyWith({
@@ -70,7 +103,15 @@ class AltaEntrega {
     String? distanciaCalculada,
     DateTime? fechaAlta,
     String? tipoAlta,
+    String? token,
+    String? codhabilitado,
+    String? idorganizacion,
+    String? fotoBovInicial,
+    String? fotoBovFinal,
+    bool? reposicion,
+    String? observaciones,
     List<BovinoResumen>? detalleBovinos,
+    String? estadoAlta,
   }) {
     return AltaEntrega(
       idAlta: idAlta ?? this.idAlta,
@@ -85,11 +126,43 @@ class AltaEntrega {
       distanciaCalculada: distanciaCalculada ?? this.distanciaCalculada,
       fechaAlta: fechaAlta ?? this.fechaAlta,
       tipoAlta: tipoAlta ?? this.tipoAlta,
+      token: token ?? this.token,
+      codhabilitado: codhabilitado ?? this.codhabilitado,
+      idorganizacion: idorganizacion ?? this.idorganizacion,
+      fotoBovInicial: fotoBovInicial ?? this.fotoBovInicial,
+      fotoBovFinal: fotoBovFinal ?? this.fotoBovFinal,
+      reposicion: reposicion ?? this.reposicion,
+      observaciones: observaciones ?? this.observaciones,
       detalleBovinos: detalleBovinos ?? this.detalleBovinos,
+      estadoAlta: estadoAlta ?? this.estadoAlta,
+
     );
   }
-}
 
+Map<String, dynamic> toJsonEnvio() => {
+  "idAlta": idAlta,
+  "rangoInicial": rangoInicial,
+  "rangoFinal": rangoFinal,
+  "cupa": cupa,
+  "cue": cue,
+  "departamento": departamento,
+  "municipio": municipio,
+  "latitud": latitud,
+  "longitud": longitud,
+  "distanciaCalculada": distanciaCalculada,
+  "fechaAlta": fechaAlta.toUtc().toIso8601String(),
+  "tipoAlta": tipoAlta,
+  "token": token,
+  "codhabilitado": codhabilitado,
+  "idorganizacion": int.tryParse(idorganizacion) ?? 0,
+  "fotoBovInicial": fotoBovInicial,
+  "fotoBovFinal": fotoBovFinal,
+  "reposicion": reposicion,
+  "observaciones": observaciones,
+  "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
+};
+
+}
 
 @HiveType(typeId: 11)
 class BovinoResumen {
@@ -97,7 +170,7 @@ class BovinoResumen {
   final String arete;
 
   @HiveField(1)
-  final int edad; // En meses
+  final int edad;
 
   @HiveField(2)
   final String sexo;
@@ -106,13 +179,13 @@ class BovinoResumen {
   final String raza;
 
   @HiveField(4)
-  final String traza; // Nuevo campo
+  final String traza;
 
   @HiveField(5)
   final String estadoArete;
 
   @HiveField(6)
-  final DateTime fechaNacimiento; // Ahora es un campo explícito en Hive
+  final DateTime fechaNacimiento;
 
   BovinoResumen({
     required this.arete,
@@ -121,41 +194,16 @@ class BovinoResumen {
     required this.raza,
     required this.traza,
     required this.estadoArete,
-    required this.fechaNacimiento, // Se pasa explícitamente
+    required this.fechaNacimiento,
   });
 
-  // Getter opcional para calcular la fecha de nacimiento si es necesario en otros lugares
-  DateTime get calcularFechaNacimiento {
-    return DateTime.now().subtract(Duration(days: edad * 30)); // Aproximación de un mes a 30 días
-  }
-
-  BovinoResumen copyWith({
-    String? arete,
-    int? edad,
-    String? sexo,
-    String? raza,
-    String? traza,
-    String? estadoArete,
-    DateTime? fechaNacimiento,
-  }) {
-    return BovinoResumen(
-      arete: arete ?? this.arete,
-      edad: edad ?? this.edad,
-      sexo: sexo ?? this.sexo,
-      raza: raza ?? this.raza,
-      traza: traza ?? this.traza,
-      estadoArete: estadoArete ?? this.estadoArete,
-      fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento, // Se incluye en `copyWith`
-    );
-  }
-
   Map<String, dynamic> toJson() => {
-        "arete": arete,
-        "edad": edad,
-        "sexo": sexo,
-        "raza": raza,
-        "traza": traza,
-        "estadoArete": estadoArete,
-        "fechaNacimiento": fechaNacimiento.toIso8601String(), // Se envía en el JSON
-      };
+    "arete": arete,
+    "edad": edad,
+    "sexo": sexo,
+    "raza": raza,
+    "traza": traza,
+    "estadoArete": estadoArete,
+    "fechaNacimiento": fechaNacimiento.toIso8601String(),
+  };
 }

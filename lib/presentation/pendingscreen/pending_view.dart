@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart'; // Importa intl para formatear la fecha
+import 'package:intl/intl.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 
 class EntregasView extends StatelessWidget {
-  final EntregaController controller = Get.find<EntregaController>();
-    final CatalogosController controller2 = Get.put(CatalogosController()); // ⬅️ Agregar esto
-
+final EntregaController controller = Get.put(EntregaController(), permanent: true);
+  final CatalogosController controller2 = Get.put(CatalogosController());
 
   @override
   Widget build(BuildContext context) {
-    // 🔹 Forzar actualización de datos al entrar a la vista
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.refreshData();
     });
@@ -36,19 +34,16 @@ class EntregasView extends StatelessWidget {
               itemCount: controller.entregasPendientes.length,
               itemBuilder: (context, index) {
                 final entrega = controller.entregasPendientes[index];
-
-                // 🔹 Formateo de fecha de entrega a dd/MM/yyyy
                 String formattedDate = formatFecha(entrega.fechaEntrega);
 
-                // 🔹 Validación segura de distancia
                 final distanciaCalculadaStr =
                     entrega.distanciaCalculada?.replaceAll('KM', '').trim();
                 final distanciaCalculadaDouble =
                     double.tryParse(distanciaCalculadaStr ?? '0') ?? 0.0;
 
                 final isInRange = distanciaCalculadaDouble <= 150;
-                final isMidRange = distanciaCalculadaDouble > 150 &&
-                    distanciaCalculadaDouble <= 300;
+                final isMidRange =
+                    distanciaCalculadaDouble > 150 && distanciaCalculadaDouble <= 300;
 
                 Color buttonColor;
                 if (isInRange) {
@@ -67,11 +62,28 @@ class EntregasView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 🔹 CUE y Nombre del Establecimiento
-                        Text(
-                          '📌 CUE: ${entrega.cue} - ${entrega.nombreEstablecimiento}',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // 🔹 CUE y Nombre del Establecimiento
+                            Expanded(
+                              child: Text(
+                                '📌 CUE: ${entrega.cue} - ${entrega.nombreEstablecimiento}',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            
+                            // 🔹 Botón de eliminar (solo si es manual)
+                            if (entrega.tipo == "manual")
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                tooltip: "Eliminar entrega manual",
+                                onPressed: () {
+                                  _confirmarEliminarEntrega(context, entrega.entregaId);
+                                },
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 4),
 
@@ -154,10 +166,26 @@ class EntregasView extends StatelessWidget {
   }
 
   /// 🔹 Función para formatear la fecha en `dd/MM/yyyy`
+  String formatFecha(DateTime fecha) {
+    return DateFormat('dd/MM/yyyy').format(fecha);
+  }
 
-/// 🔹 Formatea la fecha `DateTime` a `dd/MM/yyyy`
-String formatFecha(DateTime fecha) {
-  return DateFormat('dd/MM/yyyy').format(fecha);
-}
-
+  /// 🔹 Función para confirmar eliminación de una entrega manual
+  void _confirmarEliminarEntrega(BuildContext context, String entregaId) {
+    Get.defaultDialog(
+      title: "Eliminar Entrega",
+      middleText: "¿Estás seguro de que deseas eliminar esta entrega manual?",
+      textConfirm: "Eliminar",
+      textCancel: "Cancelar",
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.red,
+      onConfirm: () {
+        controller.deleteEntregaYBovinos(entregaId);
+        Get.back(); // Cerrar el diálogo
+      },
+      onCancel: () {
+        Get.back(); // Cerrar el diálogo sin hacer nada
+      },
+    );
+  }
 }

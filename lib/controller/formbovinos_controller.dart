@@ -1,7 +1,14 @@
+import 'dart:math';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
+import 'package:trazaapp/controller/entrega_controller.dart';
+import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
+import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
@@ -17,59 +24,77 @@ class FormBovinosController extends GetxController {
 
   late Box<Bovino> bovinoBox;
   late Box<Entregas> entregasBox;
+  late Box<AltaEntrega> altaEntregaBox; // ✅ Agregado aquí
   late String entregaId;
   var rangos = <String>[].obs;
-  var razas = <Raza>[].obs; // Lista de razas obtenidas del catálogo
+  var razas = <Raza>[].obs;
 
-  final catalogosController = Get.find<CatalogosController>(); // Usamos el catálogo existente
-  final CatalogosController controller = Get.put(CatalogosController()); // ⬅️ Agregar esto
+  // 📌 NUEVOS CAMPOS PARA RECOLECTAR AL FINAL
+  var fotoBovInicial = ''.obs;
+  var fotoBovFinal = ''.obs;
+  var observaciones = ''.obs;
 
-  @override
-  void onInit() async {
-    super.onInit();
-    try {
-      // Abrir las cajas Hive
-      bovinoBox = await Hive.openBox<Bovino>('bovinos');
-      entregasBox = await Hive.openBox<Entregas>('entregas');
+  final catalogosController = Get.find<CatalogosController>();
+  final CatalogosController controller = Get.put(CatalogosController());
 
-      // Cargar razas desde el catálogo
-      razas.assignAll(catalogosController.razas);
+@override
+void onInit() async {
+  super.onInit();
+  try {
+    bovinoBox = await Hive.box<Bovino>('bovinos');
+    entregasBox = await Hive.box<Entregas>('entregas');
+    altaEntregaBox = await Hive.box<AltaEntrega>('altaentregas');
 
-      // Obtener los argumentos de la navegación
-      final args = Get.arguments as Map<String, dynamic>;
-      if (!args.containsKey('entregaId')) {
-        throw Exception('Argumento "entregaId" no proporcionado.');
-      }
+    razas.assignAll(catalogosController.razas);
 
-      entregaId = args['entregaId'];
-
-      final entrega = entregasBox.values.firstWhere(
-        (e) => e.entregaId == entregaId,
-        orElse: () =>
-            throw Exception('No se encontró la entrega con ID=$entregaId.'),
+    if (razas.isEmpty) {
+      Get.snackbar(
+        'Catálogo vacío',
+        'Debe descargar el catálogo de razas antes de continuar.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
       );
-
-      final generatedRangos =
-          generateRangos(entrega.rangoInicial, entrega.rangoFinal);
-      rangos.assignAll(generatedRangos);
-
-      // Inicializar los datos de los bovinos
-      for (var id in rangos) {
-        bovinoInfo[id] = Bovino(
-          arete: id,
-          edad: 0,
-          sexo: '',
-          raza: '',
-          estadoArete: 'Bueno',
-          cue: entrega.cue,
-          cupa: entrega.cupa,
-          traza: '',
-        );
-      }
-    } catch (e) {
-      print('Error al inicializar FormBovinosController: $e');
+      Future.delayed(const Duration(seconds: 3), () {
+        Get.offAllNamed('/home');
+      });
+      return;
     }
+
+    final args = Get.arguments as Map<String, dynamic>;
+    if (!args.containsKey('entregaId')) {
+      throw Exception('Argumento "entregaId" no proporcionado.');
+    }
+
+    entregaId = args['entregaId'];
+    final entrega = entregasBox.values.firstWhere(
+      (e) => e.entregaId == entregaId,
+      orElse: () =>
+          throw Exception('No se encontró la entrega con ID=$entregaId.'),
+    );
+
+    final generatedRangos =
+        generateRangos(entrega.rangoInicial, entrega.rangoFinal);
+    rangos.assignAll(generatedRangos);
+
+    for (var id in rangos) {
+      bovinoInfo[id] = Bovino(
+        arete: id,
+        edad: 0,
+        sexo: '',
+        raza: '',
+        estadoArete: 'Bueno',
+        cue: entrega.cue,
+        cupa: entrega.cupa,
+        traza: 'CRUCE', // ✅ Valor por defecto
+        entregaId: entregaId,
+      );
+    }
+  } catch (e) {
+    print('Error al inicializar FormBovinosController: $e');
   }
+}
+
 
   /// Genera los IDs del rango basado en el rango inicial y final
   List<String> generateRangos(int rangoInicial, int rangoFinal) {
@@ -126,9 +151,16 @@ class FormBovinosController extends GetxController {
     Get.snackbar('Llenado Rápido', 'Datos borrados correctamente.');
   }
 
+  /// 📌 Genera un código único de 5 caracteres para `idAlta`
+  String generateUniqueAltaId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rand = Random();
+    return List.generate(5, (index) => chars[rand.nextInt(chars.length)])
+        .join();
+  }
+
   void saveBovinos() async {
     try {
-      // Validar que todos los campos estén completos
       for (var bovino in bovinoInfo.values) {
         if (bovino.edad <= 0 || bovino.sexo.isEmpty || bovino.raza.isEmpty) {
           throw Exception(
@@ -138,31 +170,112 @@ class FormBovinosController extends GetxController {
 
       sendingData.value = true;
 
-      // Guardar los bovinos en Hive
       for (var bovino in bovinoInfo.values) {
-        await bovinoBox.put(bovino.arete, bovino);
-      }
-
-      // Buscar la entrega en Hive
-      final entregaIndex = entregasBox.values
-          .toList()
-          .indexWhere((e) => e.entregaId == entregaId);
-
-      if (entregaIndex != -1) {
-        final entrega = entregasBox.getAt(entregaIndex)!;
-        final entregaActualizada = entrega.copyWith(estado: 'Lista');
-        await entregasBox.putAt(entregaIndex, entregaActualizada);
+        final bovinoActualizado = bovino.copyWith(entregaId: entregaId);
+        await bovinoBox.put(bovinoActualizado.arete, bovinoActualizado);
       }
 
       sendingData.value = false;
-      Get.snackbar('Guardado', 'Los datos se guardaron correctamente.');
-      Get.offNamed('/home');
+
+      // 📌 NUEVO PASO: Navegar a la pantalla de fotos y observaciones
+      Get.toNamed('/finalizarEntrega', arguments: {"entregaId": entregaId});
     } catch (e) {
       sendingData.value = false;
       Get.snackbar('Error', 'Error al guardar: $e');
       print('Error en saveBovinos: $e');
     }
   }
+void saveFinalData() async {
+  try {
+    final entrega = entregasBox.values.firstWhere(
+      (e) => e.entregaId == entregaId,
+      orElse: () => throw Exception('Entrega no encontrada.'),
+    );
+
+    // ✅ Accedemos a la configuración del usuario desde Hive
+    final configBox = Hive.box<AppConfig>('appConfig');
+    final config = configBox.get('config');
+    if (config == null) {
+      throw Exception('No se encontró la configuración del usuario.');
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    final distance = Geolocator.distanceBetween(
+      position.latitude,
+      position.longitude,
+      entrega.latitud,
+      entrega.longitud,
+    );
+
+    final distanciaCalculada = '${distance.toStringAsFixed(2)}';
+
+    // ✅ Generar un ID único para esta alta
+    final uniqueAltaId = generateUniqueAltaId();
+
+    // 📌 Crear lista de BovinoResumen
+    final detalleBovinos = bovinoInfo.values.map((bovino) {
+      return BovinoResumen(
+        arete: bovino.arete,
+        edad: bovino.edad,
+        sexo: bovino.sexo,
+        raza: bovino.raza,
+        traza: bovino.traza,
+        estadoArete: bovino.estadoArete,
+        fechaNacimiento: DateTime.now().subtract(Duration(days: bovino.edad * 30)),
+      );
+    }).toList();
+
+    // 📌 Crear el objeto AltaEntrega
+    final altaEntrega = AltaEntrega(
+      idAlta: uniqueAltaId,
+      rangoInicial: entrega.rangoInicial,
+      rangoFinal: entrega.rangoFinal,
+      cupa: entrega.cupa,
+      cue: entrega.cue,
+      departamento: entrega.departamento,
+      municipio: entrega.municipio,
+      latitud: entrega.latitud,
+      longitud: entrega.longitud,
+      distanciaCalculada: distanciaCalculada,
+      fechaAlta: DateTime.now(),
+      tipoAlta: "operadora", // o "productor", según corresponda
+      token: config.imei,
+      codhabilitado: config.codHabilitado,
+      idorganizacion: config.idOrganizacion,
+      fotoBovInicial: fotoBovInicial.value,
+      fotoBovFinal: fotoBovFinal.value,
+      reposicion: false,
+      observaciones: observaciones.value,
+      detalleBovinos: detalleBovinos,
+      estadoAlta: 'Lista',
+    );
+
+    // 📌 Guardar en Hive
+    await altaEntregaBox.put(uniqueAltaId, altaEntrega);
+
+    // 📌 Actualizar entrega original con el ID y estado
+    final entregaActualizada = entrega.copyWith(
+      estado: 'altalista', // <- aquí el cambio clave
+      idAlta: uniqueAltaId,
+    );
+    await entregasBox.put(entregaId, entregaActualizada);
+
+    // 📌 Refrescar el estado general
+    final entregaController = Get.find<EntregaController>();
+    await entregaController.fetchEntregas();
+    entregaController.getAltasListas();
+
+    // 📌 Aviso y navegación
+    Get.snackbar('Guardado', 'AltaEntrega creada y guardada.');
+    Get.offAllNamed('/home');
+  } catch (e) {
+    Get.snackbar('Error', 'Error al guardar AltaEntrega: $e');
+    print('❌ Error en saveFinalData: $e');
+  }
+}
 
   void checkEntregasBox() {
     print('Contenido de entregasBox:');

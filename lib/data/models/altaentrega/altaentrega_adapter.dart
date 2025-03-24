@@ -13,14 +13,22 @@ class AltaEntregaAdapter extends TypeAdapter<AltaEntrega> {
       rangoFinal: reader.readInt(),
       cupa: reader.readString(),
       cue: reader.readString(),
-      departamento: reader.readString(), // Campo agregado
-      municipio: reader.readString(), // Campo agregado
+      departamento: reader.readString(),
+      municipio: reader.readString(),
       latitud: reader.readDouble(),
       longitud: reader.readDouble(),
       distanciaCalculada: reader.readBool() ? reader.readString() : null,
       fechaAlta: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       tipoAlta: reader.readString(),
+      token: reader.readString(),
+      codhabilitado: reader.readString(),
+      idorganizacion: reader.readString(),
+      fotoBovInicial: reader.readString(),
+      fotoBovFinal: reader.readString(),
+      reposicion: reader.readBool(),
+      observaciones: reader.readString(),
       detalleBovinos: reader.readList().cast<BovinoResumen>(),
+      estadoAlta: reader.readString(), // NUEVO
     );
   }
 
@@ -31,8 +39,8 @@ class AltaEntregaAdapter extends TypeAdapter<AltaEntrega> {
     writer.writeInt(obj.rangoFinal);
     writer.writeString(obj.cupa);
     writer.writeString(obj.cue);
-    writer.writeString(obj.departamento); // Campo agregado
-    writer.writeString(obj.municipio); // Campo agregado
+    writer.writeString(obj.departamento);
+    writer.writeString(obj.municipio);
     writer.writeDouble(obj.latitud);
     writer.writeDouble(obj.longitud);
     writer.writeBool(obj.distanciaCalculada != null);
@@ -41,6 +49,14 @@ class AltaEntregaAdapter extends TypeAdapter<AltaEntrega> {
     }
     writer.writeInt(obj.fechaAlta.millisecondsSinceEpoch);
     writer.writeString(obj.tipoAlta);
+    writer.writeString(obj.token);
+    writer.writeString(obj.codhabilitado);
+    writer.writeString(obj.idorganizacion);
+    writer.writeString(obj.fotoBovInicial);
+    writer.writeString(obj.fotoBovFinal);
+    writer.writeBool(obj.reposicion);
+    writer.writeString(obj.observaciones);
     writer.writeList(obj.detalleBovinos);
+    writer.writeString(obj.estadoAlta); // NUEVO
   }
 }

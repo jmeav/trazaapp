@@ -25,7 +25,8 @@ import 'package:trazaapp/data/models/productores/productor_adapter.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
 import 'package:trazaapp/data/models/razas/raza_adapter.dart';
 import 'package:trazaapp/presentation/catalogscreen/catalogscreen.dart';
-import 'package:trazaapp/presentation/finishedscreen/finished_view.dart';
+import 'package:trazaapp/presentation/formbovinoscreen/finishform_view.dart';
+import 'package:trazaapp/presentation/sendscreen/send_view.dart';
 import 'package:trazaapp/presentation/managebagscreen/managebag_view.dart';
 import 'package:trazaapp/presentation/pendingscreen/pending_view.dart';
 import 'package:trazaapp/presentation/formbovinoscreen/formbovinos_view.dart';
@@ -45,6 +46,7 @@ void main() async {
   await Hive.initFlutter();
 
   Get.lazyPut(() => CatalogosController());
+
   // Registra los adaptadores de Hive
   Hive.registerAdapter(EntregasAdapter());
   Hive.registerAdapter(BovinoAdapter());
@@ -58,7 +60,6 @@ void main() async {
   Hive.registerAdapter(BovinoResumenAdapter());
   Hive.registerAdapter(RazaAdapter());
 
-  // Abre todas las cajas necesarias con manejo de errores
   try {
     await Future.wait([
       Hive.openBox<HomeStat>('homeStat'),
@@ -70,9 +71,10 @@ void main() async {
       Hive.openBox<Departamento>('departamentos'),
       Hive.openBox<Municipio>('municipios'),
       Hive.openBox<AppConfig>('appConfig'),
-      Hive.openBox<Raza>('razas'), // Asegurar que la caja de razas se abra correctamente
-      Hive.openBox<AltaEntrega>('altaEntrega'), // Nueva caja abierta
-      Hive.openBox<BovinoResumen>('resumenBovino'), // Nueva caja abierta
+      Hive.openBox<Raza>('razas'),
+      Hive.openBox<AltaEntrega>('altaEntrega'),
+      Hive.openBox<BovinoResumen>('resumenBovino'),
+      Hive.openBox<AltaEntrega>('altaentregas'),
     ]);
   } catch (e) {
     print("Error al abrir cajas de Hive: $e");
@@ -82,8 +84,18 @@ void main() async {
   Get.put(LoginController());
   Get.put(ThemeController());
 
+  // // ✅ Limpieza de cajas específicas
+  // final entregasBox = Hive.box<Entregas>('entregas');
+  // final altaEntregasBox = Hive.box<AltaEntrega>('altaentregas');
+
+  // await entregasBox.clear();
+  // await altaEntregasBox.clear();
+
+  // print('✅ Boxes de entregas y altaentregas limpiados.');
+
   runApp(MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   final ThemeController themeController = Get.find();
@@ -107,6 +119,7 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/catalogs', page: () => CatalogosScreen()),
           GetPage(name: '/configs', page: () => ConfiguracionesScreen()),
           GetPage(name: '/verifycue', page: () => VerifyEstablishmentView()),
+          GetPage(name: '/finalizarEntrega', page: () => FinalizarEntregaView()),
         ],
       );
     });

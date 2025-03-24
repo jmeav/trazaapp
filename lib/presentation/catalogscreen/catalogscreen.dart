@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:hive/hive.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CatalogosScreen extends StatelessWidget {
   final CatalogosController controller = Get.put(CatalogosController());
@@ -83,7 +84,7 @@ class CatalogosScreen extends StatelessWidget {
               ),
               _buildCatalogCard(
                 title: "Establecimientos",
-                icon: Icons.store,
+                icon: FontAwesomeIcons.houseChimneyCrack,
                 isDownloaded: controller.establecimientos.isNotEmpty,
                 lastUpdated: controller.lastUpdateEstablecimientos.value,
                 onTap: () {
@@ -114,8 +115,8 @@ class CatalogosScreen extends StatelessWidget {
                     controller.progressText.value.contains('Productores'),
               ),
               _buildCatalogCard(
-                title: "Bag",
-                icon: Icons.shopping_bag,
+                title: "Bolsón",
+                icon: FontAwesomeIcons.boxOpen,
                 isDownloaded: controller.bag.value != null,
                 lastUpdated: controller.lastUpdateBag.value,
                 onTap: () {
@@ -136,7 +137,7 @@ class CatalogosScreen extends StatelessWidget {
           catalogCards.add(
             _buildCatalogCard(
               title: "Entregas",
-              icon: Icons.local_shipping,
+              icon: FontAwesomeIcons.thumbtack,
               isDownloaded: controller.entregas.isNotEmpty,
               lastUpdated: controller.lastUpdateEntregas.value,
               onTap: () {
@@ -156,7 +157,7 @@ class CatalogosScreen extends StatelessWidget {
           catalogCards.add(
             _buildCatalogCard(
               title: "Razas",
-              icon: Icons.pets,
+              icon: FontAwesomeIcons.cow,
               isDownloaded: controller.razas.isNotEmpty,
               lastUpdated: controller.lastUpdateRazas.value,
               onTap: () {

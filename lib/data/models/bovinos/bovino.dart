@@ -21,10 +21,13 @@ class Bovino {
   String raza;
 
   @HiveField(6)
-  String traza; // Nuevo campo agregado
+  String traza; 
 
   @HiveField(7)
   String estadoArete;
+
+  @HiveField(8) // Nuevo campo agregado
+  String entregaId; // Identifica a qué entrega pertenece el bovino
 
   Bovino({
     required this.arete,
@@ -35,11 +38,12 @@ class Bovino {
     required this.raza,
     required this.traza,
     required this.estadoArete,
+    required this.entregaId, // Ahora cada bovino tiene un `entregaId`
   });
 
   // Getter para calcular la fecha de nacimiento dinámicamente
   DateTime get fechaNacimiento {
-    return DateTime.now().subtract(Duration(days: edad * 30)); // Aproximación de un mes a 30 días
+    return DateTime.now().subtract(Duration(days: edad * 30));
   }
 
   // Método copyWith para permitir copias con cambios
@@ -52,6 +56,7 @@ class Bovino {
     String? raza,
     String? traza,
     String? estadoArete,
+    String? entregaId,
   }) {
     return Bovino(
       arete: arete ?? this.arete,
@@ -62,6 +67,7 @@ class Bovino {
       raza: raza ?? this.raza,
       traza: traza ?? this.traza,
       estadoArete: estadoArete ?? this.estadoArete,
+      entregaId: entregaId ?? this.entregaId,
     );
   }
 }

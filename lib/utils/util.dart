@@ -6,6 +6,11 @@ import 'package:intl/intl.dart';
 import 'dart:math' as math;
 
 
+class AppColors {
+  static const Color snackSuccess = Color(0xFF4CAF50); // verde éxito (puedes ajustar el tono)
+  static const Color snackError = Color(0xFFF44336);   // rojo error (por si lo usás también)
+}
+
 TextTheme createTextTheme(BuildContext context, String primaryFont, String secondaryFont) {
   return TextTheme(
     displayLarge: TextStyle(

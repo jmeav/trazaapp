@@ -9,7 +9,7 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
   Entregas read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) 
+      for (int i = 0; i < numOfFields; i++)
         reader.readByte(): reader.read(),
     };
     return Entregas(
@@ -30,14 +30,21 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
       distanciaCalculada: fields[14] as String?,
       estado: fields[15] as String,
       lastUpdate: fields[16] as DateTime,
-      tipo: fields[17] as String, // Nuevo campo
+      tipo: fields[17] as String,
+      fotoBovInicial: fields[18] as String,
+      fotoBovFinal: fields[19] as String,
+      reposicion: fields[20] as bool,
+      observaciones: fields[21] as String,
+      idAlta: fields[22] as String?,
+      departamento: fields[23] as String,
+      municipio: fields[24] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, Entregas obj) {
     writer
-      ..writeByte(18) // Cantidad total de campos (ahora 18)
+      ..writeByte(25) // ✅ Ahora hay 25 campos
       ..writeByte(0)
       ..write(obj.entregaId)
       ..writeByte(1)
@@ -73,6 +80,20 @@ class EntregasAdapter extends TypeAdapter<Entregas> {
       ..writeByte(16)
       ..write(obj.lastUpdate)
       ..writeByte(17)
-      ..write(obj.tipo); // Nuevo campo
+      ..write(obj.tipo)
+      ..writeByte(18)
+      ..write(obj.fotoBovInicial)
+      ..writeByte(19)
+      ..write(obj.fotoBovFinal)
+      ..writeByte(20)
+      ..write(obj.reposicion)
+      ..writeByte(21)
+      ..write(obj.observaciones)
+      ..writeByte(22)
+      ..write(obj.idAlta)
+      ..writeByte(23)
+      ..write(obj.departamento)
+      ..writeByte(24)
+      ..write(obj.municipio);
   }
 }
