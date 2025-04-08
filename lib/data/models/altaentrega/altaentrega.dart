@@ -61,10 +61,18 @@ class AltaEntrega {
 
   @HiveField(19)
   final List<BovinoResumen> detalleBovinos;
-  
-  @HiveField(20)
- final String estadoAlta; // Puede ser "Lista", "Enviada", etc.
 
+  @HiveField(20)
+  final String estadoAlta; // Puede ser "Lista", "Enviada", etc.
+
+  // ──────────────────────────────
+  // NUEVO CAMPO
+  // ──────────────────────────────
+  @HiveField(21)
+  final String fotoFicha; // PDF en base64
+  // ──
+  @HiveField(22) // ← siguiente campo libre
+  final bool aplicaEntrega;
 
   AltaEntrega({
     required this.idAlta,
@@ -88,6 +96,8 @@ class AltaEntrega {
     required this.observaciones,
     required this.detalleBovinos,
     required this.estadoAlta,
+    this.fotoFicha = '', // se inicializa vacío
+    required this.aplicaEntrega,
   });
 
   AltaEntrega copyWith({
@@ -112,6 +122,8 @@ class AltaEntrega {
     String? observaciones,
     List<BovinoResumen>? detalleBovinos,
     String? estadoAlta,
+    String? fotoFicha,
+    bool? aplicaEntrega,
   }) {
     return AltaEntrega(
       idAlta: idAlta ?? this.idAlta,
@@ -135,33 +147,35 @@ class AltaEntrega {
       observaciones: observaciones ?? this.observaciones,
       detalleBovinos: detalleBovinos ?? this.detalleBovinos,
       estadoAlta: estadoAlta ?? this.estadoAlta,
-
+      fotoFicha: fotoFicha ?? this.fotoFicha,
+      aplicaEntrega: aplicaEntrega ?? this.aplicaEntrega,
     );
   }
 
-Map<String, dynamic> toJsonEnvio() => {
-  "idAlta": idAlta,
-  "rangoInicial": rangoInicial,
-  "rangoFinal": rangoFinal,
-  "cupa": cupa,
-  "cue": cue,
-  "departamento": departamento,
-  "municipio": municipio,
-  "latitud": latitud,
-  "longitud": longitud,
-  "distanciaCalculada": distanciaCalculada,
-  "fechaAlta": fechaAlta.toUtc().toIso8601String(),
-  "tipoAlta": tipoAlta,
-  "token": token,
-  "codhabilitado": codhabilitado,
-  "idorganizacion": int.tryParse(idorganizacion) ?? 0,
-  "fotoBovInicial": fotoBovInicial,
-  "fotoBovFinal": fotoBovFinal,
-  "reposicion": reposicion,
-  "observaciones": observaciones,
-  "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
-};
-
+  Map<String, dynamic> toJsonEnvio() => {
+        "idAlta": idAlta,
+        "rangoInicial": rangoInicial,
+        "rangoFinal": rangoFinal,
+        "cupa": cupa,
+        "cue": cue,
+        "departamento": departamento,
+        "municipio": municipio,
+        "latitud": latitud,
+        "longitud": longitud,
+        "distanciaCalculada": distanciaCalculada,
+        "fechaAlta": fechaAlta.toUtc().toIso8601String(),
+        "tipoAlta": tipoAlta,
+        "token": token,
+        "codhabilitado": codhabilitado,
+        "idorganizacion": int.tryParse(idorganizacion) ?? 0,
+        "fotoBovInicial": fotoBovInicial,
+        "fotoBovFinal": fotoBovFinal,
+        "fotoFicha": fotoFicha, // <--- nuevo
+        "reposicion": reposicion,
+        "observaciones": observaciones,
+        "aplicaEntrega": aplicaEntrega,
+        "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
+      };
 }
 
 @HiveType(typeId: 11)
@@ -187,6 +201,25 @@ class BovinoResumen {
   @HiveField(6)
   final DateTime fechaNacimiento;
 
+  // ──────────────────────────────
+  // NUEVOS CAMPOS
+  // ──────────────────────────────
+  @HiveField(7)
+  final String fotoArete;
+
+  @HiveField(8)
+  final String areteMadre;
+
+  @HiveField(9)
+  final String aretePadre;
+
+  @HiveField(10)
+  final String regMadre;
+
+  @HiveField(11)
+  final String regPadre;
+  // ──────────────────────────────
+
   BovinoResumen({
     required this.arete,
     required this.edad,
@@ -195,15 +228,25 @@ class BovinoResumen {
     required this.traza,
     required this.estadoArete,
     required this.fechaNacimiento,
+    this.fotoArete = '',
+    this.areteMadre = '',
+    this.aretePadre = '',
+    this.regMadre = '',
+    this.regPadre = '',
   });
 
   Map<String, dynamic> toJson() => {
-    "arete": arete,
-    "edad": edad,
-    "sexo": sexo,
-    "raza": raza,
-    "traza": traza,
-    "estadoArete": estadoArete,
-    "fechaNacimiento": fechaNacimiento.toIso8601String(),
-  };
+        "arete": arete,
+        "edad": edad,
+        "sexo": sexo,
+        "raza": raza,
+        "traza": traza,
+        "estadoArete": estadoArete,
+        "fechaNacimiento": fechaNacimiento.toIso8601String(),
+        "fotoArete": fotoArete,
+        "areteMadre": areteMadre,
+        "aretePadre": aretePadre,
+        "regMadre": regMadre,
+        "regPadre": regPadre,
+      };
 }

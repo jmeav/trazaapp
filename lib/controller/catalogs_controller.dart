@@ -17,19 +17,17 @@ import 'package:trazaapp/data/repositories/entregas/entregas_bag_repo.dart';
 import 'package:trazaapp/data/repositories/entregas/entregas_repo.dart';
 import 'package:trazaapp/presentation/homescreen/home.dart';
 
-
 class CatalogosController extends GetxController {
   var isDownloading = false.obs;
   var progressText = ''.obs;
   var habilitadoOperadora = "".obs;
-
 
   var departamentos = <Departamento>[].obs;
   var municipios = <Municipio>[].obs;
   var establecimientos = <Establecimiento>[].obs;
   var productores = <Productor>[].obs;
   var entregas = <Entregas>[].obs;
-    var razas = <Raza>[].obs; // Lista para almacenar razas
+  var razas = <Raza>[].obs;
   var bag = Rxn<Bag>();
 
   var municipiosFiltrados = <Municipio>[].obs;
@@ -40,35 +38,35 @@ class CatalogosController extends GetxController {
   var lastUpdateEstablecimientos = ''.obs;
   var lastUpdateProductores = ''.obs;
   var lastUpdateEntregas = ''.obs;
-  var lastUpdateRazas = ''.obs; // Última actualización de Razas
+  var lastUpdateRazas = ''.obs;
   var lastUpdateBag = ''.obs;
 
   final DepartamentosRepository _departamentosRepo = DepartamentosRepository();
   final MunicipiosRepository _municipiosRepo = MunicipiosRepository();
-  final EstablecimientosRepository _establecimientosRepo =
-      EstablecimientosRepository();
+  final EstablecimientosRepository _establecimientosRepo = EstablecimientosRepository();
   final ProductoresRepository _productoresRepo = ProductoresRepository();
   final EntregasRepository _entregasRepo = EntregasRepository();
   final BagRepository _bagRepo = BagRepository();
-  final RazasRepository _razasRepo = RazasRepository(); // Repositorio de Razas
+  final RazasRepository _razasRepo = RazasRepository();
+  var currentStep = 0.obs;
+  final totalSteps = 7; // número fijo de catálogos
+  var isForcedDownload = false.obs;
 
 
-@override
-void onInit() {
-  super.onInit();
-  _loadConfig(); // Cargar habilitadoOperadora
-  checkCatalogStatus();
-}
-
-void _loadConfig() {
-  var box = Hive.box<AppConfig>('appConfig');
-  var config = box.get('config');
-
-  if (config != null) {
-    habilitadoOperadora.value = config.habilitadoOperadora;
+  @override
+  void onInit() {
+    super.onInit();
+    _loadConfig();
+    checkCatalogStatus();
   }
-}
 
+  void _loadConfig() {
+    var box = Hive.box<AppConfig>('appConfig');
+    var config = box.get('config');
+    if (config != null) {
+      habilitadoOperadora.value = config.habilitadoOperadora;
+    }
+  }
 
   void checkCatalogStatus() async {
     var boxDep = Hive.box<Departamento>('departamentos');
@@ -76,7 +74,7 @@ void _loadConfig() {
     var boxEst = Hive.box<Establecimiento>('establecimientos');
     var boxProd = Hive.box<Productor>('productores');
     var boxEnt = Hive.box<Entregas>('entregas');
-    var boxRaz = Hive.box<Raza>('razas'); // Caja para Razas
+    var boxRaz = Hive.box<Raza>('razas');
     var boxBag = Hive.box<Bag>('bag');
 
     departamentos.assignAll(boxDep.values.toList());
@@ -84,55 +82,61 @@ void _loadConfig() {
     establecimientos.assignAll(boxEst.values.toList());
     productores.assignAll(boxProd.values.toList());
     entregas.assignAll(boxEnt.values.toList());
-    razas.assignAll(boxRaz.values.toList()); // Cargar razas desde Hive
+    razas.assignAll(boxRaz.values.toList());
     bag.value = boxBag.isNotEmpty ? boxBag.getAt(0) : null;
 
     var updatesBox = await Hive.openBox('catalog_updates');
-
-    lastUpdateDepartamentos.value =
-        updatesBox.get('Departamentos', defaultValue: 'Nunca');
-    lastUpdateMunicipios.value =
-        updatesBox.get('Municipios', defaultValue: 'Nunca');
-    lastUpdateEstablecimientos.value =
-        updatesBox.get('Establecimientos', defaultValue: 'Nunca');
-    lastUpdateProductores.value =
-        updatesBox.get('Productores', defaultValue: 'Nunca');
-    lastUpdateEntregas.value =
-        updatesBox.get('Entregas', defaultValue: 'Nunca');
+    lastUpdateDepartamentos.value = updatesBox.get('Departamentos', defaultValue: 'Nunca');
+    lastUpdateMunicipios.value = updatesBox.get('Municipios', defaultValue: 'Nunca');
+    lastUpdateEstablecimientos.value = updatesBox.get('Establecimientos', defaultValue: 'Nunca');
+    lastUpdateProductores.value = updatesBox.get('Productores', defaultValue: 'Nunca');
+    lastUpdateEntregas.value = updatesBox.get('Entregas', defaultValue: 'Nunca');
     lastUpdateRazas.value = updatesBox.get('Razas', defaultValue: 'Nunca');
     lastUpdateBag.value = updatesBox.get('Bag', defaultValue: 'Nunca');
   }
+Future<void> downloadAllCatalogsSequential({
+  required String token,
+  required String codhabilitado,
+}) async {
+  isDownloading.value = true;
+  currentStep.value = 0;
 
-Future<void> downloadAllCatalogs(
-    {required String token, required String codhabilitado}) async {
-  if (habilitadoOperadora.value == "1") {
-    await Future.wait([
-      downloadDepartamentos(token: token, codhabilitado: codhabilitado),
-      downloadMunicipios(token: token, codhabilitado: codhabilitado),
-      downloadEstablecimientos(token: token, codhabilitado: codhabilitado),
-      downloadProductores(token: token, codhabilitado: codhabilitado),
-      downloadEntregas(token: token, codhabilitado: codhabilitado),
-      downloadRazas(token: token, codhabilitado: codhabilitado), // Nueva función
-      downloadBag(token: token, codhabilitado: codhabilitado),
-    ]);
-      Get.offUntil(
-    GetPageRoute(
-      page: () => HomeView(), // 🔹 Reemplaza esto con la pantalla de inicio a la que quieres volver
-    ),
-    (route) => false, // 🔹 Esto se asegura de que elimina todas las pantallas hasta la de inicio
-  );
+  await downloadDepartamentos(token: token, codhabilitado: codhabilitado);
+  currentStep.value++;
 
-  } else {
+  await downloadMunicipios(token: token, codhabilitado: codhabilitado);
+  currentStep.value++;
+
+  await downloadEstablecimientos(token: token, codhabilitado: codhabilitado);
+  currentStep.value++;
+
+  await downloadProductores(token: token, codhabilitado: codhabilitado);
+  currentStep.value++;
+
+  if (departamentos.isNotEmpty && municipios.isNotEmpty) {
+    await downloadBag(token: token, codhabilitado: codhabilitado);
+  }
+  currentStep.value++;
+
+  if (departamentos.isNotEmpty && municipios.isNotEmpty) {
     await downloadEntregas(token: token, codhabilitado: codhabilitado);
   }
-  progressText.value = "";
-   // ✅ Cerrar la pantalla y limpiar los datos completamente
+  currentStep.value++;
 
+  await downloadRazas(token: token, codhabilitado: codhabilitado);
+  currentStep.value++;
+
+  isDownloading.value = false;
+
+  await Future.delayed(const Duration(seconds: 1));
+  Get.offUntil(GetPageRoute(page: () => HomeView()), (route) => false);
 }
 
 
-  Future<void> downloadRazas(
-      {required String token, required String codhabilitado}) async {
+  Future<void> downloadRazas({
+    required String token,
+    required String codhabilitado,
+  }) async {
     await _downloadCatalog(
       title: "Razas",
       fetchFunction: (t, c) => _razasRepo.fetchRazas(token: t, codhabilitado: c),
@@ -156,17 +160,12 @@ Future<void> downloadAllCatalogs(
     try {
       isDownloading.value = true;
       progressText.value = "Descargando $title...";
-
       var data = await fetchFunction(token, codhabilitado);
-
       await box.clear();
       await box.addAll(data);
-
       list.assignAll(data);
-
       var updatesBox = await Hive.openBox('catalog_updates');
       await updatesBox.put(title, DateTime.now().toIso8601String());
-
       lastUpdate.value = DateTime.now().toIso8601String();
       progressText.value = "$title descargado con éxito";
     } catch (e) {
@@ -176,12 +175,13 @@ Future<void> downloadAllCatalogs(
     }
   }
 
-  Future<void> downloadDepartamentos(
-      {required String token, required String codhabilitado}) async {
+  Future<void> downloadDepartamentos({
+    required String token,
+    required String codhabilitado,
+  }) async {
     await _downloadCatalog(
       title: "Departamentos",
-      fetchFunction: (t, c) =>
-          _departamentosRepo.fetchDepartamentos(token: t, codhabilitado: c),
+      fetchFunction: (t, c) => _departamentosRepo.fetchDepartamentos(token: t, codhabilitado: c),
       box: Hive.box<Departamento>('departamentos'),
       list: departamentos,
       lastUpdate: lastUpdateDepartamentos,
@@ -190,12 +190,13 @@ Future<void> downloadAllCatalogs(
     );
   }
 
-  Future<void> downloadMunicipios(
-      {required String token, required String codhabilitado}) async {
+  Future<void> downloadMunicipios({
+    required String token,
+    required String codhabilitado,
+  }) async {
     await _downloadCatalog(
       title: "Municipios",
-      fetchFunction: (t, c) =>
-          _municipiosRepo.fetchMunicipios(token: t, codhabilitado: c),
+      fetchFunction: (t, c) => _municipiosRepo.fetchMunicipios(token: t, codhabilitado: c),
       box: Hive.box<Municipio>('municipios'),
       list: municipios,
       lastUpdate: lastUpdateMunicipios,
@@ -204,12 +205,13 @@ Future<void> downloadAllCatalogs(
     );
   }
 
-  Future<void> downloadEstablecimientos(
-      {required String token, required String codhabilitado}) async {
+  Future<void> downloadEstablecimientos({
+    required String token,
+    required String codhabilitado,
+  }) async {
     await _downloadCatalog(
       title: "Establecimientos",
-      fetchFunction: (t, c) => _establecimientosRepo.fetchEstablecimientos(
-          token: t, codhabilitado: c),
+      fetchFunction: (t, c) => _establecimientosRepo.fetchEstablecimientos(token: t, codhabilitado: c),
       box: Hive.box<Establecimiento>('establecimientos'),
       list: establecimientos,
       lastUpdate: lastUpdateEstablecimientos,
@@ -218,12 +220,13 @@ Future<void> downloadAllCatalogs(
     );
   }
 
-  Future<void> downloadProductores(
-      {required String token, required String codhabilitado}) async {
+  Future<void> downloadProductores({
+    required String token,
+    required String codhabilitado,
+  }) async {
     await _downloadCatalog(
       title: "Productores",
-      fetchFunction: (t, c) =>
-          _productoresRepo.fetchProductores(token: t, codhabilitado: c),
+      fetchFunction: (t, c) => _productoresRepo.fetchProductores(token: t, codhabilitado: c),
       box: Hive.box<Productor>('productores'),
       list: productores,
       lastUpdate: lastUpdateProductores,
@@ -232,12 +235,13 @@ Future<void> downloadAllCatalogs(
     );
   }
 
-  Future<void> downloadEntregas(
-      {required String token, required String codhabilitado}) async {
+  Future<void> downloadEntregas({
+    required String token,
+    required String codhabilitado,
+  }) async {
     await _downloadCatalog(
       title: "Entregas",
-      fetchFunction: (t, c) =>
-          _entregasRepo.fetchEntregas(token: t, codhabilitado: c),
+      fetchFunction: (t, c) => _entregasRepo.fetchEntregas(token: t, codhabilitado: c),
       box: Hive.box<Entregas>('entregas'),
       list: entregas,
       lastUpdate: lastUpdateEntregas,
@@ -246,23 +250,20 @@ Future<void> downloadAllCatalogs(
     );
   }
 
-  Future<void> downloadBag(
-      {required String token, required String codhabilitado}) async {
+  Future<void> downloadBag({
+    required String token,
+    required String codhabilitado,
+  }) async {
     try {
       isDownloading.value = true;
       progressText.value = "Descargando Bag...";
-
       Bag data = await _bagRepo.fetchBag(token: token, codhabilitado: codhabilitado);
-
       var box = await Hive.openBox<Bag>('bag');
       await box.clear();
       await box.put(0, data);
-
       bag.value = data;
-
       var updatesBox = await Hive.openBox('catalog_updates');
       await updatesBox.put("Bag", DateTime.now().toIso8601String());
-
       lastUpdateBag.value = DateTime.now().toIso8601String();
       progressText.value = "Bag descargado con éxito";
     } catch (e) {

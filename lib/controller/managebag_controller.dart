@@ -261,6 +261,24 @@ class ManageBagController extends GetxController {
     );
   }
 
+  String resolveDepartamento(String? idDept) {
+    final dep = Hive.box<Departamento>('departamentos').values.firstWhere(
+        (d) => d.idDepartamento == idDept,
+        orElse: () => Departamento(
+            idDepartamento: idDept ?? '', departamento: 'Desconocido'));
+    return dep.departamento;
+  }
+
+  String resolveMunicipio(String? idMun) {
+    final mun = Hive.box<Municipio>('municipios').values.firstWhere(
+        (m) => m.idMunicipio == idMun,
+        orElse: () => Municipio(
+            idMunicipio: idMun ?? '',
+            municipio: 'Desconocido',
+            idDepartamento: ''));
+    return mun.municipio;
+  }
+
   Future<bool> asignarEntrega(List<int> asignados) async {
     if (asignados.isEmpty) {
       Get.snackbar("Error", "No se pudo asignar la entrega.");
@@ -306,8 +324,9 @@ class ManageBagController extends GetxController {
       fotoBovFinal: '',
       reposicion: false,
       observaciones: '',
-      departamento: departamentoController.text,
-      municipio: municipioController.text,
+      departamento:
+          resolveDepartamento(establecimientoSeleccionado?.idDepartamento),
+      municipio: resolveMunicipio(establecimientoSeleccionado?.idMunicipio),
     );
 
     final entregasBox = Hive.box<Entregas>('entregas');

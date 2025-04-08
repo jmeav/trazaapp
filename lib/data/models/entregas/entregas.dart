@@ -1,5 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:trazaapp/data/models/departamentos/departamento.dart';
+import 'package:trazaapp/data/models/municipios/municipio.dart';
 
 @HiveType(typeId: 2)
 class Entregas {
@@ -163,7 +165,23 @@ class Entregas {
     );
   }
 
-  factory Entregas.fromJson(Map<String, dynamic> json) {
+   factory Entregas.fromJson(Map<String, dynamic> json) {
+    final tipoEntrega = json['tipo'] ?? 'sistema';
+
+    String resolveDepartamento(String? idDept) {
+      final dep = Hive.box<Departamento>('departamentos')
+          .values
+          .firstWhere((d) => d.idDepartamento == idDept, orElse: () => Departamento(idDepartamento: idDept ?? '', departamento: 'Desconocido'));
+      return dep.departamento;
+    }
+
+    String resolveMunicipio(String? idMun) {
+      final mun = Hive.box<Municipio>('municipios')
+          .values
+          .firstWhere((m) => m.idMunicipio == idMun, orElse: () => Municipio(idMunicipio: idMun ?? '', municipio: 'Desconocido', idDepartamento: ''));
+      return mun.municipio;
+    }
+
     return Entregas(
       entregaId: json['ID'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
       fechaEntrega: DateTime.tryParse(json['FECHAENTRAGA'] ?? '') ?? DateTime.now(),
@@ -182,16 +200,21 @@ class Entregas {
       distanciaCalculada: json['distanciaCalculada'],
       estado: json['ESTADO'] ?? 'pendiente',
       lastUpdate: DateTime.now(),
-      tipo: json['tipo'] ?? 'sistema',
+      tipo: tipoEntrega,
       fotoBovInicial: json['fotoBovInicial'] ?? '',
       fotoBovFinal: json['fotoBovFinal'] ?? '',
       reposicion: json['reposicion'] ?? false,
       observaciones: json['observaciones'] ?? '',
       idAlta: json['idAlta'],
-      departamento: json['DEPARTAMENTO'] ?? 'DepX',
-      municipio: json['MUNICIPIO'] ?? 'MunX',
+      departamento: tipoEntrega == 'manual'
+          ? (json['DEPARTAMENTO'] ?? 'Sin dept.')
+          : resolveDepartamento(json['iddept']),
+      municipio: tipoEntrega == 'manual'
+          ? (json['MUNICIPIO'] ?? 'Sin mun.')
+          : resolveMunicipio(json['idmun']),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     return {

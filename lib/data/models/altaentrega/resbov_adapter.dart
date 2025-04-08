@@ -8,25 +8,54 @@ class BovinoResumenAdapter extends TypeAdapter<BovinoResumen> {
 
   @override
   BovinoResumen read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for(int i=0; i<numOfFields; i++) reader.readByte(): reader.read(),
+    };
+
     return BovinoResumen(
-      arete: reader.readString(),
-      edad: reader.readInt(),
-      sexo: reader.readString(),
-      raza: reader.readString(),
-      traza: reader.readString(),
-      estadoArete: reader.readString(),
-      fechaNacimiento: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+      arete: fields[0] as String,
+      edad: fields[1] as int,
+      sexo: fields[2] as String,
+      raza: fields[3] as String,
+      traza: fields[4] as String,
+      estadoArete: fields[5] as String,
+      fechaNacimiento: DateTime.fromMillisecondsSinceEpoch(fields[6] as int),
+      fotoArete: fields[7] as String? ?? '',
+      areteMadre: fields[8] as String? ?? '',
+      aretePadre: fields[9] as String? ?? '',
+      regMadre: fields[10] as String? ?? '',
+      regPadre: fields[11] as String? ?? '',
     );
   }
 
   @override
   void write(BinaryWriter writer, BovinoResumen obj) {
-    writer.writeString(obj.arete);
-    writer.writeInt(obj.edad);
-    writer.writeString(obj.sexo);
-    writer.writeString(obj.raza);
-    writer.writeString(obj.traza);
-    writer.writeString(obj.estadoArete);
-    writer.writeInt(obj.fechaNacimiento.millisecondsSinceEpoch);
+    writer
+      ..writeByte(12) // total de campos
+      ..writeByte(0)
+      ..write(obj.arete)
+      ..writeByte(1)
+      ..write(obj.edad)
+      ..writeByte(2)
+      ..write(obj.sexo)
+      ..writeByte(3)
+      ..write(obj.raza)
+      ..writeByte(4)
+      ..write(obj.traza)
+      ..writeByte(5)
+      ..write(obj.estadoArete)
+      ..writeByte(6)
+      ..write(obj.fechaNacimiento.millisecondsSinceEpoch)
+      ..writeByte(7)
+      ..write(obj.fotoArete)
+      ..writeByte(8)
+      ..write(obj.areteMadre)
+      ..writeByte(9)
+      ..write(obj.aretePadre)
+      ..writeByte(10)
+      ..write(obj.regMadre)
+      ..writeByte(11)
+      ..write(obj.regPadre);
   }
 }

@@ -21,13 +21,34 @@ class Bovino {
   String raza;
 
   @HiveField(6)
-  String traza; 
+  String traza;
 
   @HiveField(7)
   String estadoArete;
 
-  @HiveField(8) // Nuevo campo agregado
-  String entregaId; // Identifica a qué entrega pertenece el bovino
+  @HiveField(8)
+  String entregaId;
+
+  // ──────────────────────────────
+  // NUEVOS CAMPOS
+  // ──────────────────────────────
+  // Foto si estadoArete ≠ "Bueno"
+  @HiveField(9)
+  String fotoArete;
+
+  // Datos genealógicos si traza = "PURO"
+  @HiveField(10)
+  String areteMadre;
+
+  @HiveField(11)
+  String aretePadre;
+
+  @HiveField(12)
+  String regMadre;
+
+  @HiveField(13)
+  String regPadre;
+  // ──────────────────────────────
 
   Bovino({
     required this.arete,
@@ -38,15 +59,16 @@ class Bovino {
     required this.raza,
     required this.traza,
     required this.estadoArete,
-    required this.entregaId, // Ahora cada bovino tiene un `entregaId`
+    required this.entregaId,
+    this.fotoArete = '',
+    this.areteMadre = '',
+    this.aretePadre = '',
+    this.regMadre = '',
+    this.regPadre = '',
   });
 
-  // Getter para calcular la fecha de nacimiento dinámicamente
-  DateTime get fechaNacimiento {
-    return DateTime.now().subtract(Duration(days: edad * 30));
-  }
-
-  // Método copyWith para permitir copias con cambios
+  // ...
+  // copyWith para incluir nuevos campos
   Bovino copyWith({
     String? arete,
     String? cue,
@@ -57,6 +79,11 @@ class Bovino {
     String? traza,
     String? estadoArete,
     String? entregaId,
+    String? fotoArete,
+    String? areteMadre,
+    String? aretePadre,
+    String? regMadre,
+    String? regPadre,
   }) {
     return Bovino(
       arete: arete ?? this.arete,
@@ -68,6 +95,11 @@ class Bovino {
       traza: traza ?? this.traza,
       estadoArete: estadoArete ?? this.estadoArete,
       entregaId: entregaId ?? this.entregaId,
+      fotoArete: fotoArete ?? this.fotoArete,
+      areteMadre: areteMadre ?? this.areteMadre,
+      aretePadre: aretePadre ?? this.aretePadre,
+      regMadre: regMadre ?? this.regMadre,
+      regPadre: regPadre ?? this.regPadre,
     );
   }
 }

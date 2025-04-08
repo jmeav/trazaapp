@@ -29,6 +29,8 @@ class AltaEntregaAdapter extends TypeAdapter<AltaEntrega> {
       observaciones: reader.readString(),
       detalleBovinos: reader.readList().cast<BovinoResumen>(),
       estadoAlta: reader.readString(), // NUEVO
+      fotoFicha: reader.readString(), // <--- Nuevo
+      aplicaEntrega: reader.readBool(),
     );
   }
 
@@ -57,6 +59,8 @@ class AltaEntregaAdapter extends TypeAdapter<AltaEntrega> {
     writer.writeBool(obj.reposicion);
     writer.writeString(obj.observaciones);
     writer.writeList(obj.detalleBovinos);
-    writer.writeString(obj.estadoAlta); // NUEVO
+    writer.writeString(obj.estadoAlta);
+    writer.writeString(obj.fotoFicha);
+    writer.writeBool(obj.aplicaEntrega);
   }
 }

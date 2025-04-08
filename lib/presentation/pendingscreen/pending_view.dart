@@ -5,7 +5,8 @@ import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 
 class EntregasView extends StatelessWidget {
-final EntregaController controller = Get.put(EntregaController(), permanent: true);
+  final EntregaController controller =
+      Get.put(EntregaController(), permanent: true);
   final CatalogosController controller2 = Get.put(CatalogosController());
 
   @override
@@ -42,8 +43,8 @@ final EntregaController controller = Get.put(EntregaController(), permanent: tru
                     double.tryParse(distanciaCalculadaStr ?? '0') ?? 0.0;
 
                 final isInRange = distanciaCalculadaDouble <= 150;
-                final isMidRange =
-                    distanciaCalculadaDouble > 150 && distanciaCalculadaDouble <= 300;
+                final isMidRange = distanciaCalculadaDouble > 150 &&
+                    distanciaCalculadaDouble <= 300;
 
                 Color buttonColor;
                 if (isInRange) {
@@ -73,14 +74,16 @@ final EntregaController controller = Get.put(EntregaController(), permanent: tru
                                     fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                             ),
-                            
+
                             // 🔹 Botón de eliminar (solo si es manual)
                             if (entrega.tipo == "manual")
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
                                 tooltip: "Eliminar entrega manual",
                                 onPressed: () {
-                                  _confirmarEliminarEntrega(context, entrega.entregaId);
+                                  _confirmarEliminarEntrega(
+                                      context, entrega.entregaId);
                                 },
                               ),
                           ],
@@ -99,18 +102,6 @@ final EntregaController controller = Get.put(EntregaController(), permanent: tru
                           '📅 Fecha de Entrega: $formattedDate',
                           style: const TextStyle(fontSize: 14),
                         ),
-
-                        // 🔹 Estado de la entrega
-                        Text(
-                          '📍 Estado: ${entrega.estado}',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: entrega.estado == 'Vigente'
-                                  ? Colors.green
-                                  : Colors.red),
-                        ),
-
-                        // 🔹 Rango de aretes y cantidad
                         Text(
                           '🔢 Rango: ${entrega.rangoInicial} - ${entrega.rangoFinal}',
                           style: const TextStyle(fontSize: 14),
@@ -119,7 +110,10 @@ final EntregaController controller = Get.put(EntregaController(), permanent: tru
                           '📦 Cantidad: ${entrega.cantidad}',
                           style: const TextStyle(fontSize: 14),
                         ),
-
+                        Text(
+                          '📏 Ubicación: ${entrega.departamento}/${entrega.municipio}.',
+                          style: const TextStyle(fontSize: 14),
+                        ),
                         // 🔹 Distancia en metros
                         Text(
                           '📏 Distancia: ${entrega.distanciaCalculada}',
@@ -131,26 +125,122 @@ final EntregaController controller = Get.put(EntregaController(), permanent: tru
                         // 🔹 Botón para iniciar la entrega
                         Align(
                           alignment: Alignment.centerRight,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: buttonColor,
-                            ),
+                          child: // pending_view.dart
+                              ElevatedButton(
                             onPressed: () {
-                              Get.toNamed('/formbovinos', arguments: {
-                                'entregaId': entrega.entregaId,
-                                'cue': entrega.cue,
-                                'rangoInicial': entrega.rangoInicial,
-                                'rangoFinal': entrega.rangoFinal,
-                                'cantidad': entrega.cantidad,
-                              });
+                              // Aquí la entrega que estamos procesando
+                              final entrega =
+                                  controller.entregasPendientes[index];
+
+                              // Mostramos un diálogo que pregunte cómo manejar los aretes
+                              Get.dialog(
+                                AlertDialog(
+                                  title: const Text('Atención'),
+                                  content: const Text(
+                                    '¿Deseas usar todos los aretes para esta entrega '
+                                    'o separar algunos para reposición?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        // Caso 1: usar TODOS
+                                        Get.back(); // Cierra el diálogo
+
+                                        // Lógica actual: ir al form de bovinos normal
+                                        Get.toNamed('/formbovinos', arguments: {
+                                          'entregaId': entrega.entregaId,
+                                          'cue': entrega.cue,
+                                          'rangoInicial': entrega.rangoInicial,
+                                          'rangoFinal': entrega.rangoFinal,
+                                          'cantidad': entrega.cantidad,
+                                        });
+                                      },
+                                      child: const Text('Usar TODOS'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        // Caso 2: PARCIAL => mostrar un segundo diálogo pidiendo cuántos son para el uso normal
+                                        final parcialSeleccion =
+                                            await Get.dialog<int?>(
+                                          AlertDialog(
+                                            title: const Text(
+                                                '¿Cuántos aretes usarás?'),
+                                            content: TextField(
+                                              keyboardType:
+                                                  TextInputType.number,
+                                              decoration: const InputDecoration(
+                                                labelText:
+                                                    'Cantidad para uso normal',
+                                              ),
+                                              onSubmitted: (value) {
+                                                final qty =
+                                                    int.tryParse(value) ?? 0;
+                                                // Cerrar el diálogo y devolver ese valor
+                                                Get.back(result: qty);
+                                              },
+                                            ),
+                                          ),
+                                        );
+
+                                        // Validar la cantidad ingresada
+                                        if (parcialSeleccion == null ||
+                                            parcialSeleccion <= 0 ||
+                                            parcialSeleccion >=
+                                                entrega.cantidad) {
+                                          // Cancelado o inválido
+                                          Get.back(); // cierra el primer diálogo
+                                          return;
+                                        }
+
+                                        // 1) Sub-rango para el uso normal
+                                        final cantNormal =
+                                            parcialSeleccion; // p.ej: 7
+                                        final rangoInicialNormal =
+                                            entrega.rangoInicial;
+                                        final rangoFinalNormal =
+                                            rangoInicialNormal + cantNormal - 1;
+
+                                        // 2) Sub-rango para reposición
+                                        final cantRepos = entrega.cantidad -
+                                            cantNormal; // p.ej: 3
+                                        final rangoInicialRepos =
+                                            rangoFinalNormal + 1;
+                                        final rangoFinalRepos =
+                                            rangoInicialRepos + cantRepos - 1;
+
+                                        // Cerrar el primer diálogo
+                                        Get.back();
+
+                                        // (A) Ir a FormBovinos “normal” con 7 aretes
+                                        Get.toNamed('/formbovinos', arguments: {
+                                          'entregaId': entrega
+                                              .entregaId, // la misma o ID distinto
+                                          'cue': entrega.cue,
+                                          'rangoInicial': rangoInicialNormal,
+                                          'rangoFinal': rangoFinalNormal,
+                                          'cantidad': cantNormal,
+                                        });
+
+                                        // (B) Luego, para los 3 de reposición, podemos crear
+                                        // un nuevo modelo "RepoEntrega" y una nueva pantalla "FormReposicionView",
+                                        // o reusar la misma vista con una bandera "reposicion = true".
+                                        // Por ejemplo:
+                                        Get.toNamed('/formreposicion',
+                                            arguments: {
+                                              'entregaId': entrega.entregaId,
+                                              'cue': entrega.cue,
+                                              'rangoInicial': rangoInicialRepos,
+                                              'rangoFinal': rangoFinalRepos,
+                                              'cantidad': cantRepos,
+                                            });
+                                      },
+                                      child: const Text('Separar PARCIAL'),
+                                    ),
+                                  ],
+                                ),
+                              );
                             },
-                            child: const Text(
-                              'Realizar',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            child: const Text('Realizar'),
                           ),
                         ),
                       ],

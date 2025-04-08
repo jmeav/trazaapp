@@ -25,7 +25,6 @@ import 'package:trazaapp/data/models/productores/productor_adapter.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
 import 'package:trazaapp/data/models/razas/raza_adapter.dart';
 import 'package:trazaapp/presentation/catalogscreen/catalogscreen.dart';
-import 'package:trazaapp/presentation/formbovinoscreen/finishform_view.dart';
 import 'package:trazaapp/presentation/sendscreen/send_view.dart';
 import 'package:trazaapp/presentation/managebagscreen/managebag_view.dart';
 import 'package:trazaapp/presentation/pendingscreen/pending_view.dart';
@@ -119,23 +118,38 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/catalogs', page: () => CatalogosScreen()),
           GetPage(name: '/configs', page: () => ConfiguracionesScreen()),
           GetPage(name: '/verifycue', page: () => VerifyEstablishmentView()),
-          GetPage(name: '/finalizarEntrega', page: () => FinalizarEntregaView()),
         ],
       );
     });
   }
 }
-
 class InitialView extends StatelessWidget {
   final ThemeController themeController = Get.find();
+  final CatalogosController catalogosController = Get.find();
 
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await themeController.loadTheme();
-      final box = Hive.box<AppConfig>('appConfig');
-      final initialRoute = box.containsKey('config') ? '/home' : '/splash';
-      Get.offAllNamed(initialRoute);
+
+      final configBox = Hive.box<AppConfig>('appConfig');
+      final config = configBox.get('config');
+
+      final boxDep = Hive.box<Departamento>('departamentos');
+      final boxMun = Hive.box<Municipio>('municipios');
+
+      if (config == null) {
+        Get.offAllNamed('/splash');
+        return;
+      }
+
+      if (boxDep.isEmpty || boxMun.isEmpty) {
+        catalogosController.isForcedDownload.value = true;
+        Get.offAllNamed('/catalogs');
+        return;
+      }
+
+      Get.offAllNamed('/home');
     });
 
     return Scaffold(
@@ -148,3 +162,4 @@ class InitialView extends StatelessWidget {
     );
   }
 }
+
