@@ -11,11 +11,11 @@ class EnvioAltasRepository {
       print("🌍 URL de envío: $uri");
 
       var headers = {
-        'Content-Type': 'application/json',
-      };
+  'Content-Type': 'application/json',
+  'Cookie': 'TS0191a316=0132c26adc406776fbc50246b266d4bf5715bb57f7b2bda70226710eab47882c7a2f4568e154aef4d3842a5a976bdd661f7b08af27'
+};
 
       Map<String, dynamic> altaJson = altaEntrega.toJsonEnvio();
-
       print("📤 Enviando AltaEntrega:");
       print(jsonEncode(altaJson));
 
@@ -25,21 +25,32 @@ class EnvioAltasRepository {
         body: json.encode(altaJson),
       );
 
+      print("📥 Respuesta del servidor:");
+      print("Status Code: ${response.statusCode}");
+      print("Headers: ${response.headers}");
+      print("Body: ${response.body}");
+
       if (response.statusCode == 201) {
         print("✅ Alta enviada con éxito: ${response.body}");
-        // (Opcional: no necesitas volver a guardar aquí si ya está guardada en Hive)
       } else {
         print("❌ Error al enviar alta: ${response.statusCode}");
         try {
           var jsonResponse = jsonDecode(response.body);
           print("🔹 Respuesta del servidor: $jsonResponse");
-        } catch (_) {
-          print("⚠️ No se pudo parsear la respuesta del servidor.");
+        } catch (e) {
+          print("⚠️ No se pudo parsear la respuesta del servidor: $e");
+          print("⚠️ Respuesta raw: ${response.body}");
+          
+          // Si la respuesta es HTML, probablemente sea un error de firewall
+          if (response.body.contains('<html>')) {
+            throw Exception("El servidor ha rechazado la solicitud. Por favor, verifica la configuración del servidor o contacta al administrador.");
+          }
         }
         throw Exception("Error al enviar alta.");
       }
     } catch (e) {
       print("⚠️ Excepción en enviarAlta: $e");
+      print("⚠️ Stack trace: ${StackTrace.current}");
       rethrow;
     }
   }

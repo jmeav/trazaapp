@@ -7,11 +7,11 @@ class MaterialTheme {
 static MaterialScheme lightScheme() {
   return const MaterialScheme(
     brightness: Brightness.light,
-    primary: Color.fromARGB(207, 17, 207, 216),         // Turquesa principal
-    surfaceTint: Color.fromARGB(207, 17, 207, 216),
+    primary: Color.fromARGB(255, 76, 175, 80),         // Verde más oscuro
+    surfaceTint: Color.fromARGB(255, 76, 175, 80),
     onPrimary: Color(0xFFFFFFFF),                       // Blanco
-    primaryContainer: Color(0xFFCDFBFF),                // Turquesa más suave
-    onPrimaryContainer: Color(0xFF00363A),              // Verde petróleo oscuro
+    primaryContainer: Color(0xFFC8E6C9),                // Verde más suave
+    onPrimaryContainer: Color(0xFF1B5E20),              // Verde oscuro
 
     secondary: Color(0xFF5E6472),                       // Gris elegante
     onSecondary: Color(0xFFFFFFFF),

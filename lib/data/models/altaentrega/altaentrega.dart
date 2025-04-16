@@ -173,7 +173,7 @@ class AltaEntrega {
         "fotoFicha": fotoFicha, // <--- nuevo
         "reposicion": reposicion,
         "observaciones": observaciones,
-        "aplicaEntrega": aplicaEntrega,
+        "aplicaentrega": aplicaEntrega,
         "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
       };
 }

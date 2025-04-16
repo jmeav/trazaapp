@@ -4,6 +4,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/formbovinos_controller.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
+import 'package:flutter/services.dart';
 
 class FormBovinosView extends StatelessWidget {
   final FormBovinosController controller = Get.put(FormBovinosController());
@@ -289,7 +290,9 @@ class FormBovinosView extends StatelessWidget {
               ),
               controller: TextEditingController(
                 text: bovinoData.edad > 0 ? '${bovinoData.edad}' : '',
-              ),
+              )..selection = TextSelection.fromPosition(
+                  TextPosition(offset: bovinoData.edad > 0 ? '${bovinoData.edad}'.length : 0),
+                ),
               onChanged: (value) {
                 final e = int.tryParse(value) ?? 0;
                 final updated = bovinoData.copyWith(edad: e);
@@ -362,7 +365,11 @@ class FormBovinosView extends StatelessWidget {
                   labelText: 'Arete Madre (obligatorio)',
                   border: OutlineInputBorder(),
                 ),
-                controller: TextEditingController(text: bovinoData.areteMadre),
+                keyboardType: TextInputType.number,
+                controller: TextEditingController(text: bovinoData.areteMadre)
+                  ..selection = TextSelection.fromPosition(
+                    TextPosition(offset: bovinoData.areteMadre.length),
+                  ),
                 onChanged: (val) {
                   final updated = bovinoData.copyWith(areteMadre: val);
                   controller.bovinoInfo[bovinoID] = updated;
@@ -374,7 +381,11 @@ class FormBovinosView extends StatelessWidget {
                   labelText: 'Arete Padre (obligatorio)',
                   border: OutlineInputBorder(),
                 ),
-                controller: TextEditingController(text: bovinoData.aretePadre),
+                keyboardType: TextInputType.number,
+                controller: TextEditingController(text: bovinoData.aretePadre)
+                  ..selection = TextSelection.fromPosition(
+                    TextPosition(offset: bovinoData.aretePadre.length),
+                  ),
                 onChanged: (val) {
                   final updated = bovinoData.copyWith(aretePadre: val);
                   controller.bovinoInfo[bovinoID] = updated;
@@ -386,7 +397,10 @@ class FormBovinosView extends StatelessWidget {
                   labelText: 'Registro Madre (opcional)',
                   border: OutlineInputBorder(),
                 ),
-                controller: TextEditingController(text: bovinoData.regMadre),
+                controller: TextEditingController(text: bovinoData.regMadre)
+                  ..selection = TextSelection.fromPosition(
+                    TextPosition(offset: bovinoData.regMadre.length),
+                  ),
                 onChanged: (val) {
                   final updated = bovinoData.copyWith(regMadre: val);
                   controller.bovinoInfo[bovinoID] = updated;
@@ -398,7 +412,10 @@ class FormBovinosView extends StatelessWidget {
                   labelText: 'Registro Padre (opcional)',
                   border: OutlineInputBorder(),
                 ),
-                controller: TextEditingController(text: bovinoData.regPadre),
+                controller: TextEditingController(text: bovinoData.regPadre)
+                  ..selection = TextSelection.fromPosition(
+                    TextPosition(offset: bovinoData.regPadre.length),
+                  ),
                 onChanged: (val) {
                   final updated = bovinoData.copyWith(regPadre: val);
                   controller.bovinoInfo[bovinoID] = updated;

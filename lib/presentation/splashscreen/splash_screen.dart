@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_onboarding_slider/flutter_onboarding_slider.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:trazaapp/login/controller/login_controller.dart';
+import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 
 class SplashScreen extends StatelessWidget {
   final LoginController loginController = Get.put(LoginController());
@@ -16,8 +18,15 @@ class SplashScreen extends StatelessWidget {
 
     // Comprobar si se han otorgado los permisos
     if (locationStatus.isGranted && cameraStatus.isGranted) {
-      // Navegar a la pantalla de inicio de sesión
-      Get.offNamed('/login');
+      // Marcar que ya no es la primera vez
+      final box = Hive.box<AppConfig>('appConfig');
+      final config = box.get('config');
+      if (config != null) {
+        await box.put('config', config.copyWith(isFirstTime: false));
+      }
+      
+      // Navegar al login
+      Get.offAllNamed('/login');
     } else {
       // Manejar el caso en que los permisos no se otorgaron
       Get.snackbar(
@@ -30,27 +39,25 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      if (loginController.isFirstTime.value) {
-        return OnBoardingSlider(
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    
+    return Stack(
+      children: [
+        OnBoardingSlider(
           finishButtonText: 'Aceptar Permisos',
           centerBackground: true,
           onFinish: _requestPermissions,
-          finishButtonStyle: const FinishButtonStyle(
-            // backgroundColor: kDarkBlueColor,
-          ),
-          skipTextButton: const Text(
-            'Saltar',
-            style: TextStyle(
-              fontSize: 16,
-              // color: kDarkBlueColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          controllerColor: const Color.fromARGB(255, 167, 215, 106),
+          controllerColor: primaryColor,
           totalPage: 3,
           headerBackgroundColor: Colors.white,
           pageBackgroundColor: Colors.white,
+          speed: 1.8,
+          finishButtonStyle: FinishButtonStyle(
+            backgroundColor: primaryColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+            ),
+          ),
           background: [
             Image.asset(
               'assets/images/wellcome.png',
@@ -65,7 +72,6 @@ class SplashScreen extends StatelessWidget {
               height: 400,
             ),
           ],
-          speed: 1.8,
           pageBodies: [
             Container(
               alignment: Alignment.center,
@@ -82,7 +88,6 @@ class SplashScreen extends StatelessWidget {
                     '¡BIENVENIDO! Para Comenzar, Necesitamos Permisos!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      // color: kDarkBlueColor,
                       fontSize: 24.0,
                       fontWeight: FontWeight.w600,
                     ),
@@ -114,10 +119,9 @@ class SplashScreen extends StatelessWidget {
                     height: 480,
                   ),
                   Text(
-                    'GPS',
+                    'Necesitamos tu ubicación',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      // color: kDarkBlueColor,
                       fontSize: 24.0,
                       fontWeight: FontWeight.w600,
                     ),
@@ -126,7 +130,7 @@ class SplashScreen extends StatelessWidget {
                     height: 20,
                   ),
                   Text(
-                    'Utilizaremos la ubicación de tu GPS para calcular las distancias',
+                    'Para verificar que estés en el establecimiento correcto.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.black26,
@@ -149,10 +153,9 @@ class SplashScreen extends StatelessWidget {
                     height: 480,
                   ),
                   Text(
-                    'CAMARA',
+                    'Necesitamos acceso a tu cámara',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      // color: kDarkBlueColor,
                       fontSize: 24.0,
                       fontWeight: FontWeight.w600,
                     ),
@@ -161,7 +164,7 @@ class SplashScreen extends StatelessWidget {
                     height: 20,
                   ),
                   Text(
-                    'Utilizaremos la cámara para tomar fotos de las evidencias',
+                    'Para tomar fotos de los aretes y documentos.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.black26,
@@ -173,14 +176,8 @@ class SplashScreen extends StatelessWidget {
               ),
             ),
           ],
-        );
-      } else {
-        return const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
-      }
-    });
+        ),
+      ],
+    );
   }
 }

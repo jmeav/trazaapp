@@ -81,6 +81,16 @@ class Entregas {
   @HiveField(24)
   final String municipio;
 
+  // Campos para manejo interno de reposición
+  @HiveField(25)
+  final String? idReposicion;
+
+  @HiveField(26)
+  final String estadoReposicion; // "pendiente", "en_proceso", "completada"
+
+  @HiveField(27)
+  final int? cantidadReposicion;
+
   Entregas({
     required this.entregaId,
     required this.fechaEntrega,
@@ -107,6 +117,9 @@ class Entregas {
     this.idAlta,
     required this.departamento,
     required this.municipio,
+    this.idReposicion,
+    this.estadoReposicion = 'pendiente',
+    this.cantidadReposicion,
   });
 
   Entregas copyWith({
@@ -135,6 +148,9 @@ class Entregas {
     String? idAlta,
     String? departamento,
     String? municipio,
+    String? idReposicion,
+    String? estadoReposicion,
+    int? cantidadReposicion,
   }) {
     return Entregas(
       entregaId: entregaId ?? this.entregaId,
@@ -162,10 +178,13 @@ class Entregas {
       idAlta: idAlta ?? this.idAlta,
       departamento: departamento ?? this.departamento,
       municipio: municipio ?? this.municipio,
+      idReposicion: idReposicion ?? this.idReposicion,
+      estadoReposicion: estadoReposicion ?? this.estadoReposicion,
+      cantidadReposicion: cantidadReposicion ?? this.cantidadReposicion,
     );
   }
 
-   factory Entregas.fromJson(Map<String, dynamic> json) {
+  factory Entregas.fromJson(Map<String, dynamic> json) {
     final tipoEntrega = json['tipo'] ?? 'sistema';
 
     String resolveDepartamento(String? idDept) {
@@ -212,10 +231,13 @@ class Entregas {
       municipio: tipoEntrega == 'manual'
           ? (json['MUNICIPIO'] ?? 'Sin mun.')
           : resolveMunicipio(json['idmun']),
+      idReposicion: json['idReposicion'],
+      estadoReposicion: json['estadoReposicion'] ?? 'pendiente',
+      cantidadReposicion: json['cantidadReposicion'],
     );
   }
 
-
+  // Mantiene la estructura original para envío al servidor
   Map<String, dynamic> toJson() {
     return {
       'ID': entregaId,
@@ -243,6 +265,9 @@ class Entregas {
       'idAlta': idAlta,
       'DEPARTAMENTO': departamento,
       'MUNICIPIO': municipio,
+      'idReposicion': idReposicion,
+      'estadoReposicion': estadoReposicion,
+      'cantidadReposicion': cantidadReposicion,
     };
   }
 }

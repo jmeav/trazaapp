@@ -25,7 +25,7 @@ final EntregaController entregaController = Get.isRegistered<EntregaController>(
   await Future.delayed(const Duration(milliseconds: 300));
   await entregaController.refreshData(); // 🔁 Actualiza entregas y altas
   await Future.delayed(const Duration(milliseconds: 100));
-  entregaController.getAltasParaEnviar(); // 🔄 Refresca el contador correctamente
+  entregaController.cargarAltasListas(); // 🔄 Refresca el contador correctamente
   bagController.loadBagData();
 });
 

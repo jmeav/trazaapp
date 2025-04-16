@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 // Ejemplo con image_picker
 import 'package:image_picker/image_picker.dart';
@@ -21,6 +24,7 @@ import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
+import 'package:trazaapp/utils/utils.dart';
 
 class FormBovinosController extends GetxController {
   var currentPage = 0.obs;
@@ -84,15 +88,17 @@ class FormBovinosController extends GetxController {
       }
       entregaId = args['entregaId'];
 
+      // Usar los rangos que vienen como argumentos en lugar de los de la entrega
+      final rangoInicial = args['rangoInicial'] as int;
+      final rangoFinal = args['rangoFinal'] as int;
+      final generatedRangos = generateRangos(rangoInicial, rangoFinal);
+      rangos.assignAll(generatedRangos);
+
       final entrega = entregasBox.values.firstWhere(
         (e) => e.entregaId == entregaId,
         orElse: () =>
             throw Exception('No se encontró la entrega con ID=$entregaId.'),
       );
-
-      final generatedRangos =
-          generateRangos(entrega.rangoInicial, entrega.rangoFinal);
-      rangos.assignAll(generatedRangos);
 
       // Inicializa un Bovino por cada arete
       for (var id in rangos) {
@@ -106,8 +112,6 @@ class FormBovinosController extends GetxController {
           cupa: entrega.cupa,
           traza: 'CRUCE',
           entregaId: entregaId,
-
-          // Si ya agregaste:
           fotoArete: '',
           areteMadre: '',
           aretePadre: '',
@@ -117,6 +121,12 @@ class FormBovinosController extends GetxController {
       }
     } catch (e) {
       print('Error al inicializar FormBovinosController: $e');
+      Get.snackbar(
+        'Error',
+        'Error al inicializar el formulario: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -281,7 +291,6 @@ bool validateBeforeSave() {
       }
     }
   }
-
   return true; // Si pasa todo, estamos bien
 }
 
@@ -302,10 +311,39 @@ void _showErrorAndJumpToPage(String message, int pageIndex) {
 
   /// Llamado cuando estás en la última pantalla y quieres guardar todo
   Future<void> saveFinalData() async {
+    // Si ya estamos enviando datos, no permitir otro envío
+    if (sendingData.value) {
+      return;
+    }
+
     try {
+      sendingData.value = true;
+      
+      // Mostrar diálogo de carga
+      Get.dialog(
+        const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                'Guardando datos...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+        barrierDismissible: false,
+      );
+      
       // Primero, validamos
       if (!validateBeforeSave()) {
-        // Si falla, paramos
+        sendingData.value = false;
+        Get.back(); // Cerrar diálogo de carga
         return;
       }
 
@@ -366,21 +404,18 @@ void _showErrorAndJumpToPage(String message, int pageIndex) {
         cue: entrega.cue,
         departamento: entrega.departamento,
         municipio: entrega.municipio,
-        latitud: entrega.latitud,
-        longitud: entrega.longitud,
+        latitud: position.latitude,
+        longitud: position.longitude,
         distanciaCalculada: distanciaCalculada,
         fechaAlta: DateTime.now(),
         tipoAlta: config.habilitadoOperadora == "0" ? "1" : "2",
         aplicaEntrega: entrega.tipo == 'manual',
         token: config.imei,
-        codhabilitado: config.codHabilitado,
+        codhabilitado: config.codHabilitado,  
         idorganizacion: config.idOrganizacion,
         fotoBovInicial: fotoBovInicial.value,
         fotoBovFinal: fotoBovFinal.value,
-
-        // Nuevo => PDF
         fotoFicha: fotoFicha.value,
-
         reposicion: false,
         observaciones: observaciones.value,
         detalleBovinos: detalleBovinos,
@@ -400,13 +435,17 @@ void _showErrorAndJumpToPage(String message, int pageIndex) {
       // Refrescar
       final entregaController = Get.find<EntregaController>();
       await entregaController.fetchEntregas();
-      entregaController.getAltasListas();
+      entregaController.cargarAltasListas();
 
+      Get.back(); // Cerrar diálogo de carga
       Get.snackbar('Guardado', 'AltaEntrega creada y guardada.');
       Get.offAllNamed('/home');
     } catch (e) {
+      Get.back(); // Cerrar diálogo de carga
       Get.snackbar('Error', 'Error al guardar AltaEntrega: $e');
       print('❌ Error en saveFinalData: $e');
+    } finally {
+      sendingData.value = false;
     }
   }
 
@@ -436,11 +475,17 @@ Future<void> pickImageUniversal({
     );
     if (source == null) return; // usuario canceló
 
-    final XFile? pickedFile = await picker.pickImage(source: source);
+    final XFile? pickedFile = await picker.pickImage(
+      source: source,
+      imageQuality: 30, // Calidad de imagen reducida
+      maxWidth: 800, // Ancho máximo
+      maxHeight: 800, // Alto máximo
+    );
+    
     if (pickedFile == null) return; // no se seleccionó nada
 
-    final bytes = await File(pickedFile.path).readAsBytes();
-    final base64String = base64Encode(bytes);
+    // Usar la nueva función de compresión
+    final base64String = await Utils.imageToBase64(pickedFile.path);
 
     // Dependiendo del target, asignamos
     switch (target) {
@@ -465,7 +510,7 @@ Future<void> pickImageUniversal({
         throw Exception('target inválido: $target');
     }
 
-    Get.snackbar('OK', 'Foto seleccionada correctamente para $target.');
+   // Get.snackbar('OK', 'Foto seleccionada correctamente para $target.');
   } catch (e) {
     print('Error picking image: $e');
     Get.snackbar('Error', 'No se pudo seleccionar la foto para $target.');
@@ -491,12 +536,47 @@ Future<void> pickImageUniversal({
     // Tomamos el nombre del archivo
     pdfFileName.value = result.files.single.name;
 
-    final bytes = await File(filePath).readAsBytes();
+    // Leer el archivo PDF
+    final file = File(filePath);
+    final bytes = await file.readAsBytes();
+    
+    // Verificar el tamaño del archivo
+    final fileSizeInMB = bytes.length / (1024 * 1024);
+    
+    if (fileSizeInMB > 5) { // Si el archivo es mayor a 5MB
+      Get.snackbar(
+        'Error',
+        'El archivo PDF es muy grande (${fileSizeInMB.toStringAsFixed(2)}MB). El tamaño máximo permitido es 5MB.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    } else if (fileSizeInMB > 2) { // Advertencia para archivos entre 2MB y 5MB
+      Get.snackbar(
+        'Advertencia',
+        'El archivo PDF es grande (${fileSizeInMB.toStringAsFixed(2)}MB). Se recomienda comprimirlo manualmente antes de subirlo.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+    }
+
+    // Convertir a base64
     final base64String = base64Encode(bytes);
+    
+    // Verificar el tamaño final después de la conversión
+    final base64SizeInMB = base64String.length / (1024 * 1024);
+    if (base64SizeInMB > 2.5) {
+      Get.snackbar(
+        'Error',
+        'El archivo PDF es muy grande después de la conversión. Por favor, comprima el archivo antes de subirlo.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
 
     fotoFicha.value = base64String;
-
-    Get.snackbar('OK', 'PDF seleccionado: ${pdfFileName.value}');
+ //   Get.snackbar('OK', 'PDF seleccionado: ${pdfFileName.value}');
   } catch (e) {
     print('Error picking PDF: $e');
     Get.snackbar('Error', 'No se pudo seleccionar el PDF.');

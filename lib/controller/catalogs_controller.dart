@@ -56,44 +56,83 @@ class CatalogosController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadConfig();
-    checkCatalogStatus();
-  }
-
-  void _loadConfig() {
-    var box = Hive.box<AppConfig>('appConfig');
-    var config = box.get('config');
-    if (config != null) {
-      habilitadoOperadora.value = config.habilitadoOperadora;
+    try {
+      _loadConfig();
+      checkCatalogStatus();
+    } catch (e) {
+      print("Error en la inicialización del CatalogosController: $e");
     }
   }
 
-  void checkCatalogStatus() async {
-    var boxDep = Hive.box<Departamento>('departamentos');
-    var boxMun = Hive.box<Municipio>('municipios');
-    var boxEst = Hive.box<Establecimiento>('establecimientos');
-    var boxProd = Hive.box<Productor>('productores');
-    var boxEnt = Hive.box<Entregas>('entregas');
-    var boxRaz = Hive.box<Raza>('razas');
-    var boxBag = Hive.box<Bag>('bag');
-
-    departamentos.assignAll(boxDep.values.toList());
-    municipios.assignAll(boxMun.values.toList());
-    establecimientos.assignAll(boxEst.values.toList());
-    productores.assignAll(boxProd.values.toList());
-    entregas.assignAll(boxEnt.values.toList());
-    razas.assignAll(boxRaz.values.toList());
-    bag.value = boxBag.isNotEmpty ? boxBag.getAt(0) : null;
-
-    var updatesBox = await Hive.openBox('catalog_updates');
-    lastUpdateDepartamentos.value = updatesBox.get('Departamentos', defaultValue: 'Nunca');
-    lastUpdateMunicipios.value = updatesBox.get('Municipios', defaultValue: 'Nunca');
-    lastUpdateEstablecimientos.value = updatesBox.get('Establecimientos', defaultValue: 'Nunca');
-    lastUpdateProductores.value = updatesBox.get('Productores', defaultValue: 'Nunca');
-    lastUpdateEntregas.value = updatesBox.get('Entregas', defaultValue: 'Nunca');
-    lastUpdateRazas.value = updatesBox.get('Razas', defaultValue: 'Nunca');
-    lastUpdateBag.value = updatesBox.get('Bag', defaultValue: 'Nunca');
+  void _loadConfig() {
+    try {
+      if (!Hive.isBoxOpen('appConfig')) {
+        print("La caja appConfig no está abierta aún");
+        return;
+      }
+      var box = Hive.box<AppConfig>('appConfig');
+      var config = box.get('config');
+      if (config != null) {
+        habilitadoOperadora.value = config.habilitadoOperadora;
+      }
+    } catch (e) {
+      print("Error al cargar la configuración en CatalogosController: $e");
+    }
   }
+
+  void checkCatalogStatus() {
+    try {
+      if (!Hive.isBoxOpen('departamentos') || 
+          !Hive.isBoxOpen('municipios') || 
+          !Hive.isBoxOpen('establecimientos') ||
+          !Hive.isBoxOpen('productores') ||
+          !Hive.isBoxOpen('entregas') ||
+          !Hive.isBoxOpen('razas') ||
+          !Hive.isBoxOpen('bag')) {
+        print("Algunas cajas no están abiertas aún");
+        return;
+      }
+
+      var boxDep = Hive.box<Departamento>('departamentos');
+      var boxMun = Hive.box<Municipio>('municipios');
+      var boxEst = Hive.box<Establecimiento>('establecimientos');
+      var boxProd = Hive.box<Productor>('productores');
+      var boxEnt = Hive.box<Entregas>('entregas');
+      var boxRaz = Hive.box<Raza>('razas');
+      var boxBag = Hive.box<Bag>('bag');
+
+      departamentos.assignAll(boxDep.values.toList());
+      municipios.assignAll(boxMun.values.toList());
+      establecimientos.assignAll(boxEst.values.toList());
+      productores.assignAll(boxProd.values.toList());
+      entregas.assignAll(boxEnt.values.toList());
+      razas.assignAll(boxRaz.values.toList());
+      bag.value = boxBag.isNotEmpty ? boxBag.getAt(0) : null;
+
+      _loadLastUpdates();
+    } catch (e) {
+      print("Error al verificar el estado de los catálogos: $e");
+    }
+  }
+
+  Future<void> _loadLastUpdates() async {
+    try {
+      if (!Hive.isBoxOpen('catalog_updates')) {
+        await Hive.openBox('catalog_updates');
+      }
+      var updatesBox = Hive.box('catalog_updates');
+      lastUpdateDepartamentos.value = updatesBox.get('Departamentos', defaultValue: 'Nunca');
+      lastUpdateMunicipios.value = updatesBox.get('Municipios', defaultValue: 'Nunca');
+      lastUpdateEstablecimientos.value = updatesBox.get('Establecimientos', defaultValue: 'Nunca');
+      lastUpdateProductores.value = updatesBox.get('Productores', defaultValue: 'Nunca');
+      lastUpdateEntregas.value = updatesBox.get('Entregas', defaultValue: 'Nunca');
+      lastUpdateRazas.value = updatesBox.get('Razas', defaultValue: 'Nunca');
+      lastUpdateBag.value = updatesBox.get('Bag', defaultValue: 'Nunca');
+    } catch (e) {
+      print("Error al cargar las últimas actualizaciones: $e");
+    }
+  }
+
 Future<void> downloadAllCatalogsSequential({
   required String token,
   required String codhabilitado,

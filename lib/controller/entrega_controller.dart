@@ -8,6 +8,12 @@ import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 import 'package:trazaapp/data/repositories/alta/alta_repo.dart';
 import 'package:trazaapp/utils/util.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/remote/endpoints.dart';
 
 class EntregaController extends GetxController {
   var entregas = <Entregas>[].obs;
@@ -25,17 +31,18 @@ class EntregaController extends GetxController {
   ).obs;
 
   final Box<Entregas> entregasBox = Hive.box<Entregas>('entregas');
-  var altasListas = <AltaEntrega>[].obs;
   final Box<AltaEntrega> altaEntregaBox = Hive.box<AltaEntrega>('altaentregas');
+  
+  // Unificamos las listas de altas
+  final RxList<AltaEntrega> altasListas = <AltaEntrega>[].obs;
 
   @override
   void onInit() {
     super.onInit();
     fetchUserLocation();
     fetchEntregas();
-    _listenLocationChanges(); // 🔹 Escuchar cambios en la ubicación en tiempo real
-    getAltasListas();
-    cargarAltasParaEnviar();
+    _listenLocationChanges();
+    cargarAltasListas();
   }
 
   @override
@@ -44,10 +51,10 @@ class EntregaController extends GetxController {
     refreshData();
   }
 
-  void getAltasListas() {
+  void cargarAltasListas() {
     altasListas.assignAll(
       altaEntregaBox.values
-          .where((alta) => alta.estadoAlta == 'Lista')
+          .where((alta) => alta.estadoAlta.trim().toLowerCase() == 'lista')
           .toList(),
     );
   }
@@ -55,8 +62,7 @@ class EntregaController extends GetxController {
   Future<void> refreshData() async {
     await fetchUserLocation();
     await fetchEntregas();
-    getAltasListas();
-     cargarAltasParaEnviar();
+    cargarAltasListas();
   }
 
   /// Obtiene la ubicación actual del usuario
@@ -151,7 +157,7 @@ class EntregaController extends GetxController {
 
       // Actualizar lista observable y UI
       await fetchEntregas();
-      getAltasListas();
+      cargarAltasListas();
 
       Get.snackbar(
         'Eliminado',
@@ -207,7 +213,7 @@ class EntregaController extends GetxController {
       await bovinoBox.delete(bovino.arete);
     }
 
-    getAltasListas();
+    cargarAltasListas();
     fetchEntregas();
 
     Get.snackbar(
@@ -268,7 +274,7 @@ class EntregaController extends GetxController {
       await entregasBox.put(entrega.entregaId, entregaRestaurada);
 
       // Refrescar la UI
-      getAltasListas();
+      cargarAltasListas();
       fetchEntregas();
 
       Get.snackbar(
@@ -283,78 +289,84 @@ class EntregaController extends GetxController {
     }
   }
 
- void getAltasParaEnviar() {
-  altasParaEnviar.assignAll( // ✅ Correcto
-    altaEntregaBox.values
-      .where((alta) => alta.estadoAlta.trim().toLowerCase() == 'lista')
-      .toList(),
-  );
-}
-
-
-  Future<void> enviarAlta(String entregaId) async {
+  Future<void> enviarAlta(String idAlta) async {
     try {
-      final entrega = altaEntregaBox.get(entregaId);
-      if (entrega == null || entrega.idAlta.isEmpty) {
-        print("❌ No se encontró una alta válida para enviar.");
-        Get.snackbar(
-          'Error',
-          'No se encontró la alta a enviar.',
-          backgroundColor: AppColors.snackError,
-          colorText: Colors.white,
-        );
-        return;
+      // Obtener la alta desde Hive
+      final alta = altaEntregaBox.get(idAlta);
+      if (alta == null) {
+        throw Exception('No se encontró la alta con ID: $idAlta');
       }
 
-      final altaEntrega = altaEntregaBox.get(entrega.idAlta);
-      if (altaEntrega == null) {
-        print("❌ No se encontró la alta con ID: ${entrega.idAlta}");
-        Get.snackbar(
-          'Error',
-          'AltaEntrega no encontrada.',
-          backgroundColor: AppColors.snackError,
-          colorText: Colors.white,
-        );
-        return;
-      }
-
-      // 🔁 Enviar al backend
-      await EnvioAltasRepository().enviarAlta(altaEntrega);
-
-      // ✅ Actualizar estadoAlta a "Enviada"
-      final altaActualizada = altaEntrega.copyWith(estadoAlta: 'Enviada');
-      await altaEntregaBox.put(altaEntrega.idAlta, altaActualizada);
-
-      // 🔄 Actualizar listas observables
-      getAltasListas();
-      getAltasParaEnviar();
-
-      // ✅ Snackbar de éxito
-      Get.snackbar(
-        'Alta enviada',
-        'La alta ${altaEntrega.idAlta} fue enviada con éxito.',
-        backgroundColor: AppColors.snackSuccess,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
+      // Mostrar diálogo de carga
+      Get.dialog(
+        const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                'Enviando datos...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+        barrierDismissible: false,
       );
+
+      // Config
+      final configBox = Hive.box<AppConfig>('appConfig');
+      final config = configBox.get('config');
+      if (config == null) {
+        throw Exception('No se encontró la configuración del usuario.');
+      }
+
+      // Enviar
+      final response = await http.post(
+        Uri.parse('$urlaltas?proceso=alta&codhabilitado=${alta.codhabilitado}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${config.token}',
+        },
+        body: jsonEncode(alta.toJsonEnvio()),
+      );
+
+      if (response.statusCode == 201) {
+        // Actualizar estado
+        final updatedAlta = alta.copyWith(estadoAlta: 'Enviada');
+        await altaEntregaBox.put(alta.idAlta, updatedAlta);
+
+        // Refrescar lista
+        cargarAltasListas();
+
+        Get.back(); // Cerrar diálogo de carga
+        Get.snackbar(
+          'Éxito',
+          'Alta enviada correctamente',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } else {
+        throw Exception(
+            'Error al enviar alta: ${response.statusCode} - ${response.body}');
+      }
     } catch (e) {
-      print('❌ Error al enviar alta: $e');
+      Get.back(); // Cerrar diálogo de carga
       Get.snackbar(
         'Error',
-        'Ocurrió un error al enviar la alta.',
-        backgroundColor: AppColors.snackError,
+        'Error al enviar alta: $e',
+        backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+      print('❌ Error en enviarAlta: $e');
     }
   }
 
-void cargarAltasParaEnviar() {
-  altasParaEnviar.value = altaEntregaBox.values
-      .where((alta) => alta.estadoAlta.trim().toLowerCase() == 'Lista')
-      .toList();
-}
-
-// Para gestión en campo
+  // Para gestión en campo
   List<Entregas> get entregasPendientes => entregas
       .where((entrega) => entrega.estado.trim().toLowerCase() == 'pendiente')
       .toList();
@@ -364,12 +376,107 @@ void cargarAltasParaEnviar() {
       .toList();
 
   int get entregasPendientesCount => entregasPendientes.length;
-
   int get entregasConAltaListaCount => entregasListas.length;
+  int get altasParaEnviarCount => altasListas.length;
 
-// Para envío de altas
- final RxList<AltaEntrega> altasParaEnviar = <AltaEntrega>[].obs;
+  // Método para actualizar la entrega con información de reposición
+  Future<void> configurarReposicion(String entregaId, int cantidadReposicion) async {
+    try {
+      final entrega = entregasBox.get(entregaId);
+      if (entrega == null) {
+        Get.snackbar('Error', 'No se encontró la entrega');
+        return;
+      }
 
+      // Validar que la cantidad de reposición sea válida
+      if (cantidadReposicion >= entrega.cantidad) {
+        Get.snackbar(
+          'Error',
+          'La cantidad para reposición no puede ser mayor o igual al total',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
 
-  int get altasParaEnviarCount => altasParaEnviar.length;
+      // Actualizar la entrega con la información de reposición
+      final entregaActualizada = entrega.copyWith(
+        reposicion: true,
+        estadoReposicion: 'pendiente',
+        cantidad: entrega.cantidad, // Mantener cantidad total original
+        cantidadReposicion: cantidadReposicion, // Guardar la cantidad de reposición
+      );
+
+      // Guardar la entrega actualizada
+      await entregasBox.put(entregaId, entregaActualizada);
+      
+      // Actualizar la lista observable de entregas
+      final index = entregas.indexWhere((e) => e.entregaId == entregaId);
+      if (index != -1) {
+        entregas[index] = entregaActualizada;
+      }
+      
+      Get.snackbar(
+        'Reposición configurada',
+        'Se ha configurado la reposición correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      print('❌ Error al configurar reposición: $e');
+      Get.snackbar(
+        'Error',
+        'No se pudo configurar la reposición',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  // Método para marcar una reposición como completada
+  Future<void> completarReposicion(String entregaId) async {
+    try {
+      final entrega = entregasBox.get(entregaId);
+      if (entrega == null) {
+        Get.snackbar('Error', 'No se encontró la entrega');
+        return;
+      }
+
+      final entregaActualizada = entrega.copyWith(
+        estadoReposicion: 'completada',
+      );
+
+      await entregasBox.put(entregaId, entregaActualizada);
+      await fetchEntregas();
+
+      Get.snackbar(
+        'Reposición completada',
+        'La reposición se ha marcado como completada',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      print('❌ Error al completar reposición: $e');
+      Get.snackbar(
+        'Error',
+        'No se pudo completar la reposición',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  // Método para obtener las entregas con reposiciones pendientes
+  List<Entregas> get entregasConReposicionPendiente => entregas
+      .where((entrega) => 
+        entrega.reposicion && 
+        entrega.estadoReposicion.toLowerCase() == 'pendiente')
+      .toList();
+
+  // Método para obtener las entregas con reposiciones completadas
+  List<Entregas> get entregasConReposicionCompletada => entregas
+      .where((entrega) => 
+        entrega.reposicion && 
+        entrega.estadoReposicion.toLowerCase() == 'completada')
+      .toList();
 }
