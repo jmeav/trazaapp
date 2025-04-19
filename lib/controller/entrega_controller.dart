@@ -17,6 +17,7 @@ import 'package:trazaapp/data/remote/endpoints.dart';
 
 class EntregaController extends GetxController {
   var entregas = <Entregas>[].obs;
+  var isLoading = false.obs;
   var userLocation = Position(
     latitude: 0.0,
     longitude: 0.0,
@@ -368,11 +369,15 @@ class EntregaController extends GetxController {
 
   // Para gestión en campo
   List<Entregas> get entregasPendientes => entregas
-      .where((entrega) => entrega.estado.trim().toLowerCase() == 'pendiente')
+      .where((entrega) => 
+        entrega.estado.trim().toLowerCase() == 'pendiente' && 
+        !entrega.reposicion)
       .toList();
 
   List<Entregas> get entregasListas => entregas
-      .where((entrega) => entrega.estado.trim().toLowerCase() == 'altalista')
+      .where((entrega) => 
+        entrega.estado.trim().toLowerCase() == 'altalista' && 
+        !entrega.reposicion)
       .toList();
 
   int get entregasPendientesCount => entregasPendientes.length;
@@ -399,29 +404,68 @@ class EntregaController extends GetxController {
         return;
       }
 
-      // Actualizar la entrega con la información de reposición
-      final entregaActualizada = entrega.copyWith(
-        reposicion: true,
-        estadoReposicion: 'pendiente',
-        cantidad: entrega.cantidad, // Mantener cantidad total original
-        cantidadReposicion: cantidadReposicion, // Guardar la cantidad de reposición
+      // Verificar si ya existe una reposición para esta entrega
+      final bool tieneReposicionExistente = entregasBox.values.any(
+        (e) => e.entregaId.startsWith('${entregaId}_repo')
       );
 
-      // Guardar la entrega actualizada
+      if (tieneReposicionExistente) {
+        Get.snackbar(
+          'Error',
+          'Ya existe una reposición para esta entrega',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      // Calcular el nuevo rango para la entrega original
+      final nuevoRangoFinal = entrega.rangoFinal - cantidadReposicion;
+      final nuevoRangoInicial = entrega.rangoInicial;
+
+      // Crear la entrega de reposición
+      final entregaReposicion = entrega.copyWith(
+        entregaId: '${entrega.entregaId}_repo',
+        reposicion: true,
+        estadoReposicion: 'pendiente',
+        cantidad: cantidadReposicion,
+        rangoInicial: nuevoRangoFinal + 1,
+        rangoFinal: entrega.rangoFinal,
+        fechaEntrega: DateTime.now(),
+      );
+
+      // Actualizar la entrega original con el nuevo rango
+      final entregaActualizada = entrega.copyWith(
+        cantidad: entrega.cantidad - cantidadReposicion,
+        rangoFinal: nuevoRangoFinal,
+        estado: 'Pendiente',
+      );
+
+      // Guardar ambas entregas
       await entregasBox.put(entregaId, entregaActualizada);
+      await entregasBox.put(entregaReposicion.entregaId, entregaReposicion);
       
       // Actualizar la lista observable de entregas
-      final index = entregas.indexWhere((e) => e.entregaId == entregaId);
-      if (index != -1) {
-        entregas[index] = entregaActualizada;
-      }
+      await fetchEntregas();
       
       Get.snackbar(
-        'Reposición configurada',
-        'Se ha configurado la reposición correctamente',
+        'Éxito',
+        'Reposición configurada correctamente',
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
+
+      // Redirigir a la pantalla de captura de datos de la entrega ajustada
+//   print('🔁 Navegando a formulario con argumentos');
+// Get.toNamed('/form', arguments: {
+//   'entregaId': entregaId,
+//   'rangoInicial': nuevoRangoInicial,
+//   'rangoFinal': nuevoRangoFinal,
+//   'cantidad': entregaActualizada.cantidad,
+// });
+// print('✅ Navegación exitosa');
+
+  
     } catch (e) {
       print('❌ Error al configurar reposición: $e');
       Get.snackbar(

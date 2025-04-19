@@ -31,6 +31,7 @@ import 'package:trazaapp/data/models/repo/repoentrega_adapter.dart';
 import 'package:trazaapp/login/controller/login_controller.dart';
 import 'package:trazaapp/presentation/catalogscreen/catalogscreen.dart';
 import 'package:trazaapp/presentation/reposcreen/formrepo_view.dart';
+import 'package:trazaapp/presentation/reposcreen/repo_view.dart';
 import 'package:trazaapp/presentation/sendscreen/send_view.dart';
 import 'package:trazaapp/presentation/managebagscreen/managebag_view.dart';
 import 'package:trazaapp/presentation/pendingscreen/pending_view.dart';
@@ -45,11 +46,9 @@ import 'package:trazaapp/utils/configscreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Inicializa Hive
   await Hive.initFlutter();
 
-  // Registra los adaptadores de Hive
+  // Registro de adaptadores
   Hive.registerAdapter(EntregasAdapter());
   Hive.registerAdapter(BovinoAdapter());
   Hive.registerAdapter(EstablecimientoAdapter());
@@ -64,58 +63,40 @@ void main() async {
   Hive.registerAdapter(BovinoRepoAdapter());
   Hive.registerAdapter(RepoEntregaAdapter());
 
-  try {
-    // Primero abrimos la caja antigua para migrar los datos si existen
-    Box<AltaEntrega>? oldBox;
-    try {
-      oldBox = await Hive.openBox<AltaEntrega>('altaEntrega');
-    } catch (e) {
-      print("No se encontró la caja antigua, continuando...");
-    }
-    
-    // Abrimos todas las demás cajas
-    await Future.wait([
-      Hive.openBox<HomeStat>('homeStat'),
-      Hive.openBox<Entregas>('entregas'),
-      Hive.openBox<Bovino>('bovinos'),
-      Hive.openBox<Establecimiento>('establecimientos'),
-      Hive.openBox<Productor>('productores'),
-      Hive.openBox<Bag>('bag'),
-      Hive.openBox<Departamento>('departamentos'),
-      Hive.openBox<Municipio>('municipios'),
-      Hive.openBox<AppConfig>('appConfig'),
-      Hive.openBox<Raza>('razas'),
-      Hive.openBox<BovinoResumen>('resumenBovino'),
-      Hive.openBox<AltaEntrega>('altaentregas'),
-      Hive.openBox<BovinoRepo>('bovinosrepo'),
-      Hive.openBox<RepoEntrega>('repoentregas'),
-    ]);
+  await Future.wait([
+    Hive.openBox<HomeStat>('homeStat'),
+    Hive.openBox<Entregas>('entregas'),
+    Hive.openBox<Bovino>('bovinos'),
+    Hive.openBox<Establecimiento>('establecimientos'),
+    Hive.openBox<Productor>('productores'),
+    Hive.openBox<Bag>('bag'),
+    Hive.openBox<Departamento>('departamentos'),
+    Hive.openBox<Municipio>('municipios'),
+    Hive.openBox<AppConfig>('appConfig'),
+    Hive.openBox<Raza>('razas'),
+    Hive.openBox<BovinoResumen>('resumenBovino'),
+    Hive.openBox<AltaEntrega>('altaentregas'),
+    Hive.openBox<BovinoRepo>('bovinosrepo'),
+    Hive.openBox<RepoEntrega>('repoentregas'),
+  ]);
 
-    // Migrar datos de la caja antigua si existe y tiene datos
-    if (oldBox != null && oldBox.isNotEmpty) {
-      final newBox = Hive.box<AltaEntrega>('altaentregas');
-      for (var alta in oldBox.values) {
-        if (!newBox.values.any((element) => element.idAlta == alta.idAlta)) {
-          await newBox.put(alta.idAlta, alta);
-        }
-      }
-      // Eliminar la caja antigua
-      await oldBox.clear();
-      await oldBox.deleteFromDisk();
-      print("✅ Datos migrados exitosamente de la caja antigua a 'altaentregas'");
-    }
+  // 🚨 SOLO QUITAR LOS COMENTARIOS SI QUERÉS BORRAR LAS CAJAS EN USO
+  // Esto elimina todo lo almacenado en esas cajas, útil para pruebas.
+  
+  // await Hive.box<Entregas>('entregas').clear();
+  // await Hive.box<AltaEntrega>('altaentregas').clear();
+  // await Hive.box<RepoEntrega>('repoentregas').clear();
+  // print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");
+  
 
-    // Inicializa los controladores de GetX DESPUÉS de que las cajas estén abiertas
-    Get.put(LoginController());
-    Get.put(ThemeController());
-    Get.put(CatalogosController());
-
-  } catch (e) {
-    print("Error al abrir cajas de Hive: $e");
-  }
+  // Inicializa controladores
+  Get.put(LoginController());
+  Get.put(ThemeController());
+  Get.put(CatalogosController());
 
   runApp(MyApp());
 }
+
 
 
 class MyApp extends StatelessWidget {
@@ -136,6 +117,7 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/entrega', page: () => EntregasView()),
           GetPage(name: '/formbovinos', page: () => FormBovinosView()),
           GetPage(name: '/formrepo', page: () => FormRepoView()),
+          GetPage(name: '/repo', page: () => RepoView()),
           GetPage(name: '/managebag', page: () => ManageBagView()),
           GetPage(name: '/sendview', page: () => EnviarView()),
           GetPage(name: '/catalogs', page: () => CatalogosScreen()),

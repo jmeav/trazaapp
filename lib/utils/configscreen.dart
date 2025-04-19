@@ -33,21 +33,19 @@ class ConfiguracionesScreen extends StatelessWidget {
                 ),
                 child: ListTile(
                   leading: Icon(
-                    themeController.themeData.value.brightness ==
-                            Brightness.light
+                    themeController.themeData.value.brightness == Brightness.light
                         ? Icons.dark_mode
                         : Icons.light_mode,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface, // <- Esto usa el color correcto para el modo
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   title: Text(
                     "Modo Oscuro",
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   trailing: Switch(
-                    value: themeController.themeData.value.brightness ==
-                        Brightness.dark,
+                    value: themeController.themeData.value.brightness == Brightness.dark,
                     onChanged: (value) => themeController.toggleTheme(context),
                   ),
                 ),
@@ -59,6 +57,7 @@ class ConfiguracionesScreen extends StatelessWidget {
             // 📂 Sección de Catálogos
             _buildSectionTitle("Catálogos"),
             _buildButton(
+              context: context,
               icon: Icons.folder_open,
               text: "Administrar Catálogos",
               onPressed: () => Get.toNamed('/catalogs'),
@@ -69,6 +68,7 @@ class ConfiguracionesScreen extends StatelessWidget {
             // 🔓 Sección de Sesión
             _buildSectionTitle("Sesión"),
             _buildButton(
+              context: context,
               icon: Icons.logout,
               text: "Cerrar sesión",
               onPressed: _logout,
@@ -94,8 +94,9 @@ class ConfiguracionesScreen extends StatelessWidget {
     );
   }
 
-  /// 🔹 Botón con estilo elegante
+  /// 🔹 Botón con estilo elegante y tema dinámico
   Widget _buildButton({
+    required BuildContext context,
     required IconData icon,
     required String text,
     required VoidCallback onPressed,
@@ -105,11 +106,14 @@ class ConfiguracionesScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 3,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
       ),
       icon: Icon(icon, size: 22),
       label: Text(
         text,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500,),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
       ),
       onPressed: onPressed,
     );
@@ -127,14 +131,12 @@ class ConfiguracionesScreen extends StatelessWidget {
     AppConfig? currentConfig = box.get('config');
 
     if (currentConfig != null) {
-      String imeiGuardado =
-          currentConfig.imei; // 🔹 Guardamos el IMEI antes de borrar
-      String tokenGuardado =
-          currentConfig.token; // 🔹 Guardamos el token antes de borrar
+      String imeiGuardado = currentConfig.imei;
+      String tokenGuardado = currentConfig.token;
 
       AppConfig newConfig = currentConfig.copyWith(
-        imei: imeiGuardado, // ✅ Mantenemos el IMEI
-        token: tokenGuardado, // ✅ Mantenemos el Token
+        imei: imeiGuardado,
+        token: tokenGuardado,
         codHabilitado: "",
         nombre: "",
         cedula: "",
@@ -146,8 +148,7 @@ class ConfiguracionesScreen extends StatelessWidget {
       );
 
       await box.put('config', newConfig);
-      print(
-          "✅ Se ha cerrado sesión correctamente. IMEI y token siguen guardados.");
+      print("✅ Se ha cerrado sesión correctamente. IMEI y token siguen guardados.");
     }
 
     Get.offAllNamed('/login');

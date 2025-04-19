@@ -4,6 +4,8 @@ import 'package:hive/hive.dart';
 import 'package:lottie/lottie.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/models/bag/bag_operadora.dart';
+import 'package:trazaapp/data/models/entregas/entregas.dart';
 
 class CatalogosScreen extends StatelessWidget {
   final CatalogosController controller = Get.put(CatalogosController());
@@ -17,24 +19,66 @@ class CatalogosScreen extends StatelessWidget {
     }
   }
 
+  Future<bool> _onWillPop() async {
+    if (controller.isDownloading.value || controller.isForcedDownload.value) {
+      Get.snackbar(
+        'Espera',
+        'No puedes salir mientras se actualizan los catálogos',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+
+    // Verificar si hay datos en las cajas
+    final entregasBox = Hive.box<Entregas>('entregas');
+    final bagBox = Hive.box<Bag>('bag');
+
+    if (entregasBox.isEmpty && bagBox.isEmpty) {
+      // Mostrar diálogo de confirmación
+      final result = await Get.dialog<bool>(
+        AlertDialog(
+          title: const Text('⚠️ Atención'),
+          content: const Text(
+            'Para continuar necesitas descargar los catálogos de entregas y aretes. '
+            '¿Deseas descargarlos ahora?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: true),
+              child: const Text('Salir de la app'),
+            ),
+            TextButton(
+              onPressed: () {
+                final box = Hive.box<AppConfig>('appConfig');
+                final config = box.get('config');
+                if (config != null) {
+                  controller.downloadAllCatalogsSequential(
+                    token: config.token,
+                    codhabilitado: config.codHabilitado,
+                  );
+                }
+                Get.back(result: false);
+              },
+              child: const Text('Descargar ahora'),
+            ),
+          ],
+        ),
+      );
+
+      return result ?? false;
+    }
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final box = Hive.box<AppConfig>('appConfig');
     final config = box.get('config');
 
     return WillPopScope(
-      onWillPop: () async {
-        if (controller.isDownloading.value || controller.isForcedDownload.value) {
-          Get.snackbar(
-            'Espera',
-            'No puedes salir mientras se actualizan los catálogos',
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-          );
-          return false;
-        }
-        return true;
-      },
+      onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Actualización de catálogos"),
