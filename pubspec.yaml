@@ -59,6 +59,8 @@ dependencies:
   flutter_barcode_scanner: ^2.0.0
   image: 4.2.0
   pdf: ^3.10.7
+  mobile_scanner: ^6.0.8
+  qr_code_scanner: ^1.0.1
 
 
 dev_dependencies:

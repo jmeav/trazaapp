@@ -91,6 +91,16 @@ class HomeView extends StatelessWidget {
                     icon: FontAwesomeIcons.paperPlane,
                     onTap: () => Get.toNamed('/sendview'),
                   ),
+                  _ActionButton(
+                    label: 'Registrar Baja',
+                    icon: FontAwesomeIcons.skullCrossbones,
+                    onTap: () => Get.toNamed('/baja/select'),
+                  ),
+                  _ActionButton(
+                    label: 'Enviar Bajas',
+                    icon: FontAwesomeIcons.paperPlane,
+                    onTap: () => Get.toNamed('/baja/send'),
+                  ),
                 ],
               ),
 
@@ -111,11 +121,6 @@ class HomeView extends StatelessWidget {
                   _ActionButton(
                     label: 'Consulta Bovino',
                     icon: FontAwesomeIcons.cow,
-                    onTap: () {}, // TODO
-                  ),
-                  _ActionButton(
-                    label: 'Bajas',
-                    icon: FontAwesomeIcons.skullCrossbones,
                     onTap: () {}, // TODO
                   ),
                 ],

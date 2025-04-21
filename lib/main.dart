@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:trazaapp/controller/baja_controller.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_adapter.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/bag/bag_operadora.dart';
 import 'package:trazaapp/data/models/bag/bag_operadora_adapter.dart';
+import 'package:trazaapp/data/models/baja/baja_model.dart';
+import 'package:trazaapp/data/models/baja/baja_adapter.dart';
 import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/bovinos/bovino_adapter.dart';
 import 'package:trazaapp/data/models/departamentos/departamento.dart';
@@ -43,6 +46,12 @@ import 'package:trazaapp/presentation/verifycuescreen/verifycue_view.dart';
 import 'package:trazaapp/theme/theme_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:trazaapp/utils/configscreen.dart';
+import 'package:trazaapp/presentation/baja/baja_form_view.dart';
+import 'package:trazaapp/presentation/baja/baja_view.dart';
+import 'package:trazaapp/presentation/baja/baja_send_view.dart';
+import 'package:trazaapp/presentation/scanner/scanner_view.dart';
+import 'package:trazaapp/presentation/baja/baja_select_view.dart';
+import 'package:trazaapp/presentation/baja/baja_multiple_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,6 +71,7 @@ void main() async {
   Hive.registerAdapter(RazaAdapter());
   Hive.registerAdapter(BovinoRepoAdapter());
   Hive.registerAdapter(RepoEntregaAdapter());
+  Hive.registerAdapter(BajaAdapter());
 
   await Future.wait([
     Hive.openBox<HomeStat>('homeStat'),
@@ -78,6 +88,7 @@ void main() async {
     Hive.openBox<AltaEntrega>('altaentregas'),
     Hive.openBox<BovinoRepo>('bovinosrepo'),
     Hive.openBox<RepoEntrega>('repoentregas'),
+    Hive.openBox<Baja>('bajas'),
   ]);
 
   // 🚨 SOLO QUITAR LOS COMENTARIOS SI QUERÉS BORRAR LAS CAJAS EN USO
@@ -123,6 +134,28 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/catalogs', page: () => CatalogosScreen()),
           GetPage(name: '/configs', page: () => ConfiguracionesScreen()),
           GetPage(name: '/verifycue', page: () => VerifyEstablishmentView()),
+          GetPage(name: '/baja/select', page: () => const BajaSelectView()),
+          GetPage(
+  name: '/baja/form',
+  page: () => const BajaFormView(),
+  binding: BindingsBuilder(() {
+    Get.lazyPut(() => BajaController());
+  }),
+),
+
+          GetPage(name: '/baja/multiple', page: () => const BajaMultipleView()),
+          GetPage(
+            name: '/baja/send', 
+            page: () => const BajaSendView(),
+            binding: BindingsBuilder(() {
+              Get.lazyPut(() => BajaController());
+            }),
+          ),
+          GetPage(
+            name: '/scanner', 
+            page: () => const ScannerView(),
+            preventDuplicates: false  // Permite abrir múltiples instancias
+          ),
         ],
       );
     });

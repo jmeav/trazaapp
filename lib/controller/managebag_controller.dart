@@ -10,6 +10,7 @@ import 'package:trazaapp/data/models/municipios/municipio.dart';
 import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
 import 'package:trazaapp/data/models/productores/productor.dart';
 import 'package:trazaapp/presentation/homescreen/home.dart';
+import 'package:trazaapp/presentation/scanner/scanner_view.dart';
 import 'package:trazaapp/utils/util.dart';
 
 class ManageBagController extends GetxController {
@@ -460,5 +461,51 @@ class ManageBagController extends GetxController {
       );
     }
     update();
+  }
+
+  /// Escanear código de barras
+  Future<void> scanCode(String type) async {
+    final result = await Get.to(() => ScannerView());
+    if (result != null) {
+      if (type == 'cue') {
+        // Buscar el establecimiento por código
+        final establecimiento = establecimientos.firstWhereOrNull(
+          (e) => e.establecimiento.trim() == result.trim()
+        );
+        
+        if (establecimiento != null) {
+          cueController.text = establecimiento.establecimiento;
+          // Actualizar departamento y municipio
+          departamentoSeleccionado.value = establecimiento.idDepartamento;
+          filtrarMunicipios(establecimiento.idDepartamento);
+          municipioSeleccionado.value = establecimiento.idMunicipio;
+          update();
+        } else {
+          Get.snackbar(
+            'Error',
+            'Establecimiento no encontrado',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
+      } else if (type == 'cupa') {
+        // Buscar el productor por código
+        final productor = productores.firstWhereOrNull(
+          (p) => p.productor.trim() == result.trim()
+        );
+        
+        if (productor != null) {
+          cupaController.text = productor.productor;
+          update();
+        } else {
+          Get.snackbar(
+            'Error',
+            'Productor no encontrado',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
+      }
+    }
   }
 }
