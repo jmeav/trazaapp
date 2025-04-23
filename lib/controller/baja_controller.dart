@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:trazaapp/data/models/baja/baja_model.dart';
+import 'package:trazaapp/data/models/baja/arete_baja.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
 import 'package:trazaapp/data/models/productores/productor.dart';
@@ -19,6 +20,7 @@ class BajaController extends GetxController {
   final cupaController = TextEditingController();
   final fechaBajaController = TextEditingController();
   final evidenciaController = TextEditingController();
+  final cantidadController = TextEditingController();
 
   final RxBool isAreteScanned = false.obs;
   final RxString selectedMotivo = ''.obs;
@@ -28,6 +30,11 @@ class BajaController extends GetxController {
   final RxString pdfFileName = ''.obs;
   final RxString evidenciaFileName = ''.obs;
   final RxBool isLoading = true.obs;
+  final RxInt cantidadBajas = 1.obs;
+
+  final RxList<AreteBaja> detalleAretes = <AreteBaja>[].obs;
+
+  final RxInt currentAreteIndex = 0.obs;
 
   late Box<Baja> bajaBox;
   late Box<AppConfig> configBox;
@@ -49,23 +56,23 @@ class BajaController extends GetxController {
   void onInit() async {
     super.onInit();
     
-    isLoading.value = true; // Iniciar cargando
+    isLoading.value = true;
     
     try {
-      print('🔄 Inicializando BajaController...');
-      // Inicializar las cajas de Hive
+      print('�� Inicializando BajaController...');
       bajaBox = await Hive.openBox<Baja>('bajas');
       configBox = await Hive.openBox<AppConfig>('appConfig');
       establecimientoBox = await Hive.openBox<Establecimiento>('establecimientos');
       productorBox = await Hive.openBox<Productor>('productores');
       
-      // Configurar la fecha inicial
       fechaBajaController.text = _formatDate(fechaBaja.value);
+      
+      cantidadController.text = "1";
+      cantidadBajas.value = 1;
       
       isInitialized.value = true;
       print('✅ BajaController inicializado correctamente');
       
-      // Cargar bajas pendientes una vez que todo está inicializado
       cargarBajasPendientes();
     } catch (e) {
       print('❌ Error al inicializar BajaController: $e');
@@ -84,7 +91,6 @@ class BajaController extends GetxController {
   void onReady() {
     super.onReady();
     print('🔄 BajaController está listo');
-    // No cargar bajas pendientes aquí, ya se hace en onInit después de la inicialización
   }
 
   @override
@@ -95,6 +101,7 @@ class BajaController extends GetxController {
     cupaController.dispose();
     fechaBajaController.dispose();
     evidenciaController.dispose();
+    cantidadController.dispose();
     super.onClose();
   }
 
@@ -117,8 +124,94 @@ class BajaController extends GetxController {
     fechaBajaController.text = _formatDate(date);
   }
 
+  void setCantidadBajas(int cantidad) {
+    cantidadBajas.value = cantidad;
+    cantidadController.text = cantidad.toString();
+    
+    detalleAretes.clear();
+    currentAreteIndex.value = 0;
+  }
+
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  void agregarArete(String arete, String motivo) {
+    final bajaId = generateBajaId();
+    
+    detalleAretes.add(
+      AreteBaja(
+        arete: arete,
+        motivoBaja: motivo,
+        bajaId: bajaId,
+      )
+    );
+  }
+
+  void guardarAreteActual() {
+    if (areteController.text.isEmpty) {
+      Get.snackbar('Error', 'El arete es obligatorio');
+      return;
+    }
+    
+    if (selectedMotivo.value.isEmpty) {
+      Get.snackbar('Error', 'El motivo es obligatorio');
+      return;
+    }
+
+    final areteBaja = AreteBaja(
+      arete: areteController.text,
+      motivoBaja: selectedMotivo.value,
+      bajaId: generateBajaId(),
+    );
+
+    if (currentAreteIndex.value < detalleAretes.length) {
+      detalleAretes[currentAreteIndex.value] = areteBaja;
+    } else {
+      detalleAretes.add(areteBaja);
+    }
+
+    areteController.clear();
+    selectedMotivo.value = '';
+    isAreteScanned.value = false;
+
+    if (currentAreteIndex.value < cantidadBajas.value - 1) {
+      currentAreteIndex.value++;
+    } else {
+      Get.snackbar(
+        'Información',
+        'Todos los aretes han sido registrados. Puede continuar con el registro de la baja.',
+        backgroundColor: Colors.blue,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  void cargarAreteActual() {
+    if (currentAreteIndex.value < detalleAretes.length) {
+      final areteBaja = detalleAretes[currentAreteIndex.value];
+      areteController.text = areteBaja.arete;
+      selectedMotivo.value = areteBaja.motivoBaja;
+      isAreteScanned.value = true;
+    } else {
+      areteController.clear();
+      selectedMotivo.value = '';
+      isAreteScanned.value = false;
+    }
+  }
+
+  void siguienteArete() {
+    if (currentAreteIndex.value < cantidadBajas.value - 1) {
+      currentAreteIndex.value++;
+      cargarAreteActual();
+    }
+  }
+
+  void anteriorArete() {
+    if (currentAreteIndex.value > 0) {
+      currentAreteIndex.value--;
+      cargarAreteActual();
+    }
   }
 
   Future<void> loadEvidencia() async {
@@ -222,30 +315,31 @@ class BajaController extends GetxController {
   }
 
   bool validateForm() {
-    if (areteController.text.isEmpty) {
-      Get.snackbar('Error', 'El arete es obligatorio');
+    if (detalleAretes.isEmpty || detalleAretes.length != cantidadBajas.value) {
+      Get.snackbar('Error', 'Debe registrar todos los aretes');
       return false;
     }
-    if (selectedMotivo.value.isEmpty) {
-      Get.snackbar('Error', 'El motivo es obligatorio');
-      return false;
-    }
+    
     if (cueController.text.isEmpty) {
       Get.snackbar('Error', 'El CUE es obligatorio');
       return false;
     }
+    
     if (cupaController.text.isEmpty) {
       Get.snackbar('Error', 'La CUPA es obligatoria');
       return false;
     }
+    
     if (evidenciaBase64.value.isEmpty) {
       Get.snackbar('Error', 'La evidencia es obligatoria');
       return false;
     }
+    
     if (tipoEvidencia.value.isEmpty) {
       Get.snackbar('Error', 'Debe seleccionar tipo de evidencia');
       return false;
     }
+    
     return true;
   }
 
@@ -258,10 +352,14 @@ class BajaController extends GetxController {
         throw Exception('No se encontró la configuración del usuario.');
       }
 
+      final bajaId = generateBajaId();
+      
+      final updatedAretes = detalleAretes.map((arete) => 
+        arete.copyWith(bajaId: bajaId)
+      ).toList();
+
       final baja = Baja(
-        bajaId: generateBajaId(),
-        arete: areteController.text,
-        motivo: selectedMotivo.value,
+        bajaId: bajaId,
         cue: cueController.text,
         cupa: cupaController.text,
         fechaRegistro: DateTime.now(),
@@ -270,6 +368,7 @@ class BajaController extends GetxController {
         tipoEvidencia: tipoEvidencia.value,
         token: config.imei,
         codHabilitado: config.codHabilitado,
+        detalleAretes: updatedAretes,
       );
 
       await bajaBox.add(baja);
@@ -277,16 +376,15 @@ class BajaController extends GetxController {
       
       Get.snackbar(
         'Éxito', 
-        'Baja registrada correctamente',
+        'Baja de ${updatedAretes.length} aretes registrada correctamente',
         backgroundColor: Colors.green,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
         snackPosition: SnackPosition.TOP,
       );
       
-      // Retraso mayor para permitir que todas las animaciones terminen antes de navegar
       Future.delayed(const Duration(milliseconds: 1500), () {
-        Get.offAllNamed('/home'); // Usar offAllNamed para limpiar el stack de navegación
+        Get.offAllNamed('/home');
       });
     } catch (e) {
       Get.snackbar(
@@ -306,6 +404,7 @@ class BajaController extends GetxController {
     cupaController.clear();
     fechaBajaController.clear();
     evidenciaController.clear();
+    cantidadController.text = "1";
     selectedMotivo.value = '';
     evidenciaBase64.value = '';
     tipoEvidencia.value = '';
@@ -314,6 +413,9 @@ class BajaController extends GetxController {
     isAreteScanned.value = false;
     fechaBaja.value = DateTime.now();
     fechaBajaController.text = _formatDate(fechaBaja.value);
+    cantidadBajas.value = 1;
+    detalleAretes.clear();
+    currentAreteIndex.value = 0;
   }
 
   void cargarBajasPendientes() {
@@ -322,13 +424,12 @@ class BajaController extends GetxController {
       return;
     }
     
-    isLoading.value = true; // Iniciar carga
+    isLoading.value = true;
     
     try {
-      // Verificar que bajaBox esté inicializada
       if (!bajaBox.isOpen) {
         print('❌ Error: bajaBox no está inicializada o no está abierta');
-        isLoading.value = false; // Finalizar carga
+        isLoading.value = false;
         return;
       }
       
@@ -345,10 +446,7 @@ class BajaController extends GetxController {
       }
     } catch (e) {
       print('❌ Error al cargar bajas pendientes: $e');
-      // No usar Get.snackbar aquí para evitar errores durante la construcción
-      // En su lugar, solo registrar el error
       Future.microtask(() {
-        // Mostrar snackbar después del ciclo de construcción
         Get.snackbar(
           'Error',
           'Error al cargar bajas pendientes: $e',
@@ -357,7 +455,7 @@ class BajaController extends GetxController {
         );
       });
     } finally {
-      isLoading.value = false; // Finalizar carga sin importar si hay error
+      isLoading.value = false;
     }
   }
 
@@ -416,17 +514,12 @@ class BajaController extends GetxController {
         barrierDismissible: false,
       );
 
-      // Simular retraso de red
       await Future.delayed(const Duration(seconds: 2));
 
-      // TODO: Implementar el envío al backend
-      // Por ahora, simulamos un envío exitoso cambiando el estado
       for (var i = 0; i < bajasPendientes.length; i++) {
         final baja = bajasPendientes[i];
-        // Crear una nueva instancia con estado actualizado
         final bajaActualizada = baja.copyWith(estado: 'enviado');
         
-        // Encontrar el índice en el Box de Hive
         final index = bajaBox.values.toList().indexWhere(
           (b) => b.bajaId == baja.bajaId
         );
@@ -436,7 +529,7 @@ class BajaController extends GetxController {
         }
       }
       
-      Get.back(); // Cerrar el diálogo
+      Get.back();
 
       Get.snackbar(
         'Éxito', 
@@ -448,7 +541,7 @@ class BajaController extends GetxController {
       
       cargarBajasPendientes();
     } catch (e) {
-      Get.back(); // Cerrar el diálogo
+      Get.back();
       
       Get.snackbar(
         'Error',

@@ -52,6 +52,7 @@ import 'package:trazaapp/presentation/baja/baja_send_view.dart';
 import 'package:trazaapp/presentation/scanner/scanner_view.dart';
 import 'package:trazaapp/presentation/baja/baja_select_view.dart';
 import 'package:trazaapp/presentation/baja/baja_multiple_view.dart';
+import 'package:trazaapp/data/models/baja/arete_baja_adapter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,7 @@ void main() async {
   Hive.registerAdapter(BovinoRepoAdapter());
   Hive.registerAdapter(RepoEntregaAdapter());
   Hive.registerAdapter(BajaAdapter());
+  Hive.registerAdapter(AreteBajaAdapter());
 
   await Future.wait([
     Hive.openBox<HomeStat>('homeStat'),
@@ -143,7 +145,6 @@ class MyApp extends StatelessWidget {
   }),
 ),
 
-          GetPage(name: '/baja/multiple', page: () => const BajaMultipleView()),
           GetPage(
             name: '/baja/send', 
             page: () => const BajaSendView(),

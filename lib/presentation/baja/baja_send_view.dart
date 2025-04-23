@@ -25,7 +25,6 @@ class _BajaSendViewState extends State<BajaSendView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Enviar Bajas'),
-        backgroundColor: Colors.blue,
       ),
       body: Obx(() {
         // Mostrar indicador de carga mientras isLoading es true
@@ -48,7 +47,7 @@ class _BajaSendViewState extends State<BajaSendView> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.info_outline, size: 48, color: Colors.blue),
+                Icon(Icons.info_outline, size: 48),
                 const SizedBox(height: 16),
                 const Text(
                   'No hay bajas pendientes',
@@ -61,10 +60,6 @@ class _BajaSendViewState extends State<BajaSendView> {
                   onPressed: () => Get.toNamed('/baja/form'),
                   icon: const Icon(Icons.add),
                   label: const Text('Registrar Baja'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
                 ),
               ],
             ),
@@ -113,7 +108,7 @@ class _BajaSendViewState extends State<BajaSendView> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Arete: ${baja.arete}',
+                                'Aretes: ${baja.detalleAretes.length}',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -139,8 +134,45 @@ class _BajaSendViewState extends State<BajaSendView> {
                             ],
                           ),
                           const Divider(),
-                          _buildInfoRow('Motivo', baja.motivo),
-                          _buildInfoRow('Fecha', baja.fechaBaja.toString().split(' ')[0]),
+                          // Lista de aretes
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: baja.detalleAretes.length,
+                            itemBuilder: (context, areteIndex) {
+                              final arete = baja.detalleAretes[areteIndex];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${areteIndex + 1}. ',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Arete: ${arete.arete}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text('Motivo: ${arete.motivoBaja}'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const Divider(),
+                          _buildInfoRow('Fecha', '${baja.fechaBaja.day}/${baja.fechaBaja.month}/${baja.fechaBaja.year}'),
                           _buildInfoRow('CUE', baja.cue),
                           _buildInfoRow('CUPA', baja.cupa),
                           if (baja.evidencia.isNotEmpty)
@@ -159,9 +191,6 @@ class _BajaSendViewState extends State<BajaSendView> {
         onPressed: controller.bajasPendientes.isEmpty 
             ? null 
             : controller.enviarBajasPendientes,
-        backgroundColor: controller.bajasPendientes.isEmpty 
-            ? Colors.grey 
-            : Colors.blue,
         icon: const Icon(Icons.send),
         label: const Text('Enviar'),
       )),

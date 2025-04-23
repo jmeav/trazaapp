@@ -62,14 +62,14 @@ class HomeView extends StatelessWidget {
               const SizedBox(height: 24),
 
               // 📌 Actividades principales
-              Text('Actividades principales', style: theme.textTheme.titleMedium),
+              Center(child: Text('Actividades Principales', style: theme.textTheme.labelLarge)),
               const SizedBox(height: 12),
               GridView.count(
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
                 children: [
                   _ActionButton(
                     label: 'Gestionar Aretes',
@@ -106,25 +106,25 @@ class HomeView extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // 🔍 Consultas y herramientas
-              Text('Consultas y herramientas', style: theme.textTheme.titleMedium),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  _ActionButton(
-                    label: 'Verificar CUE',
-                    icon: FontAwesomeIcons.qrcode,
-                    onTap: () => Get.toNamed('/verifycue'),
-                  ),
-                  _ActionButton(
-                    label: 'Consulta Bovino',
-                    icon: FontAwesomeIcons.cow,
-                    onTap: () {}, // TODO
-                  ),
-                ],
-              ),
+              // // 🔍 Consultas y herramientas
+              // Text('Consultas y herramientas', style: theme.textTheme.titleMedium),
+              // const SizedBox(height: 12),
+              // Wrap(
+              //   spacing: 16,
+              //   runSpacing: 16,
+              //   children: [
+              //     _ActionButton(
+              //       label: 'Verificar CUE',
+              //       icon: FontAwesomeIcons.qrcode,
+              //       onTap: () => Get.toNamed('/verifycue'),
+              //     ),
+              //     _ActionButton(
+              //       label: 'Consulta Bovino',
+              //       icon: FontAwesomeIcons.cow,
+              //       onTap: () {}, // TODO
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         ),

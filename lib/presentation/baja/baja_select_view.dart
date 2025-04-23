@@ -6,11 +6,9 @@ class BajaSelectView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tipo de Baja'),
+        title: const Text('Registrar Bajas'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -20,9 +18,9 @@ class BajaSelectView extends StatelessWidget {
           children: [
             Card(
               child: ListTile(
-                leading: const Icon(Icons.person_outline, size: 32),
-                title: const Text('Individual'),
-                subtitle: const Text('Registrar una baja individual'),
+                leading: const Icon(Icons.add_circle_outline, size: 32),
+                title: const Text('Registrar Baja'),
+                subtitle: const Text('Registrar una o varias bajas'),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () => Get.toNamed('/baja/form'),
               ),
@@ -30,11 +28,11 @@ class BajaSelectView extends StatelessWidget {
             const SizedBox(height: 16),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.groups_outlined, size: 32),
-                title: const Text('Múltiple'),
-                subtitle: const Text('Registrar varias bajas a la vez'),
+                leading: const Icon(Icons.send_outlined, size: 32),
+                title: const Text('Bajas pendientes'),
+                subtitle: const Text('Ver y enviar bajas pendientes'),
                 trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () => Get.toNamed('/baja/multiple'),
+                onTap: () => Get.toNamed('/baja/send'),
               ),
             ),
           ],

@@ -1,4 +1,7 @@
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:trazaapp/controller/catalogs_controller.dart';
+import 'package:trazaapp/data/models/razas/raza.dart';
 
 @HiveType(typeId: 3)
 class Bovino {
@@ -17,8 +20,9 @@ class Bovino {
   @HiveField(4)
   String sexo;
 
+  // Almacena únicamente el ID de la raza
   @HiveField(5)
-  String raza;
+  String razaId;
 
   @HiveField(6)
   String traza;
@@ -29,14 +33,11 @@ class Bovino {
   @HiveField(8)
   String entregaId;
 
-  // ──────────────────────────────
-  // NUEVOS CAMPOS
-  // ──────────────────────────────
-  // Foto si estadoArete ≠ "Bueno"
+  // Foto del arete cuando estadoArete != "Bueno"
   @HiveField(9)
   String fotoArete;
 
-  // Datos genealógicos si traza = "PURO"
+  // Datos genealógicos cuando traza == "PURO"
   @HiveField(10)
   String areteMadre;
 
@@ -48,7 +49,6 @@ class Bovino {
 
   @HiveField(13)
   String regPadre;
-  // ──────────────────────────────
 
   Bovino({
     required this.arete,
@@ -56,7 +56,7 @@ class Bovino {
     required this.cupa,
     required this.edad,
     required this.sexo,
-    required this.raza,
+    required this.razaId,
     required this.traza,
     required this.estadoArete,
     required this.entregaId,
@@ -67,15 +67,23 @@ class Bovino {
     this.regPadre = '',
   });
 
-  // ...
-  // copyWith para incluir nuevos campos
+  /// Getter para mostrar el nombre de la raza en la UI
+  String get razaNombre {
+    final listaRazas = Get.find<CatalogosController>().razas;
+    final r = listaRazas.firstWhere(
+      (x) => x.id == razaId,
+      orElse: () => Raza(id: '', nombre: ''),
+    );
+    return r.nombre;
+  }
+
   Bovino copyWith({
     String? arete,
     String? cue,
     String? cupa,
     int? edad,
     String? sexo,
-    String? raza,
+    String? razaId,
     String? traza,
     String? estadoArete,
     String? entregaId,
@@ -91,7 +99,7 @@ class Bovino {
       cupa: cupa ?? this.cupa,
       edad: edad ?? this.edad,
       sexo: sexo ?? this.sexo,
-      raza: raza ?? this.raza,
+      razaId: razaId ?? this.razaId,
       traza: traza ?? this.traza,
       estadoArete: estadoArete ?? this.estadoArete,
       entregaId: entregaId ?? this.entregaId,

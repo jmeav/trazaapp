@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:trazaapp/data/models/baja/arete_baja.dart';
 import 'baja_model.dart';
 
 class BajaAdapter extends TypeAdapter<Baja> {
@@ -9,8 +10,6 @@ class BajaAdapter extends TypeAdapter<Baja> {
   Baja read(BinaryReader reader) {
     return Baja(
       bajaId: reader.readString(),
-      arete: reader.readString(),
-      motivo: reader.readString(),
       cue: reader.readString(),
       cupa: reader.readString(),
       fechaRegistro: DateTime.parse(reader.readString()),
@@ -20,14 +19,13 @@ class BajaAdapter extends TypeAdapter<Baja> {
       estado: reader.readString(),
       token: reader.readString(),
       codHabilitado: reader.readString(),
+      detalleAretes: (reader.readList() as List).cast<AreteBaja>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Baja obj) {
     writer.writeString(obj.bajaId);
-    writer.writeString(obj.arete);
-    writer.writeString(obj.motivo);
     writer.writeString(obj.cue);
     writer.writeString(obj.cupa);
     writer.writeString(obj.fechaRegistro.toIso8601String());
@@ -37,5 +35,6 @@ class BajaAdapter extends TypeAdapter<Baja> {
     writer.writeString(obj.estado);
     writer.writeString(obj.token);
     writer.writeString(obj.codHabilitado);
+    writer.writeList(obj.detalleAretes);
   }
 } 

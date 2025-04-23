@@ -1,4 +1,7 @@
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:trazaapp/controller/catalogs_controller.dart';
+import 'package:trazaapp/data/models/razas/raza.dart';
 
 @HiveType(typeId: 14)
 class BovinoRepo {
@@ -11,8 +14,9 @@ class BovinoRepo {
   @HiveField(2)
   final String sexo;
 
+  // Almacena únicamente el ID de la raza
   @HiveField(3)
-  final String raza;
+  String razaId;
 
   @HiveField(4)
   final String traza;
@@ -47,13 +51,11 @@ class BovinoRepo {
   @HiveField(14)
   final String repoId;
 
-  String get id => arete;
-
   BovinoRepo({
     required this.arete,
     required this.edad,
     required this.sexo,
-    required this.raza,
+    required this.razaId,
     required this.traza,
     required this.estadoArete,
     required this.fechaNacimiento,
@@ -67,11 +69,24 @@ class BovinoRepo {
     required this.repoId,
   });
 
+  /// Getter que usa tu lógica actual para identificar la entidad
+  String get id => arete;
+
+  /// Getter para mostrar el nombre de la raza en UI
+  String get razaNombre {
+    final lista = Get.find<CatalogosController>().razas;
+    final r = lista.firstWhere(
+      (x) => x.id == razaId,
+      orElse: () => Raza(id: '', nombre: ''),
+    );
+    return r.nombre;
+  }
+
   BovinoRepo copyWith({
     String? arete,
     int? edad,
     String? sexo,
-    String? raza,
+    String? razaId,
     String? traza,
     String? estadoArete,
     DateTime? fechaNacimiento,
@@ -88,7 +103,7 @@ class BovinoRepo {
       arete: arete ?? this.arete,
       edad: edad ?? this.edad,
       sexo: sexo ?? this.sexo,
-      raza: raza ?? this.raza,
+      razaId: razaId ?? this.razaId,
       traza: traza ?? this.traza,
       estadoArete: estadoArete ?? this.estadoArete,
       fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento,
@@ -107,7 +122,7 @@ class BovinoRepo {
         "arete": arete,
         "edad": edad,
         "sexo": sexo,
-        "raza": raza,
+        "raza": razaId,               // enviamos solo el ID
         "traza": traza,
         "estadoArete": estadoArete,
         "fechaNacimiento": fechaNacimiento.toIso8601String(),
@@ -120,4 +135,4 @@ class BovinoRepo {
         "areteAnterior": areteAnterior,
         "repoId": repoId,
       };
-} 
+}

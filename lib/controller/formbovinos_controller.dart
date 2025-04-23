@@ -106,7 +106,6 @@
             arete: id,
             edad: 0,
             sexo: '',
-            raza: '',
             estadoArete: 'Bueno',
             cue: entrega.cue,
             cupa: entrega.cupa,
@@ -116,7 +115,7 @@
             areteMadre: '',
             aretePadre: '',
             regMadre: '',
-            regPadre: '',
+            regPadre: '', razaId: '',
           );
         }
       } catch (e) {
@@ -161,7 +160,7 @@
     void applyQuickFill() {
       bovinoInfo.forEach((key, bovino) {
         final edad = int.tryParse(quickFillEdad.value) ?? bovino.edad;
-        final razaValida = razas.any((r) => r.nombre == quickFillRaza.value)
+        final razaValida = razas.any((r) => r.id == quickFillRaza.value)
             ? quickFillRaza.value
             : '';
 
@@ -169,7 +168,7 @@
           edad: quickFillEdad.value.isNotEmpty ? edad : bovino.edad,
           sexo:
               quickFillSexo.value.isNotEmpty ? quickFillSexo.value : bovino.sexo,
-          raza: razaValida,
+          razaId: razaValida,
         );
         bovinoInfo[key] = updatedBovino;
       });
@@ -183,7 +182,7 @@
       bovinoInfo.values.forEach((bovino) {
         bovino.edad = 0;
         bovino.sexo = '';
-        bovino.raza = '';
+        bovino.razaId = '';
       });
       Get.snackbar('Llenado Rápido', 'Datos borrados correctamente.');
     }
@@ -255,7 +254,7 @@
           );
           return false;
         }
-        if (bovino.raza.isEmpty) {
+        if (bovino.razaId.isEmpty) {
           _showErrorAndJumpToPage(
             'Falta la raza en el bovino ${bovino.arete}',
             index,
@@ -380,7 +379,7 @@
             arete: bovino.arete,
             edad: bovino.edad,
             sexo: bovino.sexo,
-            raza: bovino.raza,
+            raza: bovino.razaId,
             traza: bovino.traza,
             estadoArete: bovino.estadoArete,
             fechaNacimiento:

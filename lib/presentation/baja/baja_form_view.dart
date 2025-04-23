@@ -14,7 +14,7 @@ class BajaFormView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Baja Individual'),
+        title: const Text('Registro de Bajas'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -22,60 +22,159 @@ class BajaFormView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Arete field with scanner option
-              Text('Arete', style: theme.textTheme.titleMedium),
+              // Cantidad de bajas
+              Text('Cantidad de bajas', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: controller.areteController,
-                      decoration: const InputDecoration(
-                        hintText: 'Ingrese el número de arete',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        controller.setAreteScanned(false);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.qr_code_scanner),
-                    onPressed: () => _openScanner(context, controller),
-                  ),
-                  const SizedBox(width: 8),
-                  Obx(() => Chip(
-                        label: Text(controller.isAreteScanned.value
-                            ? 'Escaneado'
-                            : 'Digitado'),
-                        backgroundColor: controller.isAreteScanned.value
-                            ? theme.colorScheme.primaryContainer
-                            : theme.colorScheme.secondaryContainer,
-                      )),
-                ],
+              TextField(
+                controller: controller.cantidadController,
+                decoration: const InputDecoration(
+                  hintText: 'Ingrese la cantidad de bajas',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  int? cantidad = int.tryParse(value);
+                  if (cantidad != null && cantidad > 0) {
+                    controller.setCantidadBajas(cantidad);
+                  }
+                },
               ),
               const SizedBox(height: 16),
 
-              // Motivo dropdown
-              Text('Motivo de la baja', style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Obx(() => DropdownButtonFormField<String>(
-                    value: controller.selectedMotivo.value.isEmpty
-                        ? null
-                        : controller.selectedMotivo.value,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
-                    items: controller.motivos.map((motivo) {
-                      return DropdownMenuItem(
-                        value: motivo,
-                        child: Text(motivo),
-                      );
-                    }).toList(),
-                    onChanged: (value) => controller.setMotivo(value ?? ''),
+              // Sección de detalles de aretes
+              Obx(() => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Arete ${controller.currentAreteIndex.value + 1} de ${controller.cantidadBajas.value}',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back_ios),
+                                onPressed: controller.currentAreteIndex.value > 0
+                                    ? controller.anteriorArete
+                                    : null,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.arrow_forward_ios),
+                                onPressed: controller.currentAreteIndex.value <
+                                        controller.cantidadBajas.value - 1
+                                    ? controller.siguienteArete
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Arete field with scanner option
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: controller.areteController,
+                              decoration: const InputDecoration(
+                                hintText: 'Ingrese el número de arete',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                controller.setAreteScanned(false);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.qr_code_scanner),
+                            onPressed: () => _openScanner(context, controller),
+                          ),
+                          const SizedBox(width: 8),
+                          Chip(
+                            label: Text(controller.isAreteScanned.value
+                                ? 'Escaneado'
+                                : 'Digitado'),
+                            backgroundColor: controller.isAreteScanned.value
+                                ? theme.colorScheme.primaryContainer
+                                : theme.colorScheme.secondaryContainer,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Motivo dropdown
+                      Text('Motivo de la baja',
+                          style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: controller.selectedMotivo.value.isEmpty
+                            ? null
+                            : controller.selectedMotivo.value,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                        ),
+                        items: controller.motivos.map((motivo) {
+                          return DropdownMenuItem(
+                            value: motivo,
+                            child: Text(motivo),
+                          );
+                        }).toList(),
+                        onChanged: (value) => controller.setMotivo(value ?? ''),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Botón para guardar este arete
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: controller.guardarAreteActual,
+                          child: const Text('Guardar Arete'),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Mostrar lista de aretes guardados
+                      if (controller.detalleAretes.isNotEmpty) ...[
+                        Text('Aretes registrados',
+                            style: theme.textTheme.titleMedium),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: controller.detalleAretes.length,
+                            itemBuilder: (context, index) {
+                              final arete = controller.detalleAretes[index];
+                              return ListTile(
+                                title: Text('Arete: ${arete.arete}'),
+                                subtitle: Text('Motivo: ${arete.motivoBaja}'),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () {
+                                    controller.currentAreteIndex.value = index;
+                                    controller.cargarAreteActual();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ],
                   )),
+
+              const Divider(),
+              Text('Información General', style: theme.textTheme.titleLarge),
               const SizedBox(height: 16),
 
               // CUE field with autocomplete
@@ -197,10 +296,14 @@ class BajaFormView extends StatelessWidget {
               // Submit button
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: controller.saveBaja,
-                  child: const Text('Guardar'),
-                ),
+                child: Obx(() => ElevatedButton(
+                      onPressed: controller.detalleAretes.length ==
+                              controller.cantidadBajas.value
+                          ? controller.saveBaja
+                          : null,
+                      child: Text(
+                          'Guardar Baja (${controller.detalleAretes.length}/${controller.cantidadBajas.value})'),
+                    )),
               ),
             ],
           ),

@@ -352,8 +352,8 @@ class ManageBagController extends GetxController {
       duration: const Duration(seconds: 2),
     );
 
-    // ✅ Esperar antes de cerrar la pantalla
-    await Future.delayed(const Duration(seconds: 1));
+    // ✅ Aumentar el retraso antes de cerrar la pantalla para permitir que las animaciones terminen
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     // ✅ Cerrar la pantalla y limpiar los datos completamente
     Get.offUntil(
@@ -507,5 +507,96 @@ class ManageBagController extends GetxController {
         }
       }
     }
+  }
+
+  // Para gestión en campo
+  List<List<int>> get rangosResiduales {
+    if (aretesDisponibles.isEmpty) return [];
+    
+    List<List<int>> rangos = [];
+    List<int> tempRango = [];
+    
+    for (int i = 0; i < aretesDisponibles.length; i++) {
+      if (tempRango.isEmpty || tempRango.last + 1 == aretesDisponibles[i]) {
+        tempRango.add(aretesDisponibles[i]);
+      } else {
+        // Solo agregamos como residual si el rango tiene menos de 20 aretes
+        if (tempRango.length < 20 && tempRango.isNotEmpty) {
+          rangos.add(List.from(tempRango));
+        }
+        tempRango = [aretesDisponibles[i]];
+      }
+    }
+    
+    // No olvidar el último rango
+    if (tempRango.length < 20 && tempRango.isNotEmpty) {
+      rangos.add(List.from(tempRango));
+    }
+    
+    return rangos;
+  }
+  
+  bool get tieneRangosResiduales => rangosResiduales.isNotEmpty;
+  
+  void mostrarRangosResiduales() {
+    if (!tieneRangosResiduales) {
+      Get.snackbar(
+        'Información', 
+        'No hay rangos residuales disponibles',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white
+      );
+      return;
+    }
+    
+    final rangos = rangosResiduales;
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Rangos Residuales Disponibles'),
+        content: Container(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.builder(
+            itemCount: rangos.length,
+            itemBuilder: (context, index) {
+              final rango = rangos[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: ListTile(
+                  title: Text('Rango ${index + 1}'),
+                  subtitle: Text('${rango.first} - ${rango.last} (${rango.length} aretes)'),
+                  trailing: ElevatedButton(
+                    child: const Text('Usar'),
+                    onPressed: () {
+                      Get.back();
+                      // Usar este rango para una entrega
+                      _usarRangoResidual(rango);
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _usarRangoResidual(List<int> rango) {
+    // Preparamos los campos para la entrega con este rango residual
+    cantidadController.text = rango.length.toString();
+    
+    Get.snackbar(
+      'Rango seleccionado', 
+      'Se usará el rango ${rango.first} - ${rango.last} (${rango.length} aretes)',
+      backgroundColor: Colors.green,
+      colorText: Colors.white
+    );
   }
 }

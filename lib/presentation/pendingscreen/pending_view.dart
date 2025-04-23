@@ -47,47 +47,161 @@ class EntregasView extends StatelessWidget {
 
   Widget _buildEntregaCard(Entregas entrega) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Información general de la entrega
+            // Encabezado con ID, distancia y acciones
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                Expanded(
+                  child: Text(
                   'Entrega #${entrega.entregaId}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text('📅 ${formatFecha(entrega.fechaEntrega)}'),
+                ),
+                if (entrega.distanciaCalculada != null)
+                  Text(
+                    entrega.distanciaCalculada!,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  onPressed: () => _mostrarDetallesEntrega(entrega),
+                  tooltip: 'Ver detalles',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                if (entrega.tipo == 'manual')
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    color: Colors.red,
+                    onPressed: () => _confirmarEliminarEntrega(Get.context!, entrega.entregaId),
+                    tooltip: 'Eliminar entrega',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
               ],
             ),
-            const SizedBox(height: 4),
+            
+            const Divider(height: 16),
+            
+            // Información principal en formato horizontal
+            Row(
+              children: [
+                // Columna izquierda: Establecimiento y CUE
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entrega.nombreEstablecimiento,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'CUE: ${entrega.cue}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(Get.context!).textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Columna derecha: Productor y CUPA
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entrega.nombreProductor,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'CUPA: ${entrega.cupa}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(Get.context!).textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Columna cantidad de aretes
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(Get.context!).colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${entrega.cantidad} aretes',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 10),
+            
+            // Fecha y botón
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('📍 ${entrega.departamento}, ${entrega.municipio}'),
-                if (entrega.distanciaCalculada != null)
-                  Text('🚗 ${entrega.distanciaCalculada}'),
-              ],
-            ),
-            Text('🏢 ${entrega.nombreEstablecimiento} (CUE: ${entrega.cue})'),
-            Text('👨‍🌾 ${entrega.nombreProductor} (CUPA: ${entrega.cupa})'),
-            Text('🔢 Rango: ${entrega.rangoInicial} - ${entrega.rangoFinal} (${entrega.cantidad} aretes)'),
-
-            const SizedBox(height: 8),
-            if (entrega.idAlta == null)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _mostrarDialogoTipoEntrega(entrega),
-                  child: const Text('Realizar Entrega'),
+                Text(
+                  formatFecha(entrega.fechaEntrega),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(Get.context!).textTheme.bodySmall?.color,
+                  ),
                 ),
+                
+                if (entrega.estado.trim().toLowerCase() == 'pendiente')
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.assignment_turned_in, size: 18),
+                    label: const Text('Realizar'),
+                    onPressed: () => _mostrarDialogoTipoEntrega(entrega),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      minimumSize: Size(100, 36),
+                    ),
+                  ),
+              ],
               ),
           ],
         ),
@@ -234,6 +348,64 @@ class EntregasView extends StatelessWidget {
       onCancel: () {
         Get.back();
       },
+    );
+  }
+
+  void _mostrarDetallesEntrega(Entregas entrega) {
+    Get.dialog(
+      AlertDialog(
+        title: Text('Detalles de Entrega'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow('ID', entrega.entregaId),
+              _buildDetailRow('Fecha', formatFecha(entrega.fechaEntrega)),
+              _buildDetailRow('Tipo', entrega.tipo),
+              _buildDetailRow('Estado', entrega.estado),
+              _buildDetailRow('Departamento', entrega.departamento),
+              _buildDetailRow('Municipio', entrega.municipio),
+              _buildDetailRow('Establecimiento', entrega.nombreEstablecimiento),
+              _buildDetailRow('CUE', entrega.cue),
+              _buildDetailRow('Productor', entrega.nombreProductor),
+              _buildDetailRow('CUPA', entrega.cupa),
+              _buildDetailRow('Cantidad', '${entrega.cantidad} aretes'),
+              _buildDetailRow('Rango', '${entrega.rangoInicial} - ${entrega.rangoFinal}'),
+              if (entrega.distanciaCalculada != null)
+                _buildDetailRow('Distancia', entrega.distanciaCalculada!),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              '$label:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(value),
+          ),
+        ],
+      ),
     );
   }
 }

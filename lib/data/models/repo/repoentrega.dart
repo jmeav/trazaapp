@@ -161,7 +161,6 @@ class RepoEntrega {
     "token": token,
     "pdfEvidencia": pdfEvidencia,
     "observaciones": observaciones,
-    "estadoRepo": estadoRepo,
     "fotoBovInicial": fotoBovInicial,
     "fotoBovFinal": fotoBovFinal,
     "fotoFicha": fotoFicha,

@@ -1,15 +1,10 @@
 import 'package:hive/hive.dart';
+import 'package:trazaapp/data/models/baja/arete_baja.dart';
 
 @HiveType(typeId: 15)
 class Baja {
   @HiveField(0)
   final String bajaId; // Formato: "ABJSO" + número
-
-  @HiveField(1)
-  final String arete;
-
-  @HiveField(2)
-  final String motivo;
 
   @HiveField(3)
   final String cue;
@@ -38,10 +33,14 @@ class Baja {
   @HiveField(11)
   final String codHabilitado; // Código del habilitado
 
+  @HiveField(12)
+  final List<AreteBaja> detalleAretes; // Nueva lista de aretes para baja
+
+  // Getter para cantidad de aretes
+  int get cantidad => detalleAretes.length;
+
   Baja({
     required this.bajaId,
-    required this.arete,
-    required this.motivo,
     required this.cue,
     required this.cupa,
     required this.fechaRegistro,
@@ -51,13 +50,12 @@ class Baja {
     this.estado = 'pendiente',
     required this.token,
     required this.codHabilitado,
+    required this.detalleAretes,
   });
 
   // Método copyWith para crear una copia modificada del objeto
   Baja copyWith({
     String? bajaId,
-    String? arete,
-    String? motivo,
     String? cue,
     String? cupa,
     DateTime? fechaRegistro,
@@ -67,11 +65,10 @@ class Baja {
     String? estado,
     String? token,
     String? codHabilitado,
+    List<AreteBaja>? detalleAretes,
   }) {
     return Baja(
       bajaId: bajaId ?? this.bajaId,
-      arete: arete ?? this.arete,
-      motivo: motivo ?? this.motivo,
       cue: cue ?? this.cue,
       cupa: cupa ?? this.cupa,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
@@ -81,15 +78,17 @@ class Baja {
       estado: estado ?? this.estado,
       token: token ?? this.token,
       codHabilitado: codHabilitado ?? this.codHabilitado,
+      detalleAretes: detalleAretes ?? this.detalleAretes,
     );
   }
 
   // Constructor factory para crear un objeto Baja a partir de un JSON
   factory Baja.fromJson(Map<String, dynamic> json) {
+    List<dynamic> detalleJson = json['DETALLE_ARETES'] ?? [];
+    List<AreteBaja> detalles = detalleJson.map((item) => AreteBaja.fromJson(item)).toList();
+
     return Baja(
       bajaId: json['BAJA_ID'] ?? '',
-      arete: json['ARETE'] ?? '',
-      motivo: json['MOTIVO'] ?? '',
       cue: json['CUE'] ?? '',
       cupa: json['CUPA'] ?? '',
       fechaRegistro: DateTime.parse(json['FECHA_REGISTRO'] ?? DateTime.now().toIso8601String()),
@@ -99,6 +98,7 @@ class Baja {
       estado: json['ESTADO'] ?? 'pendiente',
       token: json['TOKEN'] ?? '',
       codHabilitado: json['COD_HABILITADO'] ?? '',
+      detalleAretes: detalles,
     );
   }
 
@@ -106,17 +106,15 @@ class Baja {
   Map<String, dynamic> toJson() {
     return {
       'BAJA_ID': bajaId,
-      'ARETE': arete,
-      'MOTIVO': motivo,
       'CUE': cue,
       'CUPA': cupa,
       'FECHA_REGISTRO': fechaRegistro.toIso8601String(),
       'FECBAJA': fechaBaja.toIso8601String(),
       'EVIDENCIA': evidencia,
       'TIPO_EVIDENCIA': tipoEvidencia,
-      'ESTADO': estado,
       'TOKEN': token,
       'COD_HABILITADO': codHabilitado,
+      'DETALLE_ARETES': detalleAretes.map((a) => a.toJson()).toList(),
     };
   }
 } 

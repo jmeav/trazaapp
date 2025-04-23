@@ -59,7 +59,6 @@ class FormBovinosView extends StatelessWidget {
             children: [
               // Encabezado
               Container(
-                color: Colors.blue.shade50,
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -240,7 +239,7 @@ class FormBovinosView extends StatelessWidget {
                     updated = updated.copyWith(
                       edad: 0,
                       sexo: '',
-                      raza: '',
+                      razaId: '',
                       areteMadre: '',
                       aretePadre: '',
                       regMadre: '',
@@ -322,22 +321,23 @@ class FormBovinosView extends StatelessWidget {
 
             // RAZA
             DropdownButtonFormField<String>(
-              value: bovinoData.raza.isEmpty ? null : bovinoData.raza,
+              value: bovinoData.razaId.isEmpty ? null : bovinoData.razaId,
               decoration: const InputDecoration(
                 labelText: 'Raza',
                 border: OutlineInputBorder(),
               ),
               items: controller.razas.map((Raza r) {
                 return DropdownMenuItem(
-                  value: r.nombre,
+                  value: r.id,
                   child: Text(r.nombre),
                 );
               }).toList(),
               onChanged: (val) {
-                final updated = bovinoData.copyWith(raza: val ?? '');
+                final updated = bovinoData.copyWith(razaId: val ?? '');
                 controller.bovinoInfo[bovinoID] = updated;
               },
             ),
+
 
             const SizedBox(height: 16),
 
@@ -584,129 +584,125 @@ class FormBovinosView extends StatelessWidget {
   // Diálogo de Llenado Rápido
   // ══════════════════════════════════════════════
   Widget _buildQuickFillDialog(BuildContext context) {
+    // Usamos un SingleChildScrollView para evitar problemas con el teclado
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Obx(() {
-          // Este Obx sí es válido: se lee quickFillEdad/sexo/raza
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Llenado Rápido',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+        child: SingleChildScrollView(
+          child: Obx(() {
+            // Este Obx sí es válido: se lee quickFillEdad/sexo/raza
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Llenado Rápido',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Edad',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        controller.quickFillEdad.value = value;
-                      },
-                    ),
+                // Usamos Column en vez de Row para evitar la animación brusca cuando el teclado se cierra
+                TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Edad',
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Sexo',
-                        border: OutlineInputBorder(),
-                      ),
-                      value: controller.quickFillSexo.value.isEmpty
-                          ? null
-                          : controller.quickFillSexo.value,
-                      items: const ['M', 'H'].map((s) {
-                        return DropdownMenuItem(value: s, child: Text(s));
-                      }).toList(),
-                      onChanged: (val) {
-                        controller.quickFillSexo.value = val ?? '';
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Raza',
-                  border: OutlineInputBorder(),
+                  onChanged: (value) {
+                    controller.quickFillEdad.value = value;
+                  },
                 ),
-                value: controller.quickFillRaza.value.isEmpty
-                    ? null
-                    : controller.quickFillRaza.value,
-                items: controller.razas.map((Raza r) {
-                  return DropdownMenuItem(
-                    value: r.nombre,
-                    child: Text(r.nombre),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  controller.quickFillRaza.value = val ?? '';
-                },
-              ),
-
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancelar'),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Sexo',
+                    border: OutlineInputBorder(),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          controller.clearQuickFill();
-                          Navigator.pop(context);
-                          Get.snackbar(
-                            'Llenado Rápido',
-                            'Datos borrados correctamente.',
-                          );
-                        },
-                        icon: const Icon(Icons.clear, color: Colors.red),
-                        tooltip: 'Borrar Llenado Rápido',
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          if (controller.quickFillRaza.value.isNotEmpty &&
-                              !controller.razas.any((r) =>
-                                  r.nombre == controller.quickFillRaza.value)) {
+                  value: controller.quickFillSexo.value.isEmpty
+                      ? null
+                      : controller.quickFillSexo.value,
+                  items: const ['M', 'H'].map((s) {
+                    return DropdownMenuItem(value: s, child: Text(s));
+                  }).toList(),
+                  onChanged: (val) {
+                    controller.quickFillSexo.value = val ?? '';
+                  },
+                ),
+
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Raza',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: controller.quickFillRaza.value.isEmpty
+                      ? null
+                      : controller.quickFillRaza.value,
+                  items: controller.razas.map((Raza r) {
+                    return DropdownMenuItem(
+                      value: r.id,
+                      child: Text(r.nombre),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    controller.quickFillRaza.value = val ?? '';
+                  },
+                ),
+
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancelar'),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            controller.clearQuickFill();
+                            Navigator.pop(context);
                             Get.snackbar(
-                              'Error',
-                              'La raza seleccionada no es válida.',
+                              'Llenado Rápido',
+                              'Datos borrados correctamente.',
                             );
-                            return;
-                          }
-                          controller.applyQuickFill();
-                          Navigator.pop(context);
-                          Get.snackbar(
-                            'Llenado Rápido',
-                            'Datos aplicados correctamente.',
-                          );
-                        },
-                        icon: const Icon(Icons.check, color: Colors.green),
-                        tooltip: 'Aplicar Llenado Rápido',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          );
-        }),
+                          },
+                          icon: const Icon(Icons.clear, color: Colors.red),
+                          tooltip: 'Borrar Llenado Rápido',
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            if (controller.quickFillRaza.value.isNotEmpty &&
+                                !controller.razas.any((r) =>
+                                    r.id == controller.quickFillRaza.value)) {
+                              Get.snackbar(
+                                'Error',
+                                'La raza seleccionada no es válida.',
+                              );
+                              return;
+                            }
+                            controller.applyQuickFill();
+                            Navigator.pop(context);
+                            Get.snackbar(
+                              'Llenado Rápido',
+                              'Datos aplicados correctamente.',
+                            );
+                          },
+                          icon: const Icon(Icons.check, color: Colors.green),
+                          tooltip: 'Aplicar Llenado Rápido',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }),
+        ),
       ),
     );
   }

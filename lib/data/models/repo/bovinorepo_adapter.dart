@@ -11,7 +11,7 @@ class BovinoRepoAdapter extends TypeAdapter<BovinoRepo> {
       arete: reader.readString(),
       edad: reader.readInt(),
       sexo: reader.readString(),
-      raza: reader.readString(),
+      razaId: reader.readString(),
       traza: reader.readString(),
       estadoArete: reader.readString(),
       fechaNacimiento: DateTime.parse(reader.readString()),
@@ -21,7 +21,8 @@ class BovinoRepoAdapter extends TypeAdapter<BovinoRepo> {
       regMadre: reader.readString(),
       regPadre: reader.readString(),
       repoEntregaId: reader.readString(),
-      areteAnterior: reader.readString(), repoId: '',
+      areteAnterior: reader.readString(),
+      repoId: reader.readString(),
     );
   }
 
@@ -30,7 +31,7 @@ class BovinoRepoAdapter extends TypeAdapter<BovinoRepo> {
     writer.writeString(obj.arete);
     writer.writeInt(obj.edad);
     writer.writeString(obj.sexo);
-    writer.writeString(obj.raza);
+    writer.writeString(obj.razaId);
     writer.writeString(obj.traza);
     writer.writeString(obj.estadoArete);
     writer.writeString(obj.fechaNacimiento.toIso8601String());
@@ -41,5 +42,16 @@ class BovinoRepoAdapter extends TypeAdapter<BovinoRepo> {
     writer.writeString(obj.regPadre);
     writer.writeString(obj.repoEntregaId);
     writer.writeString(obj.areteAnterior);
+    writer.writeString(obj.repoId);
   }
-} 
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BovinoRepoAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}

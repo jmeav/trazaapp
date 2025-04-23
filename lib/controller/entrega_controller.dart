@@ -370,8 +370,11 @@ class EntregaController extends GetxController {
   // Para gestión en campo
   List<Entregas> get entregasPendientes => entregas
       .where((entrega) => 
-        entrega.estado.trim().toLowerCase() == 'pendiente' && 
-        !entrega.reposicion)
+        // Incluir entregas en estado pendiente y que no sean reposiciones
+        (entrega.estado.trim().toLowerCase() == 'pendiente' && !entrega.reposicion) ||
+        // También incluir entregas con idAlta que todavía están en estado pendiente
+        (entrega.idAlta != null && entrega.estado.trim().toLowerCase() == 'pendiente' && !entrega.reposicion)
+      )
       .toList();
 
   List<Entregas> get entregasListas => entregas

@@ -212,6 +212,22 @@ class ManageBagView extends StatelessWidget {
                     // color: Colors.white, // Texto blanco
                     ),
               ),
+              const SizedBox(height: 15),
+              // Botón para rangos residuales
+              Obx(() => controller.tieneRangosResiduales
+                ? Center(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.app_registration),
+                      label: const Text('Rangos Residuales Disponibles'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => controller.mostrarRangosResiduales(),
+                    ),
+                  )
+                : SizedBox.shrink(),
+              ),
             ],
           ),
         ),
