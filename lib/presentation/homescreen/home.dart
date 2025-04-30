@@ -8,8 +8,18 @@ import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/bag/bag_operadora.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 
-class HomeView extends StatelessWidget {
+// Convertido a StatefulWidget para manejar BottomNavigationBar
+class HomeView extends StatefulWidget {
   const HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  int _selectedIndex = 0; // Índice para BottomNavigationBar
+  final EntregaController entregaController = Get.put(EntregaController());
+  final ManageBagController bagController = Get.put(ManageBagController());
 
   String getSaludo() {
     final hour = DateTime.now().hour;
@@ -24,28 +34,55 @@ class HomeView extends StatelessWidget {
 
     if (entregasBox.isEmpty && bagBox.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) { // Verificar si el widget está montado
         Get.offAllNamed('/catalogs');
+        }
       });
     }
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    switch (index) {
+      case 0:
+        // Ya estamos en Inicio, no hacemos nada o refrescamos
+        break;
+      case 1:
+        Get.toNamed('/consultas');
+        // Reset index a 0 para que Inicio quede seleccionado al volver
+        Future.delayed(Duration.zero, () => setState(() => _selectedIndex = 0));
+        break;
+      case 2:
+        Get.toNamed('/configs');
+        // Reset index a 0 para que Inicio quede seleccionado al volver
+        Future.delayed(Duration.zero, () => setState(() => _selectedIndex = 0));
+        break;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    checkCatalogData();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final entregaController = Get.put(EntregaController());
-    final bagController = Get.put(ManageBagController());
     final box = Hive.box<AppConfig>('appConfig');
     final nombre = box.get('config')?.nombre?.split(' ').first ?? 'Usuario';
-    final theme = Theme.of(context); // ✅ ¡Esto arregla el undefined 'theme'!
-
-    checkCatalogData();
+    final theme = Theme.of(context);
+    final bagBox = Hive.box<Bag>('bag');
+    final showGestionarAretes = bagBox.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
         title: Text('${getSaludo()}, $nombre 👋'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Get.toNamed('/configs'),
+            icon: const Icon(Icons.person),
+            onPressed: () => Get.toNamed('/perfil'),
           ),
         ],
       ),
@@ -59,80 +96,105 @@ class HomeView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
-
-              // 📌 Actividades principales
-              Center(child: Text('Actividades Principales', style: theme.textTheme.labelLarge)),
-              const SizedBox(height: 12),
-              GridView.count(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                children: [
+              _buildSectionTitle(context, 'Registro de Eventos'),
+              _buildActionGrid([
+                if (showGestionarAretes)
                   _ActionButton(
                     label: 'Gestionar Aretes',
                     icon: FontAwesomeIcons.tags,
                     onTap: () => Get.toNamed('/managebag'),
                   ),
                   _ActionButton(
-                    label: 'Entregas',
-                    icon: FontAwesomeIcons.boxOpen,
+                  label: 'Registrar Alta', // Anterior: Entregas
+                  icon: FontAwesomeIcons.plusCircle, // Icono cambiado
                     onTap: () => Get.toNamed('/entrega'),
                   ),
                   _ActionButton(
-                    label: 'Reposiciones',
-                    icon: FontAwesomeIcons.recycle,
+                  label: 'Registrar Repo', // Anterior: Reposiciones
+                  icon: FontAwesomeIcons.undo, // Icono cambiado
                     onTap: () => Get.toNamed('/repo'),
-                  ),
-                  _ActionButton(
-                    label: 'Enviar Altas',
-                    icon: FontAwesomeIcons.paperPlane,
-                    onTap: () => Get.toNamed('/sendview'),
                   ),
                   _ActionButton(
                     label: 'Registrar Baja',
                     icon: FontAwesomeIcons.skullCrossbones,
-                    onTap: () => Get.toNamed('/baja/select'),
+                    onTap: () =>Get.toNamed('/baja/form'),
                   ),
-                  _ActionButton(
-                    label: 'Enviar Bajas',
-                    icon: FontAwesomeIcons.paperPlane,
-                    onTap: () => Get.toNamed('/baja/send'),
-                  ),
-                ],
-              ),
-
+              ]),
               const SizedBox(height: 24),
-
-              // // 🔍 Consultas y herramientas
-              // Text('Consultas y herramientas', style: theme.textTheme.titleMedium),
-              // const SizedBox(height: 12),
-              // Wrap(
-              //   spacing: 16,
-              //   runSpacing: 16,
-              //   children: [
-              //     _ActionButton(
-              //       label: 'Verificar CUE',
-              //       icon: FontAwesomeIcons.qrcode,
-              //       onTap: () => Get.toNamed('/verifycue'),
-              //     ),
-              //     _ActionButton(
-              //       label: 'Consulta Bovino',
-              //       icon: FontAwesomeIcons.cow,
-              //       onTap: () {}, // TODO
-              //     ),
-              //   ],
-              // ),
+              _buildSectionTitle(context, 'Envío al Server'),
+              _buildActionGrid([
+                _ActionButton(
+                  label: 'Enviar Eventos', // Botón único para envíos
+                  icon: FontAwesomeIcons.paperPlane, // Icono general de envío
+                  onTap: () => Get.toNamed('/send/menu'), // Navega al menú de envíos
+                ),
+                // Se eliminan los botones específicos de envío
+              ]),
+              const SizedBox(height: 24),
+              _buildSectionTitle(context, 'Consultas'),
+              _buildActionGrid([
+                _ActionButton(
+                  label: 'Consultas', // Botón único
+                  icon: FontAwesomeIcons.search, // Icono general
+                  onTap: () => Get.toNamed('/consultas/menu'), // Navega al menú
+                ),
+                // Se eliminan los botones específicos de consulta de altas, etc.
+              ]),
             ],
           ),
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+        
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Configuración',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: theme.colorScheme.primary,
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+
+  // Helper para construir títulos de sección
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+    );
+  }
+
+  // Helper para construir Grid de acciones (para reutilizar)
+  Widget _buildActionGrid(List<Widget> actions) {
+    // Filtrar cualquier widget nulo que pueda venir de condiciones `if`
+    final validActions = actions.where((w) => w is _ActionButton).toList();
+
+    return GridView.count(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      crossAxisCount: 2, // Ajusta según prefieras (2 o 3)
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: 1.3, // Ajusta para el tamaño de los botones
+      children: validActions,
     );
   }
 }
 
+// _ActionButton no necesita cambios
 class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -152,21 +214,33 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 100,
+        // width: 100, // Ancho fijo puede no ser ideal con GridView
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
+          // color: theme.colorScheme.surfaceVariant, // Color diferente para botones
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1), // changes position of shadow
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 28, color: theme.colorScheme.onSurface),
+            Icon(icon, size: 32, color: theme.colorScheme.primary), // Icono más grande y con color primario
             const SizedBox(height: 8),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface),
+              style: theme.textTheme.bodySmall?.copyWith( // Texto más pequeño
+                  // color: theme.colorScheme.onSurfaceVariant
+                  color: theme.colorScheme.onSurface
+                  ),
             ),
           ],
         ),

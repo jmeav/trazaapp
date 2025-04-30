@@ -102,19 +102,18 @@ class Baja {
     );
   }
 
-  // Conversión a JSON
-  Map<String, dynamic> toJson() {
+  // Conversión a JSON para envío al servidor
+  Map<String, dynamic> toJsonEnvio() {
     return {
-      'BAJA_ID': bajaId,
-      'CUE': cue,
-      'CUPA': cupa,
-      'FECHA_REGISTRO': fechaRegistro.toIso8601String(),
-      'FECBAJA': fechaBaja.toIso8601String(),
-      'EVIDENCIA': evidencia,
-      'TIPO_EVIDENCIA': tipoEvidencia,
-      'TOKEN': token,
-      'COD_HABILITADO': codHabilitado,
-      'DETALLE_ARETES': detalleAretes.map((a) => a.toJson()).toList(),
+      'idBaja': bajaId,
+      'cue': cue,
+      'cupa': cupa,
+      'fecharegistro': fechaRegistro.toUtc().toIso8601String(),
+      'fechabaja': fechaBaja.toUtc().toIso8601String(), // Manteniendo fec_baja si es el nombre esperado por el servidor
+      'evidencia': evidencia,
+      'token': token,
+      'codhabilitado': codHabilitado,
+      'detallearetes': detalleAretes.map((a) => a.toJson()).toList(), // Usa el toJson() actualizado de AreteBaja
     };
   }
 } 

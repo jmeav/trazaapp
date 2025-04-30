@@ -9,7 +9,7 @@ class AreteBajaAdapter extends TypeAdapter<AreteBaja> {
   AreteBaja read(BinaryReader reader) {
     return AreteBaja(
       arete: reader.read(),
-      motivoBaja: reader.read(),
+      motivoId: reader.read(),
       bajaId: reader.read(),
     );
   }
@@ -17,7 +17,7 @@ class AreteBajaAdapter extends TypeAdapter<AreteBaja> {
   @override
   void write(BinaryWriter writer, AreteBaja obj) {
     writer.write(obj.arete);
-    writer.write(obj.motivoBaja);
+    writer.write(obj.motivoId);
     writer.write(obj.bajaId);
   }
 } 

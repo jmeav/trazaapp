@@ -12,6 +12,9 @@ import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
 import 'package:trazaapp/data/models/productores/productor.dart';
 import 'package:trazaapp/utils/utils.dart';
+import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
+import 'package:trazaapp/controller/catalogs_controller.dart';
+import 'package:trazaapp/data/repositories/baja/baja_repo.dart';
 
 class BajaController extends GetxController {
   final areteController = TextEditingController();
@@ -41,13 +44,8 @@ class BajaController extends GetxController {
   late Box<Establecimiento> establecimientoBox;
   late Box<Productor> productorBox;
 
-  final List<String> motivos = [
-    'Muerte natural',
-    'Sacrificio',
-    'Enfermedad',
-    'Accidente',
-    'Otro'
-  ];
+  var motivos = <MotivoBajaBovino>[].obs;
+  var selectedMotivoId = 0.obs;
 
   final RxList<Baja> bajasPendientes = <Baja>[].obs;
   final RxBool isInitialized = false.obs;
@@ -65,15 +63,13 @@ class BajaController extends GetxController {
       establecimientoBox = await Hive.openBox<Establecimiento>('establecimientos');
       productorBox = await Hive.openBox<Productor>('productores');
       
-      fechaBajaController.text = _formatDate(fechaBaja.value);
-      
-      cantidadController.text = "1";
-      cantidadBajas.value = 1;
+      _initVariables();
       
       isInitialized.value = true;
       print('✅ BajaController inicializado correctamente');
       
       cargarBajasPendientes();
+      await _loadMotivosBajaBovino();
     } catch (e) {
       print('❌ Error al inicializar BajaController: $e');
       Future.microtask(() {
@@ -84,7 +80,27 @@ class BajaController extends GetxController {
           colorText: Colors.white,
         );
       });
+    } finally {
+      isLoading.value = false;
     }
+  }
+
+  void _initVariables() {
+    // Inicializar fechas y campos relacionados
+    fechaBaja.value = DateTime.now();
+    fechaBajaController.text = _formatDate(fechaBaja.value);
+    
+    // Inicializar cantidad
+    cantidadController.text = "1";
+    cantidadBajas.value = 1;
+    
+    // Inicializar motivos
+    selectedMotivo.value = '';
+    selectedMotivoId.value = 0;
+    
+    // Otros valores iniciales
+    isAreteScanned.value = false;
+    currentAreteIndex.value = 0;
   }
 
   @override
@@ -106,17 +122,22 @@ class BajaController extends GetxController {
   }
 
   String generateBajaId() {
-    final random = Random();
-    final number = random.nextInt(100000).toString().padLeft(5, '0');
-    return 'ABJSO$number';
+    // Genera 5 caracteres alfanuméricos aleatorios
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rand = Random();
+    return List.generate(
+      5,
+      (index) => chars[rand.nextInt(chars.length)],
+    ).join();
   }
 
   void setAreteScanned(bool value) {
     isAreteScanned.value = value;
   }
 
-  void setMotivo(String value) {
-    selectedMotivo.value = value;
+  void setMotivo(int id, String nombre) {
+    selectedMotivoId.value = id;
+    selectedMotivo.value = nombre;
   }
 
   void setFechaBaja(DateTime date) {
@@ -136,13 +157,13 @@ class BajaController extends GetxController {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  void agregarArete(String arete, String motivo) {
+  void agregarArete(String arete, String motivoId) {
     final bajaId = generateBajaId();
     
     detalleAretes.add(
       AreteBaja(
         arete: arete,
-        motivoBaja: motivo,
+        motivoId: motivoId,
         bajaId: bajaId,
       )
     );
@@ -150,52 +171,53 @@ class BajaController extends GetxController {
 
   void guardarAreteActual() {
     if (areteController.text.isEmpty) {
-      Get.snackbar('Error', 'El arete es obligatorio');
+      Get.snackbar('Error', 'Debe ingresar un número de arete.');
       return;
     }
-    
-    if (selectedMotivo.value.isEmpty) {
-      Get.snackbar('Error', 'El motivo es obligatorio');
+
+    if (selectedMotivoId.value == 0) {
+      Get.snackbar('Error', 'Debe seleccionar un motivo de baja.');
       return;
     }
 
     final areteBaja = AreteBaja(
       arete: areteController.text,
-      motivoBaja: selectedMotivo.value,
-      bajaId: generateBajaId(),
+      motivoId: selectedMotivoId.value.toString(),
+      bajaId: 'temp',
     );
 
-    if (currentAreteIndex.value < detalleAretes.length) {
-      detalleAretes[currentAreteIndex.value] = areteBaja;
+    final index = currentAreteIndex.value;
+    if (index < detalleAretes.length) {
+      detalleAretes[index] = areteBaja;
     } else {
       detalleAretes.add(areteBaja);
     }
 
     areteController.clear();
-    selectedMotivo.value = '';
     isAreteScanned.value = false;
 
-    if (currentAreteIndex.value < cantidadBajas.value - 1) {
+    if (index < cantidadBajas.value - 1) {
       currentAreteIndex.value++;
+      cargarAreteActual();
     } else {
-      Get.snackbar(
-        'Información',
-        'Todos los aretes han sido registrados. Puede continuar con el registro de la baja.',
-        backgroundColor: Colors.blue,
-        colorText: Colors.white,
-      );
+      Get.snackbar('Éxito', 'Último arete guardado.');
     }
   }
 
   void cargarAreteActual() {
     if (currentAreteIndex.value < detalleAretes.length) {
-      final areteBaja = detalleAretes[currentAreteIndex.value];
-      areteController.text = areteBaja.arete;
-      selectedMotivo.value = areteBaja.motivoBaja;
-      isAreteScanned.value = true;
+      final arete = detalleAretes[currentAreteIndex.value];
+      areteController.text = arete.arete;
+      
+      final motivoIdInt = int.tryParse(arete.motivoId) ?? 0;
+      selectedMotivoId.value = motivoIdInt;
+
+      final motivo = motivos.firstWhereOrNull((m) => m.id == motivoIdInt);
+      selectedMotivo.value = motivo?.nombre ?? '';
     } else {
       areteController.clear();
-      selectedMotivo.value = '';
+      selectedMotivo.value = motivos.isNotEmpty ? motivos.first.nombre : '';
+      selectedMotivoId.value = motivos.isNotEmpty ? motivos.first.id : 0;
       isAreteScanned.value = false;
     }
   }
@@ -580,5 +602,113 @@ class BajaController extends GetxController {
       
       return nombreLower.contains(queryLower) || cupaLower.contains(queryLower);
     }).toList();
+  }
+
+  Future<void> _loadMotivosBajaBovino() async {
+    try {
+      if (!Hive.isBoxOpen('motivosbajabovino')) {
+        await Hive.openBox<MotivoBajaBovino>('motivosbajabovino');
+      }
+      
+      final catalogsController = Get.find<CatalogosController>();
+      
+      print('Catálogo controller - motivos bovino: ${catalogsController.motivosBajaBovino.length}');
+      if (catalogsController.motivosBajaBovino.isNotEmpty) {
+        print('Ejemplo primer motivo: ID=${catalogsController.motivosBajaBovino.first.id}, Nombre=${catalogsController.motivosBajaBovino.first.nombre}');
+      }
+      
+      motivos.assignAll(catalogsController.motivosBajaBovino);
+      print('Motivos de baja bovino cargados: ${motivos.length}');
+      
+      if (motivos.isNotEmpty) {
+        if (motivos.first.id != 0 || motivos.first.nombre.isEmpty) {
+          for (var motivo in motivos) {
+            if (motivo.id > 0 && motivo.nombre.isNotEmpty) {
+              selectedMotivo.value = motivo.nombre;
+              selectedMotivoId.value = motivo.id;
+              print('Seleccionado motivo válido: ${motivo.nombre} (ID: ${motivo.id})');
+              return;
+            }
+          }
+        }
+        
+        selectedMotivo.value = motivos.first.nombre;
+        selectedMotivoId.value = motivos.first.id;
+        print('Primer motivo seleccionado: ${motivos.first.nombre} (ID: ${motivos.first.id})');
+      } else {
+        selectedMotivo.value = '';
+        selectedMotivoId.value = 0;
+        print('No se encontraron motivos de baja bovino');
+        
+        var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
+        if (box.isNotEmpty) {
+          print('La caja tiene ${box.length} motivos pero no se cargaron en el catálogo');
+          var motivosEnCaja = box.values.toList();
+          motivos.assignAll(motivosEnCaja);
+          if (motivos.isNotEmpty) {
+            selectedMotivo.value = motivos.first.nombre;
+            selectedMotivoId.value = motivos.first.id;
+            print('Motivo cargado desde caja: ${motivos.first.nombre} (ID: ${motivos.first.id})');
+          }
+        }
+      }
+    } catch (e) {
+      print('Error cargando los motivos de baja: $e');
+      selectedMotivo.value = '';
+      selectedMotivoId.value = 0;
+      
+      try {
+        if (!Hive.isBoxOpen('motivosbajabovino')) {
+          await Hive.openBox<MotivoBajaBovino>('motivosbajabovino');
+          print('Caja abierta después del error');
+        }
+        
+        var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
+        print('Estado de la caja motivosbajabovino: ${box.isOpen ? "abierta" : "cerrada"}, elementos: ${box.length}');
+      } catch (boxError) {
+        print('Error adicional al intentar verificar la caja: $boxError');
+      }
+    }
+  }
+
+  Future<void> eliminarBaja(String bajaId) async {
+    try {
+      final index = bajaBox.values.toList().indexWhere((b) => b.bajaId == bajaId);
+      if (index != -1) {
+        await bajaBox.deleteAt(index);
+        cargarBajasPendientes(); // Recargar la lista de pendientes
+        Get.snackbar(
+          'Eliminada', 
+          'Baja $bajaId eliminada correctamente.', 
+          snackPosition: SnackPosition.BOTTOM
+        );
+      } else {
+         Get.snackbar(
+          'Error', 
+          'No se encontró la baja con ID $bajaId para eliminar.', 
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error', 
+        'Error al eliminar la baja: $e', 
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Future<void> enviarBaja(String bajaId) async {
+    final envioBajaRepository = EnvioBajaRepository();
+    final baja = bajaBox.get(bajaId);
+    if (baja == null) {
+      Get.snackbar('Error', 'No se encontró la baja con ID: $bajaId');
+      return;
+    }
+    await envioBajaRepository.enviarBaja(baja.toJsonEnvio());
   }
 } 

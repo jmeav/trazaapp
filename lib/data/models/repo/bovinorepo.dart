@@ -24,6 +24,9 @@ class BovinoRepo {
   @HiveField(5)
   final String estadoArete;
 
+  @HiveField(15)
+  final String motivoEstadoAreteId;
+
   @HiveField(6)
   final DateTime fechaNacimiento;
 
@@ -58,6 +61,7 @@ class BovinoRepo {
     required this.razaId,
     required this.traza,
     required this.estadoArete,
+    this.motivoEstadoAreteId = "0",
     required this.fechaNacimiento,
     required this.areteAnterior,
     this.fotoArete = '',
@@ -89,6 +93,7 @@ class BovinoRepo {
     String? razaId,
     String? traza,
     String? estadoArete,
+    String? motivoEstadoAreteId,
     DateTime? fechaNacimiento,
     String? fotoArete,
     String? areteMadre,
@@ -106,6 +111,7 @@ class BovinoRepo {
       razaId: razaId ?? this.razaId,
       traza: traza ?? this.traza,
       estadoArete: estadoArete ?? this.estadoArete,
+      motivoEstadoAreteId: motivoEstadoAreteId ?? this.motivoEstadoAreteId,
       fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento,
       fotoArete: fotoArete ?? this.fotoArete,
       areteMadre: areteMadre ?? this.areteMadre,
@@ -120,19 +126,18 @@ class BovinoRepo {
 
   Map<String, dynamic> toJson() => {
         "arete": arete,
+        "areteAnterior": areteAnterior,
         "edad": edad,
         "sexo": sexo,
-        "raza": razaId,               // enviamos solo el ID
+        "raza": razaId,
         "traza": traza,
         "estadoArete": estadoArete,
+        "motivoEstadoAreteId": motivoEstadoAreteId,
         "fechaNacimiento": fechaNacimiento.toIso8601String(),
         "fotoArete": fotoArete,
         "areteMadre": areteMadre,
         "aretePadre": aretePadre,
         "regMadre": regMadre,
         "regPadre": regPadre,
-        "repoEntregaId": repoEntregaId,
-        "areteAnterior": areteAnterior,
-        "repoId": repoId,
       };
 }

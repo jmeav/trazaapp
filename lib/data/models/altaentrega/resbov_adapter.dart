@@ -26,13 +26,14 @@ class BovinoResumenAdapter extends TypeAdapter<BovinoResumen> {
       aretePadre: fields[9] as String? ?? '',
       regMadre: fields[10] as String? ?? '',
       regPadre: fields[11] as String? ?? '',
+      motivoEstadoAreteId: fields[12] as String? ?? '0',
     );
   }
 
   @override
   void write(BinaryWriter writer, BovinoResumen obj) {
     writer
-      ..writeByte(12) // total de campos
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.arete)
       ..writeByte(1)
@@ -56,6 +57,8 @@ class BovinoResumenAdapter extends TypeAdapter<BovinoResumen> {
       ..writeByte(10)
       ..write(obj.regMadre)
       ..writeByte(11)
-      ..write(obj.regPadre);
+      ..write(obj.regPadre)
+      ..writeByte(12)
+      ..write(obj.motivoEstadoAreteId);
   }
 }

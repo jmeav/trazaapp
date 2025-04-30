@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/formrepo_controller.dart';
 import 'package:trazaapp/presentation/scanner/scanner_view.dart';
@@ -227,24 +226,22 @@ class FormRepoView extends GetView<FormRepoController> {
                                 icon: const Icon(Icons.qr_code_scanner),
                                 onPressed: () async {
                                   try {
-                    final result = await Navigator.of(Get.context!).pushNamed('/scanner');
-                    if (result != null && result is String) {
-                      controller.updateAreteAnterior(index, result);
-                      // Force UI refresh immediately
-                      controller.update();
-                      // Show success message
-                      Get.snackbar(
-                        'Éxito',
-                        'Arete escaneado correctamente',
-                        backgroundColor: Colors.green,
-                        colorText: Colors.white,
+                                    final result = await Get.toNamed('/scanner');
+                                    if (result != null && result is String) {
+                                      controller.updateAreteAnterior(index, result);
+                                      controller.update();
+                                      Get.snackbar(
+                                        'Éxito',
+                                        'Arete escaneado correctamente',
+                                        backgroundColor: Colors.green,
+                                        colorText: Colors.white,
                                       );
                                     }
                                   } catch (e) {
-                    print('Error al escanear: $e');
+                                    print('Error al escanear: $e');
                                     Get.snackbar(
                                       'Error',
-                      'Error al escanear el código: $e',
+                                      'Error al escanear el código: $e',
                                       backgroundColor: Colors.red,
                                       colorText: Colors.white,
                                     );
@@ -413,9 +410,10 @@ class FormRepoView extends GetView<FormRepoController> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Obx(() {
+        final controller = Get.find<FormRepoController>();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+          children: [
             const Text(
               'Fotos y Documento Final',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -469,7 +467,7 @@ class FormRepoView extends GetView<FormRepoController> {
               onPressed: () => controller.pickPdfFicha(),
             ),
             const SizedBox(height: 6),
-            _buildPdfIndicator(controller.fotoFicha.value),
+            _buildPdfIndicator(controller.fotoFicha.value, controller),
 
             const SizedBox(height: 40),
 
@@ -483,17 +481,17 @@ class FormRepoView extends GetView<FormRepoController> {
                   ),
                 ),
                 onPressed: () {
-                  _validarYGuardarReposicion();
+                  _validarYGuardarReposicion(controller);
                 },
                 child: const Text(
                   "Finalizar Reposición",
                   style: TextStyle(fontSize: 16),
                 ),
-                ),
               ),
-            ],
-          );
-        }),
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -625,7 +623,7 @@ class FormRepoView extends GetView<FormRepoController> {
   }
 
   // Indicador para PDF
-  Widget _buildPdfIndicator(String base64pdf) {
+  Widget _buildPdfIndicator(String base64pdf, FormRepoController controller) {
     if (base64pdf.isEmpty) {
       return const Text(
         'No hay PDF seleccionado',
@@ -656,7 +654,7 @@ class FormRepoView extends GetView<FormRepoController> {
   }
 
   // Validar y guardar reposición
-  void _validarYGuardarReposicion() {
+  void _validarYGuardarReposicion(FormRepoController controller) {
     // Verificar que todos los bovinos tengan la información necesaria
     bool datosCompletos = true;
     String mensajeError = '';
@@ -665,13 +663,13 @@ class FormRepoView extends GetView<FormRepoController> {
       final bovino = controller.bovinosRepo[i];
       if (bovino.sexo.isEmpty || bovino.razaId.isEmpty || bovino.edad <= 0) {
         datosCompletos = false;
-        mensajeError = 'El bovino ${i+1} no tiene todos los datos requeridos';
+        mensajeError = 'El bovino \\${i+1} no tiene todos los datos requeridos';
         break;
       }
       
       if (bovino.estadoArete == 'Dañado' && bovino.fotoArete.isEmpty) {
         datosCompletos = false;
-        mensajeError = 'El bovino ${i+1} tiene arete dañado pero no tiene foto';
+        mensajeError = 'El bovino \\${i+1} tiene arete dañado pero no tiene foto';
         break;
       }
     }

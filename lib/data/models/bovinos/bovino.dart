@@ -49,6 +49,10 @@ class Bovino {
 
   @HiveField(13)
   String regPadre;
+  
+  // ID del motivo de estado del arete (249 si está dañado, 0 si está bueno)
+  @HiveField(14)
+  String motivoEstadoAreteId;
 
   Bovino({
     required this.arete,
@@ -58,13 +62,14 @@ class Bovino {
     required this.sexo,
     required this.razaId,
     required this.traza,
-    required this.estadoArete,
     required this.entregaId,
+    required this.aretePadre,
+    required this.areteMadre,
+    required this.regPadre,
+    required this.regMadre,
+    this.estadoArete = 'Bueno',
+    this.motivoEstadoAreteId = '0',
     this.fotoArete = '',
-    this.areteMadre = '',
-    this.aretePadre = '',
-    this.regMadre = '',
-    this.regPadre = '',
   });
 
   /// Getter para mostrar el nombre de la raza en la UI
@@ -85,13 +90,14 @@ class Bovino {
     String? sexo,
     String? razaId,
     String? traza,
-    String? estadoArete,
     String? entregaId,
-    String? fotoArete,
-    String? areteMadre,
     String? aretePadre,
-    String? regMadre,
+    String? areteMadre,
     String? regPadre,
+    String? regMadre,
+    String? estadoArete,
+    String? motivoEstadoAreteId,
+    String? fotoArete,
   }) {
     return Bovino(
       arete: arete ?? this.arete,
@@ -101,13 +107,54 @@ class Bovino {
       sexo: sexo ?? this.sexo,
       razaId: razaId ?? this.razaId,
       traza: traza ?? this.traza,
-      estadoArete: estadoArete ?? this.estadoArete,
       entregaId: entregaId ?? this.entregaId,
-      fotoArete: fotoArete ?? this.fotoArete,
-      areteMadre: areteMadre ?? this.areteMadre,
       aretePadre: aretePadre ?? this.aretePadre,
-      regMadre: regMadre ?? this.regMadre,
+      areteMadre: areteMadre ?? this.areteMadre,
       regPadre: regPadre ?? this.regPadre,
+      regMadre: regMadre ?? this.regMadre,
+      estadoArete: estadoArete ?? this.estadoArete,
+      motivoEstadoAreteId: motivoEstadoAreteId ?? this.motivoEstadoAreteId,
+      fotoArete: fotoArete ?? this.fotoArete,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'arete': arete,
+      'cue': cue,
+      'cupa': cupa,
+      'edad': edad,
+      'sexo': sexo,
+      'raza_id': razaId,
+      'traza': traza,
+      'entrega_id': entregaId,
+      'arete_padre': aretePadre,
+      'arete_madre': areteMadre,
+      'reg_padre': regPadre,
+      'reg_madre': regMadre,
+      'estado_arete': estadoArete,
+      'motivoEstadoAreteId': motivoEstadoAreteId,
+      'foto_arete': fotoArete,
+    };
+  }
+
+  factory Bovino.fromJson(Map<String, dynamic> json) {
+    return Bovino(
+      arete: json['arete'] ?? '',
+      cue: json['cue'] ?? '',
+      cupa: json['cupa'] ?? '',
+      edad: json['edad'] ?? 0,
+      sexo: json['sexo'] ?? '',
+      razaId: json['raza_id'] ?? '',
+      traza: json['traza'] ?? 'CRUCE',
+      entregaId: json['entrega_id'] ?? '',
+      aretePadre: json['arete_padre'] ?? '',
+      areteMadre: json['arete_madre'] ?? '',
+      regPadre: json['reg_padre'] ?? '',
+      regMadre: json['reg_madre'] ?? '',
+      estadoArete: json['estado_arete'] ?? 'Bueno',
+      motivoEstadoAreteId: json['motivo_estado_arete_id'] ?? '0',
+      fotoArete: json['foto_arete'] ?? '',
     );
   }
 }

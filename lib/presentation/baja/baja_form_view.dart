@@ -110,21 +110,71 @@ class BajaFormView extends StatelessWidget {
                       Text('Motivo de la baja',
                           style: theme.textTheme.titleMedium),
                       const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: controller.selectedMotivo.value.isEmpty
-                            ? null
-                            : controller.selectedMotivo.value,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                        items: controller.motivos.map((motivo) {
-                          return DropdownMenuItem(
-                            value: motivo,
-                            child: Text(motivo),
-                          );
-                        }).toList(),
-                        onChanged: (value) => controller.setMotivo(value ?? ''),
-                      ),
+                      Obx(() {
+                         final hayMotivos = controller.motivos.isNotEmpty;
+                         
+                         // Si no hay motivos, mostrar un mensaje o un indicador
+                         if (!hayMotivos) {
+                           return const Padding(
+                             padding: EdgeInsets.symmetric(vertical: 8.0),
+                             child: Row(
+                               children: [
+                                 SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2)),
+                                 SizedBox(width: 10),
+                                 Text('Cargando motivos...', 
+                               style: TextStyle(color: Colors.grey)),
+                               ],
+                             )
+                           );
+                         }
+                         
+                         // Determinar el valor a mostrar en el dropdown
+                         // Debe ser un ID válido que exista en la lista de motivos
+                         int? valorSeleccionado = controller.selectedMotivoId.value;
+                         final idSeleccionadoExiste = controller.motivos.any((m) => m.id == valorSeleccionado);
+                         
+                         // Si el ID seleccionado no es válido (0 o no existe), y hay motivos, 
+                         // selecciona el primer motivo válido como valor por defecto para el dropdown.
+                         // PERO NO actualices el controller aquí directamente para evitar bucles.
+                         // La actualización del controller se hace en onChanged o al cargar el arete.
+                         if (valorSeleccionado == 0 || !idSeleccionadoExiste) {
+                            valorSeleccionado = controller.motivos.first.id; 
+                            // Opcionalmente, podrías poner un `hintText` si prefieres que no haya selección inicial
+                            // valorSeleccionado = null;
+                         }
+                         
+                         return DropdownButtonFormField<int>(
+                           value: valorSeleccionado, // Usar el ID int
+                           isExpanded: true, // Para que ocupe el ancho disponible
+                           decoration: const InputDecoration(
+                             border: OutlineInputBorder(),
+                             hintText: 'Seleccione un motivo',
+                           ),
+                           // Filtrar motivos con ID 0 o nombre vacío si es necesario
+                           items: controller.motivos
+                               // .where((m) => m.id != 0 && m.nombre.isNotEmpty) // Descomentar si quieres filtrar inválidos
+                               .map((motivo) {
+                             return DropdownMenuItem<int>(
+                               value: motivo.id,
+                               // Mostrar solo el nombre en el dropdown
+                               child: Text(motivo.nombre, overflow: TextOverflow.ellipsis),
+                             );
+                           }).toList(),
+                           onChanged: (value) {
+                             if (value != null) {
+                               // Encuentra el motivo completo por su ID y actualiza el controller
+                               final motivo = controller.motivos.firstWhere((m) => m.id == value);
+                               controller.setMotivo(value, motivo.nombre);
+                             }
+                           },
+                            validator: (value) { // Añadir validación si es necesario
+                              if (value == null || value == 0) {
+                                return 'Debe seleccionar un motivo';
+                              }
+                              return null;
+                           },
+                         );
+                       }),
                       const SizedBox(height: 16),
 
                       // Botón para guardar este arete
@@ -154,9 +204,14 @@ class BajaFormView extends StatelessWidget {
                             itemCount: controller.detalleAretes.length,
                             itemBuilder: (context, index) {
                               final arete = controller.detalleAretes[index];
+                              // Convertir motivoId (String) a int para buscar el nombre
+                              final motivoIdInt = int.tryParse(arete.motivoId) ?? 0;
+                              // Buscar nombre del motivo
+                              final motivoNombre = controller.motivos.firstWhereOrNull((m) => m.id == motivoIdInt)?.nombre ?? 'ID: ${arete.motivoId}';
+                              
                               return ListTile(
                                 title: Text('Arete: ${arete.arete}'),
-                                subtitle: Text('Motivo: ${arete.motivoBaja}'),
+                                subtitle: Text('Motivo: $motivoNombre'), // Mostrar nombre encontrado
                                 trailing: IconButton(
                                   icon: const Icon(Icons.edit),
                                   onPressed: () {

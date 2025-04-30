@@ -13,6 +13,7 @@ import 'package:trazaapp/utils/utils.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:trazaapp/data/repositories/reposicion/reposicion_repo.dart';
 
 class FormRepoController extends GetxController {
   late Box<Entregas> entregasBox;
@@ -52,6 +53,9 @@ class FormRepoController extends GetxController {
 
   // Agregar la propiedad pdfFileName
   final RxString pdfFileName = ''.obs;
+
+  // --- Nuevas variables para el resumen ---
+  final repoParaResumen = Rxn<RepoEntrega>();
 
   @override
   void onInit() {
@@ -176,6 +180,7 @@ class FormRepoController extends GetxController {
           edad: 0,
           traza: 'CRUCE',
           estadoArete: 'Bueno',
+          motivoEstadoAreteId: "0", // Explícitamente "0" para estado "Bueno"
           fechaNacimiento: DateTime.now(),
           repoEntregaId: repoId!,
           repoId: repoId!,
@@ -258,6 +263,7 @@ class FormRepoController extends GetxController {
     final bovino = bovinosRepo[index];
     final updated = bovino.copyWith(
       estadoArete: value,
+      motivoEstadoAreteId: value == 'Dañado' ? "249" : "0",
       fotoArete: value == 'Bueno' ? '' : bovino.fotoArete,
     );
     bovinosBox.put(bovino.arete, updated);
@@ -324,6 +330,9 @@ class FormRepoController extends GetxController {
   }) {
     for (var i = 0; i < bovinosRepo.length; i++) {
       final bovino = bovinosRepo[i];
+      // Asegurar que motivoEstadoAreteId concuerde con estadoArete
+      final motivoId = bovino.estadoArete == 'Dañado' ? "249" : "0";
+      
       final updated = BovinoRepo(
         arete: bovino.arete,
         edad: edad,
@@ -331,6 +340,7 @@ class FormRepoController extends GetxController {
         razaId: raza,
         traza: bovino.traza,
         estadoArete: bovino.estadoArete,
+        motivoEstadoAreteId: motivoId, // Usar el valor correcto según estadoArete
         fechaNacimiento: bovino.fechaNacimiento,
         areteAnterior: bovino.areteAnterior,
         fotoArete: bovino.fotoArete,
@@ -363,9 +373,13 @@ class FormRepoController extends GetxController {
         return;
       }
 
+      // Asegurar que motivoEstadoAreteId sea coherente con estadoArete
+      final motivoId = bovino.estadoArete == 'Dañado' ? "249" : "0";
+      final bovinoActualizado = bovino.copyWith(motivoEstadoAreteId: motivoId);
+
       // Guardar el bovino
-      await bovinosBox.put(bovino.id, bovino);
-      bovinosRepo.add(bovino);
+      await bovinosBox.put(bovinoActualizado.id, bovinoActualizado);
+      bovinosRepo.add(bovinoActualizado);
 
       // Verificar si ya se completaron todos los bovinos
       if (bovinosRepo.length == repoEntrega.value?.cantidad) {
@@ -510,203 +524,136 @@ class FormRepoController extends GetxController {
       // Tomamos el nombre del archivo
       pdfFileName.value = result.files.single.name;
 
-      // Leer el archivo PDF
+      // Usar el nuevo método de compresión
       final file = File(filePath);
-      final bytes = await file.readAsBytes();
+      final compressedBase64 = await Utils.pdfToCompressedBase64(file);
       
-      // Verificar el tamaño del archivo
-      final fileSizeInMB = bytes.length / (1024 * 1024);
-      
-      if (fileSizeInMB > 5) { // Si el archivo es mayor a 5MB
+      if (compressedBase64 == null) {
         Get.snackbar(
           'Error',
-          'El archivo PDF es muy grande (${fileSizeInMB.toStringAsFixed(2)}MB). El tamaño máximo permitido es 5MB.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        return;
-      } else if (fileSizeInMB > 2) { // Advertencia para archivos entre 2MB y 5MB
-        Get.snackbar(
-          'Advertencia',
-          'El archivo PDF es grande (${fileSizeInMB.toStringAsFixed(2)}MB). Se recomienda comprimirlo manualmente antes de subirlo.',
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-        );
-      }
-
-      // Convertir a base64
-      final base64String = base64Encode(bytes);
-      
-      // Verificar el tamaño final después de la conversión
-      final base64SizeInMB = base64String.length / (1024 * 1024);
-      if (base64SizeInMB > 2.5) {
-        Get.snackbar(
-          'Error',
-          'El archivo PDF es muy grande después de la conversión. Por favor, comprima el archivo antes de subirlo.',
+          'El archivo PDF es demasiado grande. Por favor, usa un PDF más pequeño o comprímelo manualmente.',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
         return;
       }
 
-      fotoFicha.value = base64String;
+      // Asignar el valor comprimido
+      fotoFicha.value = compressedBase64;
+      
+      // Validar el formulario después de actualizar
+      _validateForm();
+      
     } catch (e) {
       print('Error picking PDF: $e');
-      Get.snackbar('Error', 'No se pudo seleccionar el PDF.');
+      Get.snackbar('Error', 'No se pudo seleccionar el PDF: ${e.toString()}');
     }
   }
 
-  Future<void> guardarReposicion() async {
-    try {
-      isLoading.value = true;
+  // --- Método para cargar datos para el resumen --- 
+  Future<void> cargarDatosParaResumen(String repoId) async {
+     try {
+        isLoading.value = true;
+        // Asegurarse que las cajas estén abiertas (podrían estar cerradas si vienes de otra pantalla)
+        if (!repoBox.isOpen) repoBox = await Hive.openBox<RepoEntrega>('repoentregas');
+        if (!bovinosBox.isOpen) bovinosBox = await Hive.openBox<BovinoRepo>('bovinosrepo');
+        
+        final repo = repoBox.get(repoId);
+        if (repo == null) {
+          throw Exception('No se encontró la reposición con ID $repoId');
+        }
+        // Cargar también los bovinos asociados a esa reposición
+        final bovinosDelRepo = bovinosBox.values.where((b) => b.repoId == repoId).toList();
+        repoParaResumen.value = repo.copyWith(detalleBovinos: bovinosDelRepo);
+     } catch(e) {
+        print('Error cargando datos para resumen: $e');
+        Get.snackbar('Error', 'No se pudieron cargar los datos para el resumen: $e');
+        repoParaResumen.value = null; // Limpiar en caso de error
+     } finally {
+        isLoading.value = false;
+     }
+  }
 
-      if (entrega.value == null) {
-        throw Exception('No se encontró la entrega original');
+  // --- guardarReposicion Modificado --- 
+  Future<void> guardarReposicion() async {
+      isLoading.value = true;
+    try {
+      if (entrega.value == null || repoId == null) {
+        throw Exception('Datos de entrega o ID de reposición no disponibles');
       }
 
       final config = configBox.values.first;
-      final uniqueRepoId = DateTime.now().millisecondsSinceEpoch.toString();
 
-      // Crear RepoEntrega primero
-      final repoEntrega = RepoEntrega(
-        idRepo: uniqueRepoId,
+      // 1. Crear/Actualizar RepoEntrega con estado 'Lista'
+      final repoFinal = RepoEntrega(
+        idRepo: repoId!, // Usar el ID existente o generado en onInit
         entregaIdOrigen: entrega.value!.entregaId,
         cupa: entrega.value!.cupa,
         cue: entrega.value!.cue,
         departamento: entrega.value!.departamento,
         municipio: entrega.value!.municipio,
-        latitud: entrega.value!.latitud,
+        latitud: entrega.value!.latitud, // Usar lat/lon de la entrega original
         longitud: entrega.value!.longitud,
         distanciaCalculada: entrega.value!.distanciaCalculada,
-        fechaRepo: DateTime.now(),
+        fechaRepo: DateTime.now(), // Fecha actual de guardado
         token: config.imei,
-        pdfEvidencia: fotoFicha.value,
-        observaciones: observacionesController.text.trim(),
-        detalleBovinos: [],  // Se llenará después
-        estadoRepo: 'Lista',
+        codhabilitado: config.codHabilitado,
+        idorganizacion: config.idOrganizacion,
         fotoBovInicial: fotoBovInicial.value,
         fotoBovFinal: fotoBovFinal.value,
         fotoFicha: fotoFicha.value,
-        codhabilitado: config.codHabilitado,
-        idorganizacion: config.idOrganizacion,
+        pdfEvidencia: fotoFicha.value, // Asumiendo que fotoFicha es la evidencia PDF
+        observaciones: observacionesController.text.trim(),
+        // Usar los bovinos actualizados en el controlador
+        detalleBovinos: bovinosRepo.map((bov) => bov.copyWith(repoId: repoId, repoEntregaId: repoId)).toList(), 
+        estadoRepo: 'Lista', // Marcar como lista para enviar
         rangoInicialRepo: rangoInicial.value,
         rangoFinalRepo: rangoFinal.value,
       );
 
-      // Guardar RepoEntrega primero para obtener su ID
-      await repoBox.put(uniqueRepoId, repoEntrega);
-
-      // Crear lista de bovinos para reposición
-      final detalleBovinos = List.generate(
-        cantidad.value,
-        (index) {
-          final nuevoArete = (rangoInicial.value + index).toString();
-          // El areteAnterior será el arete original que se está reemplazando
-          final areteAnterior = (entrega.value!.rangoInicial + index).toString();
-          
-          return BovinoRepo(
-            arete: nuevoArete,
-            areteAnterior: areteAnterior,
-            sexo: '',
-            razaId: '',
-            edad: 0,
-            traza: 'CRUCE',
-            estadoArete: 'Bueno',
-            fechaNacimiento: DateTime.now(),
-            repoEntregaId: uniqueRepoId,
-            repoId: uniqueRepoId,
-          );
-        },
-      );
-
-      // Actualizar RepoEntrega con la lista de bovinos
-      final repoEntregaActualizada = repoEntrega.copyWith(
-        detalleBovinos: detalleBovinos,
-      );
-      await repoBox.put(uniqueRepoId, repoEntregaActualizada);
-
-      // Crear AltaEntrega a partir de la reposición para que aparezca en la lista de altas pendientes
-      try {
-        // Usar el Box de AltaEntrega
-        final altaEntregaBox = Hive.box<AltaEntrega>('altaentregas');
-        
-        // Convertir BovinoRepo a BovinoResumen para AltaEntrega
-        final bovinosResumen = detalleBovinos.map((b) => BovinoResumen(
-          arete: b.arete,
-          edad: b.edad,
-          sexo: b.sexo,
-          raza: b.razaId,
-          estadoArete: b.estadoArete,
-          traza: b.traza,
-          fechaNacimiento: b.fechaNacimiento,
-          fotoArete: b.fotoArete,
-          areteMadre: b.areteMadre,
-          aretePadre: b.aretePadre,
-          regMadre: b.regMadre,
-          regPadre: b.regPadre,
-        )).toList();
-        
-        // Crear una nueva alta con los datos de la reposición
-        final altaEntrega = AltaEntrega(
-          idAlta: uniqueRepoId,
-          cupa: entrega.value!.cupa,
-          cue: entrega.value!.cue,
-          rangoInicial: rangoInicial.value,
-          rangoFinal: rangoFinal.value,
-          departamento: entrega.value!.departamento,
-          municipio: entrega.value!.municipio,
-          latitud: entrega.value!.latitud,
-          longitud: entrega.value!.longitud,
-          distanciaCalculada: entrega.value!.distanciaCalculada,
-          fotoBovInicial: fotoBovInicial.value,
-          fotoBovFinal: fotoBovFinal.value,
-          fotoFicha: fotoFicha.value,
-          fechaAlta: DateTime.now(),
-          observaciones: observacionesController.text.trim(),
-          estadoAlta: 'Lista',
-          token: config.imei,
-          tipoAlta: 'Reposición', // Indicar que es reposición
-          codhabilitado: config.codHabilitado,
-          idorganizacion: config.idOrganizacion,
-          reposicion: true,
-          detalleBovinos: bovinosResumen,
-          aplicaEntrega: true, // Asumimos que aplica la entrega
-        );
-        
-        // Guardar el alta
-        await altaEntregaBox.put(uniqueRepoId, altaEntrega);
-        print('✅ Alta de reposición creada con ID: $uniqueRepoId');
-      } catch (e) {
-        print('⚠️ Error al crear alta de reposición: $e');
-        // Continuar con el flujo aunque falle la creación del alta
+      // 2. Guardar RepoEntrega y sus BovinoRepo asociados
+      await repoBox.put(repoId!, repoFinal);
+      // Guardar/Actualizar cada bovino asociado en su propia caja
+      for (final bovino in repoFinal.detalleBovinos) {
+        // Asegurar que los IDs de relación estén correctos antes de guardar
+        final bovinoActualizado = bovino.copyWith(repoId: repoId, repoEntregaId: repoId);
+        await bovinosBox.put(bovinoActualizado.id, bovinoActualizado);
       }
 
-      // Actualizar estado de reposición en la entrega original
-      final entregaActualizada = entrega.value!.copyWith(
-        estadoReposicion: 'completada',
-        idReposicion: uniqueRepoId,
-      );
-      await entregasBox.put(entrega.value!.entregaId, entregaActualizada);
+      // 3. NO actualizamos la entrega original aquí
+      // La actualización a 'completada' se hará al "enviar" desde la pantalla de SendRepoView
 
       Get.snackbar(
-        'Éxito',
-        'Reposición guardada correctamente',
+        'Guardado',
+        'Reposición guardada y lista para enviar.',
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
 
-      Get.offAllNamed('/home');
+      // Navegar a la pantalla de envío de reposiciones
+      Get.offNamed('/sendrepo');
+
     } catch (e) {
       print('❌ Error al guardar reposición: $e');
       Get.snackbar(
         'Error',
-        'No se pudo guardar la reposición',
+        'No se pudo guardar la reposición: ${e.toString()}',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> enviarReposicion(String repoId) async {
+    final envioReposicionRepository = EnvioReposicionRepository();
+    final repo = repoBox.get(repoId);
+    if (repo == null) {
+      Get.snackbar('Error', 'No se encontró la reposición con ID: $repoId');
+      return;
+    }
+    await envioReposicionRepository.enviarReposicion(repo.toJsonEnvio());
   }
 
   @override

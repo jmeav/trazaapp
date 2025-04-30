@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
+import 'package:collection/collection.dart';
 import 'package:trazaapp/controller/managebag_controller.dart';
 import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
 import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
-import 'package:trazaapp/data/repositories/alta/alta_repo.dart';
+import 'package:trazaapp/data/models/repo/repoentrega.dart';
 import 'package:trazaapp/utils/util.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -14,6 +15,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/remote/endpoints.dart';
+import 'package:trazaapp/data/repositories/reposicion/reposicion_repo.dart';
 
 class EntregaController extends GetxController {
   var entregas = <Entregas>[].obs;
@@ -33,37 +35,85 @@ class EntregaController extends GetxController {
 
   final Box<Entregas> entregasBox = Hive.box<Entregas>('entregas');
   final Box<AltaEntrega> altaEntregaBox = Hive.box<AltaEntrega>('altaentregas');
+  late Box<RepoEntrega> repoBox;
   
   // Unificamos las listas de altas
   final RxList<AltaEntrega> altasListas = <AltaEntrega>[].obs;
+  final RxList<RepoEntrega> reposListas = <RepoEntrega>[].obs;
 
   @override
-  void onInit() {
+  void onInit() async {
     super.onInit();
-    fetchUserLocation();
-    fetchEntregas();
-    _listenLocationChanges();
-    cargarAltasListas();
+    isLoading.value = true;
+    try {
+      // Asegurarse que todas las cajas necesarias se abren aquí
+      if (!entregasBox.isOpen) await Hive.openBox<Entregas>('entregas');
+      if (!altaEntregaBox.isOpen) await Hive.openBox<AltaEntrega>('altaentregas');
+      repoBox = await Hive.openBox<RepoEntrega>('repoentregas'); // repoBox se abre aquí
+      
+      await fetchUserLocation();
+      await fetchEntregas();
+      _listenLocationChanges();
+      cargarAltasListas();
+      cargarReposListas(); // Ahora se llama después de abrir repoBox
+    } catch (e) {
+       print("Error en onInit EntregaController: $e");
+       // Considera mostrar un Get.snackbar de error aquí si la inicialización falla
+    } finally {
+       isLoading.value = false;
+    }
   }
 
   @override
   void onReady() {
     super.onReady();
-    refreshData();
   }
 
   void cargarAltasListas() {
-    altasListas.assignAll(
-      altaEntregaBox.values
-          .where((alta) => alta.estadoAlta.trim().toLowerCase() == 'lista')
-          .toList(),
-    );
+    try {
+       if (!altaEntregaBox.isOpen) {
+          print("Advertencia: altaEntregaBox no está abierta en cargarAltasListas.");
+          return;
+       }
+       altasListas.assignAll(
+         altaEntregaBox.values
+             .where((alta) => alta.estadoAlta.trim().toLowerCase() == 'lista')
+             .toList(),
+       );
+       print("Altas listas cargadas: ${altasListas.length}");
+    } catch (e) {
+       print("Error cargando altas listas: $e");
+    }
+  }
+
+  void cargarReposListas() {
+    // No es necesario verificar isOpen aquí si garantizamos que se llama después de onInit
+    try {
+       reposListas.assignAll(
+         repoBox.values
+             .where((repo) => repo.estadoRepo.trim().toLowerCase() == 'lista')
+             .toList(),
+       );
+       print("Reposiciones listas cargadas: ${reposListas.length}");
+    } catch (e) {
+       print("Error cargando reposiciones listas: $e");
+       // Podrías limpiar la lista o mostrar un error
+       reposListas.clear(); 
+    }
   }
 
   Future<void> refreshData() async {
-    await fetchUserLocation();
-    await fetchEntregas();
-    cargarAltasListas();
+    isLoading.value = true;
+    try {
+       await fetchUserLocation();
+       await fetchEntregas();
+       cargarAltasListas();
+       cargarReposListas();
+    } catch (e) {
+       print("Error en refreshData: $e");
+    } finally {
+       isLoading.value = false;
+    }
   }
 
   /// Obtiene la ubicación actual del usuario
@@ -101,17 +151,26 @@ class EntregaController extends GetxController {
 
   /// Carga las entregas desde Hive
   Future<void> fetchEntregas() async {
-    final values = entregasBox.values.toList();
+    try {
+        if (!entregasBox.isOpen) {
+          print("Advertencia: entregasBox no está abierta en fetchEntregas.");
+          return; 
+        }
+        final values = entregasBox.values.toList();
 
-    // Eliminar duplicados por entregaId (conservando el último)
-    final mapaUnico = <String, Entregas>{};
-    for (var entrega in values) {
-      mapaUnico[entrega.entregaId] = entrega;
+        // Eliminar duplicados por entregaId (conservando el último)
+        final mapaUnico = <String, Entregas>{};
+        for (var entrega in values) {
+          mapaUnico[entrega.entregaId] = entrega;
+        }
+
+        entregas.assignAll(mapaUnico.values.toList());
+        print("Entregas cargadas: ${entregas.length}");
+
+        updateDistances();
+    } catch (e) {
+        print("Error en fetchEntregas: $e");
     }
-
-    entregas.assignAll(mapaUnico.values.toList());
-
-    updateDistances();
   }
 
   /// Agrega una nueva entrega a Hive
@@ -132,49 +191,63 @@ class EntregaController extends GetxController {
   }
 
   Future<void> deleteEntregaYBovinos(String entregaId) async {
+     // Primero restaurar bag si aplica
+     final entregaParaEliminar = entregasBox.get(entregaId);
+     if (entregaParaEliminar != null && entregaParaEliminar.tipo == 'manual') {
+        try {
+          final bagController = Get.find<ManageBagController>();
+          await bagController.restoreBag(entregaParaEliminar.cantidad, entregaParaEliminar.rangoInicial);
+        } catch (e) {
+          print("Error restaurando bag al eliminar entrega $entregaId: $e");
+        }
+     }
+
+    // Eliminar bovinos asociados (si existen)
     try {
-      final entrega = entregasBox.get(entregaId);
-      if (entrega == null) {
-        Get.snackbar('Error', 'No se encontró la entrega a eliminar.');
-        return;
-      }
-
-      // Restaurar cantidad al bolsón
-      final bagController = Get.find<ManageBagController>();
-      await bagController.restoreBag(entrega.cantidad, entrega.rangoInicial);
-
-      // Eliminar bovinos asociados
-      final bovinoBox = await Hive.openBox<Bovino>('bovinos');
-      final bovinosToDelete = bovinoBox.values
-          .where((bovino) => bovino.entregaId == entrega.entregaId)
-          .toList();
-
-      for (var bovino in bovinosToDelete) {
-        await bovinoBox.delete(bovino.arete);
-      }
-
-      // Eliminar entrega correctamente usando su ID como key
-      await entregasBox.delete(entregaId);
-
-      // Actualizar lista observable y UI
-      await fetchEntregas();
-      cargarAltasListas();
-
-      Get.snackbar(
-        'Eliminado',
-        'Entrega eliminada correctamente.',
-        backgroundColor: AppColors.snackSuccess,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-      );
+        final bovinoBox = await Hive.openBox<Bovino>('bovinos');
+        final bovinosToDelete = bovinoBox.values
+            .where((bovino) => bovino.entregaId == entregaId)
+            .toList();
+        for (var bovino in bovinosToDelete) {
+            await bovinoBox.delete(bovino.arete);
+        }
+         print("Bovinos asociados a $entregaId eliminados: ${bovinosToDelete.length}");
     } catch (e) {
-      print('❌ Error al eliminar entrega: $e');
-      Get.snackbar(
-        'Error',
-        'No se pudo eliminar la entrega.',
-        backgroundColor: AppColors.snackError,
-        colorText: Colors.white,
-      );
+        print("Error eliminando bovinos asociados a $entregaId: $e");
+    }
+
+    try {
+        // Usar firstWhereOrNull ya está bien porque importamos collection
+        final repoAsociado = repoBox.values.firstWhereOrNull((repo) => repo.entregaIdOrigen == entregaId);
+        if (repoAsociado != null) {
+           // Asegurar que repoBox esté abierta antes de eliminar
+           if (!repoBox.isOpen) repoBox = await Hive.openBox<RepoEntrega>('repoentregas');
+           await repoBox.delete(repoAsociado.idRepo);
+           print("RepoEntrega ${repoAsociado.idRepo} asociada a $entregaId eliminada.");
+        }
+        // Eliminar entrega correctamente usando su ID como key
+        await entregasBox.delete(entregaId);
+
+        // Actualizar lista observable y UI
+        await fetchEntregas();
+        cargarAltasListas();
+        cargarReposListas();
+
+        Get.snackbar(
+          'Eliminado',
+          'Entrega eliminada correctamente.',
+          backgroundColor: AppColors.snackSuccess,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+    } catch (e) {
+       print('❌ Error al eliminar entrega: $e');
+       Get.snackbar(
+         'Error',
+         'No se pudo eliminar la entrega.',
+         backgroundColor: AppColors.snackError,
+         colorText: Colors.white,
+       );
     }
   }
 
@@ -226,29 +299,40 @@ class EntregaController extends GetxController {
   }
 
   void updateDistances() {
-    for (var i = 0; i < entregas.length; i++) {
-      try {
-        final entrega = entregas[i];
-        final distance = Geolocator.distanceBetween(
-          userLocation.value.latitude,
-          userLocation.value.longitude,
-          entrega.latitud,
-          entrega.longitud,
-        );
+     if (!entregasBox.isOpen) {
+        print("Advertencia: entregasBox no está abierta en updateDistances.");
+        return;
+     }
+      for (var i = 0; i < entregas.length; i++) {
+         try {
+           final entrega = entregas[i];
+           // Evitar calcular si lat/lon no son válidos (ej. 0.0)
+           if (userLocation.value.latitude == 0.0 || userLocation.value.longitude == 0.0 || entrega.latitud == 0.0 || entrega.longitud == 0.0) {
+             // Asignar un valor por defecto o mantener el existente
+              // entregas[i] = entrega.copyWith(distanciaCalculada: 'N/A');
+              continue; // Saltar al siguiente
+           }
 
-        final entregaActualizada = entrega.copyWith(
-          distanciaCalculada: '${distance.toStringAsFixed(2)} m',
-        );
+           final distance = Geolocator.distanceBetween(
+             userLocation.value.latitude,
+             userLocation.value.longitude,
+             entrega.latitud,
+             entrega.longitud,
+           );
 
-        // 🔥 Guardar la entrega actualizada en Hive
-        entregasBox.put(entrega.entregaId, entregaActualizada);
+           final entregaActualizada = entrega.copyWith(
+             distanciaCalculada: '${distance.toStringAsFixed(2)} m',
+           );
 
-        // 🔄 Actualizar la lista observable
-        entregas[i] = entregaActualizada;
-      } catch (e) {
-        print("❌ Error al calcular distancia: $e");
+           // 🔥 Guardar la entrega actualizada en Hive
+           entregasBox.put(entrega.entregaId, entregaActualizada);
+
+           // 🔄 Actualizar la lista observable
+           entregas[i] = entregaActualizada;
+         } catch (e) {
+           print("❌ Error al calcular distancia para ${entregas[i].entregaId}: $e");
+         }
       }
-    }
   }
 
   Future<void> eliminarAlta(String idAlta) async {
@@ -290,7 +374,7 @@ class EntregaController extends GetxController {
     }
   }
 
-  Future<void> enviarAlta(String idAlta) async {
+ Future<void> enviarAlta(String idAlta) async {
     try {
       // Obtener la alta desde Hive
       final alta = altaEntregaBox.get(idAlta);
@@ -298,26 +382,8 @@ class EntregaController extends GetxController {
         throw Exception('No se encontró la alta con ID: $idAlta');
       }
 
-      // Mostrar diálogo de carga
-      Get.dialog(
-        const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                'Enviando datos...',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
-        barrierDismissible: false,
-      );
+      // NO creamos un diálogo aquí para evitar duplicación
+      // Ya que el código que llama a esta función (en send_view.dart) ya muestra su propio diálogo
 
       // Config
       final configBox = Hive.box<AppConfig>('appConfig');
@@ -344,19 +410,24 @@ class EntregaController extends GetxController {
         // Refrescar lista
         cargarAltasListas();
 
-        Get.back(); // Cerrar diálogo de carga
+        // NO cerramos ningún diálogo aquí
+        // La función que llamó a este método debe encargarse de cerrar su propio diálogo
+
         Get.snackbar(
           'Éxito',
           'Alta enviada correctamente',
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
+        return; // Retornamos éxito
       } else {
         throw Exception(
             'Error al enviar alta: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      Get.back(); // Cerrar diálogo de carga
+      // NO cerramos ningún diálogo aquí
+      // La función que llamó a este método debe encargarse de cerrar su propio diálogo
+      
       Get.snackbar(
         'Error',
         'Error al enviar alta: $e',
@@ -364,9 +435,10 @@ class EntregaController extends GetxController {
         colorText: Colors.white,
       );
       print('❌ Error en enviarAlta: $e');
+      throw e; // Re-lanzamos la excepción para que el llamador sepa que falló
     }
   }
-
+  
   // Para gestión en campo
   List<Entregas> get entregasPendientes => entregas
       .where((entrega) => 
@@ -517,8 +589,27 @@ class EntregaController extends GetxController {
   List<Entregas> get entregasConReposicionPendiente => entregas
       .where((entrega) => 
         entrega.reposicion && 
-        entrega.estadoReposicion.toLowerCase() == 'pendiente')
+        entrega.estadoReposicion.toLowerCase() == 'pendiente' &&
+        // Excluir las que ya tienen un RepoEntrega con estado 'lista'
+        !_tieneRepoListaAsociada(entrega.entregaId)
+      )
       .toList();
+
+  // Método auxiliar para verificar si existe una RepoEntrega asociada con estado 'lista'
+  bool _tieneRepoListaAsociada(String entregaId) {
+    if (!repoBox.isOpen) return false; // Si no está abierto aún, asumir que no existe
+    
+    // Extraer el ID base de la entrega (quitar el sufijo _repo si existe)
+    final idBase = entregaId.endsWith('_repo') 
+        ? entregaId.substring(0, entregaId.length - 5)
+        : entregaId;
+    
+    // Verificar si existe alguna RepoEntrega con este entregaIdOrigen y estado 'lista'
+    return repoBox.values.any((repo) => 
+        repo.entregaIdOrigen == idBase && 
+        repo.estadoRepo.trim().toLowerCase() == 'lista'
+    );
+  }
 
   // Método para obtener las entregas con reposiciones completadas
   List<Entregas> get entregasConReposicionCompletada => entregas
@@ -526,4 +617,87 @@ class EntregaController extends GetxController {
         entrega.reposicion && 
         entrega.estadoReposicion.toLowerCase() == 'completada')
       .toList();
+
+  Future<void> marcarRepoEnviada(String repoId) async {
+    isLoading.value = true;
+    try {
+      // Asegurar que las cajas estén abiertas
+      if (!repoBox.isOpen) repoBox = await Hive.openBox<RepoEntrega>('repoentregas');
+      if (!entregasBox.isOpen) await Hive.openBox<Entregas>('entregas'); // Asegurar que entregasBox esté abierta
+
+      final repo = repoBox.get(repoId);
+      if (repo == null) {
+        throw Exception('Reposición con ID $repoId no encontrada.');
+      }
+
+      // 1. Actualizar estado de RepoEntrega
+      final repoActualizado = repo.copyWith(estadoRepo: 'Enviada');
+      await repoBox.put(repoId, repoActualizado);
+      print("Repo $repoId marcada como Enviada.");
+
+      // 2. Actualizar estado de la Entrega original
+      final entregaOriginal = entregasBox.get(repo.entregaIdOrigen);
+      if (entregaOriginal != null) {
+        final entregaActualizada = entregaOriginal.copyWith(
+          estadoReposicion: 'completada',
+        );
+        await entregasBox.put(entregaOriginal.entregaId, entregaActualizada);
+        print("Entrega original ${entregaOriginal.entregaId} actualizada a reposicion completada.");
+      } else {
+        print("Advertencia: No se encontró la entrega original ${repo.entregaIdOrigen} para actualizar estado.");
+      }
+
+      // 3. Recargar listas
+      cargarReposListas();
+      await fetchEntregas();
+
+      Get.snackbar('Enviada', 'Reposición marcada como enviada.', snackPosition: SnackPosition.BOTTOM);
+
+    } catch (e) {
+      print('Error al marcar repo como enviada: $e');
+      Get.snackbar('Error', 'No se pudo marcar la reposición como enviada: ${e.toString()}', snackPosition: SnackPosition.BOTTOM);
+    } finally {
+       isLoading.value = false;
+    }
+  }
+
+  Future<void> eliminarRepoLista(String repoId) async {
+     isLoading.value = true;
+     try {
+       // Asegurar que repoBox esté abierta
+        if (!repoBox.isOpen) repoBox = await Hive.openBox<RepoEntrega>('repoentregas');
+
+        final repo = repoBox.get(repoId);
+        if (repo == null) {
+          print("Advertencia: No se encontró Repo $repoId para eliminar.");
+          isLoading.value = false; // Salir y quitar indicador de carga
+          return;
+        }
+
+       // Eliminar el RepoEntrega
+        await repoBox.delete(repoId);
+        print("Repo $repoId eliminada.");
+
+        // Recargar lista
+        cargarReposListas();
+
+        Get.snackbar('Eliminada', 'Reposición $repoId eliminada.', snackPosition: SnackPosition.BOTTOM);
+
+     } catch (e) {
+        print('Error al eliminar repo lista: $e');
+        Get.snackbar('Error', 'No se pudo eliminar la reposición: ${e.toString()}', snackPosition: SnackPosition.BOTTOM);
+     } finally {
+       isLoading.value = false;
+     }
+  }
+
+  Future<void> enviarReposicion(String repoId) async {
+    final envioReposicionRepository = EnvioReposicionRepository();
+    final repo = repoBox.get(repoId);
+    if (repo == null) {
+      Get.snackbar('Error', 'No se encontró la reposición con ID: $repoId');
+      return;
+    }
+    await envioReposicionRepository.enviarReposicion(repo.toJsonEnvio());
+  }
 }

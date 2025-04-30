@@ -6,45 +6,45 @@ class AreteBaja {
   final String arete;
 
   @HiveField(1)
-  final String motivoBaja;
+  final String motivoId;
 
   @HiveField(2)
   final String bajaId;
 
   AreteBaja({
     required this.arete,
-    required this.motivoBaja,
+    required this.motivoId,
     required this.bajaId,
   });
 
   // Método copyWith para crear una copia modificada
   AreteBaja copyWith({
     String? arete,
-    String? motivoBaja,
+    String? motivoId,
     String? bajaId,
   }) {
     return AreteBaja(
       arete: arete ?? this.arete,
-      motivoBaja: motivoBaja ?? this.motivoBaja,
+      motivoId: motivoId ?? this.motivoId,
       bajaId: bajaId ?? this.bajaId,
     );
   }
 
-  // Método para convertir a JSON
+  // Método para convertir a JSON para envío al servidor
   Map<String, dynamic> toJson() {
     return {
-      'ARETE': arete,
-      'MOTIVO': motivoBaja,
-      'BAJA_ID': bajaId,
+      'arete': arete,
+      'motivoId': motivoId,
     };
   }
 
-  // Constructor factory desde JSON
+  // Constructor factory desde JSON (puede necesitar ajustes si la fuente es diferente)
   factory AreteBaja.fromJson(Map<String, dynamic> json) {
+    final motivoValue = json['MOTIVO'] ?? json['motivo_id'] ?? '';
     return AreteBaja(
-      arete: json['ARETE'] ?? '',
-      motivoBaja: json['MOTIVO'] ?? '',
-      bajaId: json['BAJA_ID'] ?? '',
+      arete: json['ARETE'] ?? json['arete'] ?? '',
+      motivoId: motivoValue.toString(),
+      bajaId: json['BAJA_ID'] ?? json['baja_id'] ?? '',
     );
   }
 } 

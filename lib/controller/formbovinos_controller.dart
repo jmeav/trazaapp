@@ -384,13 +384,12 @@
             estadoArete: bovino.estadoArete,
             fechaNacimiento:
                 DateTime.now().subtract(Duration(days: bovino.edad * 30)),
-
-            // También pasamos fotoArete, areteMadre, etc. si así lo definiste en BovinoResumen
             fotoArete: bovino.fotoArete,
             areteMadre: bovino.areteMadre,
             aretePadre: bovino.aretePadre,
             regMadre: bovino.regMadre,
             regPadre: bovino.regPadre,
+            motivoEstadoAreteId: bovino.estadoArete == 'Dañado' ? '249' : '0',
           );
         }).toList();
 

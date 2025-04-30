@@ -146,28 +146,42 @@ class RepoEntrega {
     );
   }
 
-
-  Map<String, dynamic> toJsonEnvio() => {
-    "idRepo": idRepo,
-    "entregaIdOrigen": entregaIdOrigen,
-    "cupa": cupa,
-    "cue": cue,
-    "departamento": departamento,
-    "municipio": municipio,
-    "latitud": latitud,
-    "longitud": longitud,
-    "distanciaCalculada": distanciaCalculada,
-    "fechaRepo": fechaRepo.toUtc().toIso8601String(),
-    "token": token,
-    "pdfEvidencia": pdfEvidencia,
-    "observaciones": observaciones,
-    "fotoBovInicial": fotoBovInicial,
-    "fotoBovFinal": fotoBovFinal,
-    "fotoFicha": fotoFicha,
-    "codhabilitado": codhabilitado,
-    "idorganizacion": int.tryParse(idorganizacion) ?? 0,
-    "rangoInicialRepo": rangoInicialRepo,
-    "rangoFinalRepo": rangoFinalRepo,
-    "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
-  };
+  Map<String, dynamic> toJsonEnvio() {
+    // Función auxiliar para quitar el prefijo '558' y ceros a la izquierda
+    String stripTag(int value) {
+      var s = value.toString();
+      if (s.startsWith('558')) {
+        s = s.substring(3);
+      }
+      s = s.replaceFirst(RegExp(r'^0+'), '');
+      return s.isEmpty ? '0' : s;
+    }
+    
+    final riShort = int.tryParse(stripTag(rangoInicialRepo)) ?? rangoInicialRepo;
+    final rfShort = int.tryParse(stripTag(rangoFinalRepo)) ?? rangoFinalRepo;
+    
+    return {
+      "idRepo": idRepo,
+      "entregaIdOrigen": entregaIdOrigen,
+      "cupa": cupa,
+      "cue": cue,
+      "departamento": departamento,
+      "municipio": municipio,
+      "latitud": latitud,
+      "longitud": longitud,
+      "distanciaCalculada": distanciaCalculada,
+      "fechaRepo": fechaRepo.toUtc().toIso8601String(),
+      "token": token,
+      "pdfEvidencia": pdfEvidencia,
+      "observaciones": observaciones,
+      "fotoBovInicial": fotoBovInicial,
+      "fotoBovFinal": fotoBovFinal,
+      "ficha": fotoFicha,
+      "codhabilitado": codhabilitado,
+      "idorganizacion": int.tryParse(idorganizacion) ?? 0,
+      "rangoInicialRepo": riShort,  // Usar versión formateada (sin 558 y sin ceros a la izquierda)
+      "rangoFinalRepo": rfShort,    // Usar versión formateada (sin 558 y sin ceros a la izquierda)
+      "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
+    };
+  }
 } 

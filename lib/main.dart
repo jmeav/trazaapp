@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:trazaapp/controller/baja_controller.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
+import 'package:trazaapp/controller/formrepo_controller.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_adapter.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/bag/bag_operadora.dart';
@@ -18,6 +19,10 @@ import 'package:trazaapp/data/models/entregas/entregas_adapter.dart';
 import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
 import 'package:trazaapp/data/models/establecimiento/establecimiento_adapter.dart';
 import 'package:trazaapp/data/models/home_stat.dart';
+import 'package:trazaapp/data/models/motivosbajaarete/motivosbajaarete.dart';
+import 'package:trazaapp/data/models/motivosbajaarete/motivosbajaarete_adapter.dart';
+import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
+import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino_adapter.dart';
 import 'package:trazaapp/data/models/municipios/minicipio_adapter.dart';
 import 'package:trazaapp/data/models/municipios/municipio.dart';
 import 'package:trazaapp/data/models/productores/productor.dart';
@@ -53,6 +58,15 @@ import 'package:trazaapp/presentation/scanner/scanner_view.dart';
 import 'package:trazaapp/presentation/baja/baja_select_view.dart';
 import 'package:trazaapp/presentation/baja/baja_multiple_view.dart';
 import 'package:trazaapp/data/models/baja/arete_baja_adapter.dart';
+import 'package:trazaapp/presentation/consultas/consultaalta_view.dart';
+import 'package:trazaapp/controller/consultasaltas_controller.dart';
+import 'package:trazaapp/presentation/reposcreen/send_repo_view.dart';
+import 'package:trazaapp/presentation/views/profile_view.dart';
+import 'package:trazaapp/presentation/consultas/consultarepo_view.dart';
+import 'package:trazaapp/controller/consultasrepo_controller.dart';
+import 'package:trazaapp/presentation/consultas/consultas_menu_view.dart';
+import 'package:trazaapp/presentation/sendscreen/send_menu_view.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,6 +88,8 @@ void main() async {
   Hive.registerAdapter(RepoEntregaAdapter());
   Hive.registerAdapter(BajaAdapter());
   Hive.registerAdapter(AreteBajaAdapter());
+  Hive.registerAdapter(MotivoBajaAreteAdapter());
+  Hive.registerAdapter(MotivoBajaBovinoAdapter());
 
   await Future.wait([
     Hive.openBox<HomeStat>('homeStat'),
@@ -91,16 +107,18 @@ void main() async {
     Hive.openBox<BovinoRepo>('bovinosrepo'),
     Hive.openBox<RepoEntrega>('repoentregas'),
     Hive.openBox<Baja>('bajas'),
+    Hive.openBox<MotivoBajaArete>('motivosbajaarete'),
+    Hive.openBox<MotivoBajaBovino>('motivosbajabovino'),
   ]);
 
   // 🚨 SOLO QUITAR LOS COMENTARIOS SI QUERÉS BORRAR LAS CAJAS EN USO
   // Esto elimina todo lo almacenado en esas cajas, útil para pruebas.
-  
-  // await Hive.box<Entregas>('entregas').clear();
-  // await Hive.box<AltaEntrega>('altaentregas').clear();
-  // await Hive.box<RepoEntrega>('repoentregas').clear();
-  // print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");
-  
+
+ 
+//  await Hive.box<Entregas>('entregas').clear();
+//   await Hive.box<AltaEntrega>('altaentregas').clear();
+//   await Hive.box<RepoEntrega>('repoentregas').clear();
+//   print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");
 
   // Inicializa controladores
   Get.put(LoginController());
@@ -109,8 +127,6 @@ void main() async {
 
   runApp(MyApp());
 }
-
-
 
 class MyApp extends StatelessWidget {
   final ThemeController themeController = Get.find();
@@ -129,7 +145,13 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/home', page: () => const HomeView()),
           GetPage(name: '/entrega', page: () => EntregasView()),
           GetPage(name: '/formbovinos', page: () => FormBovinosView()),
-          GetPage(name: '/formrepo', page: () => FormRepoView()),
+          GetPage(
+            name: '/formrepo',
+            page: () => FormRepoView(),
+            binding: BindingsBuilder(() {
+              Get.lazyPut(() => FormRepoController());
+            }),
+          ),
           GetPage(name: '/repo', page: () => RepoView()),
           GetPage(name: '/managebag', page: () => ManageBagView()),
           GetPage(name: '/sendview', page: () => EnviarView()),
@@ -138,30 +160,48 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/verifycue', page: () => VerifyEstablishmentView()),
           GetPage(name: '/baja/select', page: () => const BajaSelectView()),
           GetPage(
-  name: '/baja/form',
-  page: () => const BajaFormView(),
-  binding: BindingsBuilder(() {
-    Get.lazyPut(() => BajaController());
-  }),
-),
-
+            name: '/baja/form',
+            page: () => const BajaFormView(),
+            binding: BindingsBuilder(() {
+              Get.lazyPut(() => BajaController());
+            }),
+          ),
           GetPage(
-            name: '/baja/send', 
+            name: '/baja/send',
             page: () => const BajaSendView(),
             binding: BindingsBuilder(() {
               Get.lazyPut(() => BajaController());
             }),
           ),
           GetPage(
-            name: '/scanner', 
-            page: () => const ScannerView(),
-            preventDuplicates: false  // Permite abrir múltiples instancias
+              name: '/scanner',
+              page: () => const ScannerView(),
+              preventDuplicates: false // Permite abrir múltiples instancias
+              ),
+          GetPage(name: '/consultas/menu', page: () => const ConsultasMenuView()),
+          GetPage(
+            name: '/consultas/altas',
+            page: () => const ConsultasView(),
+            binding: BindingsBuilder(() {
+              Get.lazyPut(() => ConsultasController());
+            }),
           ),
+          GetPage(
+            name: '/consultas/repos',
+            page: () => const ConsultasRepoView(),
+            binding: BindingsBuilder(() {
+              Get.lazyPut(() => ConsultasRepoController());
+            }),
+          ),
+          GetPage(name: '/sendrepo', page: () => SendRepoView()),
+          GetPage(name: '/perfil', page: () => const ProfileView()),
+          GetPage(name: '/send/menu', page: () => const SendMenuView()),
         ],
       );
     });
   }
 }
+
 class InitialView extends StatelessWidget {
   final ThemeController themeController = Get.find();
   final CatalogosController catalogosController = Get.find();
@@ -185,8 +225,12 @@ class InitialView extends StatelessWidget {
       final boxRaz = Hive.box<Raza>('razas');
 
       // Si es la primera vez o si los catálogos están vacíos, forzar la descarga
-      if (config.isFirstTime || boxDep.isEmpty || boxMun.isEmpty || boxRaz.isEmpty) {
-        print("✅ Primera vez o catálogos vacíos, redirigiendo a descarga de catálogos");
+      if (config.isFirstTime ||
+          boxDep.isEmpty ||
+          boxMun.isEmpty ||
+          boxRaz.isEmpty) {
+        print(
+            "✅ Primera vez o catálogos vacíos, redirigiendo a descarga de catálogos");
         catalogosController.isForcedDownload.value = true;
         Get.offAllNamed('/catalogs');
         return;
@@ -206,4 +250,3 @@ class InitialView extends StatelessWidget {
     );
   }
 }
-

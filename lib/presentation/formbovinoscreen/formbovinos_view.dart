@@ -227,12 +227,13 @@ class FormBovinosView extends StatelessWidget {
               const SizedBox(width: 10),
               DropdownButton<String>(
                 value: bovinoData.estadoArete,
-                items: const ['Bueno', 'Dañado', 'Perdido'].map((e) {
+                items: const ['Bueno', 'Dañado'].map((e) {
                   return DropdownMenuItem(value: e, child: Text(e));
                 }).toList(),
                 onChanged: (val) {
                   var updated = bovinoData.copyWith(
                     estadoArete: val ?? 'Bueno',
+                    motivoEstadoAreteId: val == 'Dañado' ? '249' : '0',
                   );
                   if (val != 'Bueno') {
                     // Si no es Bueno => limpiamos

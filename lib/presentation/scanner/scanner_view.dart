@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ScannerView extends StatefulWidget {
   const ScannerView({Key? key}) : super(key: key);
@@ -12,8 +12,7 @@ class ScannerView extends StatefulWidget {
 }
 
 class _ScannerViewState extends State<ScannerView> {
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-  QRViewController? controller;
+  final MobileScannerController controller = MobileScannerController();
   bool hasPermission = false;
   bool hasError = false;
   String? errorMessage;
@@ -29,15 +28,15 @@ class _ScannerViewState extends State<ScannerView> {
   void reassemble() {
     super.reassemble();
     if (Platform.isAndroid) {
-      controller?.pauseCamera();
+      controller.stop();
     } else if (Platform.isIOS) {
-      controller?.resumeCamera();
+      controller.start();
     }
   }
 
   @override
   void dispose() {
-    controller?.dispose();
+    controller.dispose();
     super.dispose();
   }
 
@@ -65,47 +64,43 @@ class _ScannerViewState extends State<ScannerView> {
     }
   }
 
-  void _onQRViewCreated(QRViewController controller) {
-    this.controller = controller;
-    controller.scannedDataStream.listen((scanData) {
-      if (isScanning || scanData.code == null) return;
-      
-      isScanning = true;
-      print('📦 Código detectado: ${scanData.code}');
-      
-      // Detener la cámara y regresar el resultado
-      controller.pauseCamera();
-      Navigator.of(context).pop(scanData.code);
-    });
+  void _onDetect(BarcodeCapture capture) {
+    if (isScanning) return;
+    final List<Barcode> barcodes = capture.barcodes;
+    if (barcodes.isEmpty) return;
+    final code = barcodes.first.rawValue;
+    if (code == null) return;
+    isScanning = true;
+    print('📦 Código detectado: $code');
+    controller.stop();
+    Navigator.of(context).pop(code);
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        await controller?.pauseCamera();
+        await controller.stop();
         return true;
       },
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Escanear código'),
           actions: [
-            if (controller != null) ...[
-              IconButton(
-                icon: const Icon(Icons.flash_on),
-                onPressed: () async {
-                  await controller?.toggleFlash();
-                  setState(() {});
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.flip_camera_ios),
-                onPressed: () async {
-                  await controller?.flipCamera();
-                  setState(() {});
-                },
-              ),
-            ],
+            IconButton(
+              icon: const Icon(Icons.flash_on),
+              onPressed: () async {
+                await controller.toggleTorch();
+                setState(() {});
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.flip_camera_ios),
+              onPressed: () async {
+                await controller.switchCamera();
+                setState(() {});
+              },
+            ),
           ],
         ),
         body: !hasPermission
@@ -158,15 +153,25 @@ class _ScannerViewState extends State<ScannerView> {
                   )
                 : Stack(
                     children: [
-                      QRView(
-                        key: qrKey,
-                        onQRViewCreated: _onQRViewCreated,
-                        overlay: QrScannerOverlayShape(
-                          borderColor: Theme.of(context).primaryColor,
-                          borderRadius: 10,
-                          borderLength: 30,
-                          borderWidth: 10,
-                          cutOutSize: 300,
+                      MobileScanner(
+                        controller: controller,
+                        onDetect: _onDetect,
+                      ),
+                      Positioned(
+                        left: 24,
+                        right: 24,
+                        top: 80,
+                        bottom: 120,
+                        child: IgnorePointer(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(context).primaryColor,
+                                width: 4,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
                         ),
                       ),
                       Positioned(

@@ -152,30 +152,43 @@ class AltaEntrega {
     );
   }
 
-  Map<String, dynamic> toJsonEnvio() => {
-        "idAlta": idAlta,
-        "rangoInicial": rangoInicial,
-        "rangoFinal": rangoFinal,
-        "cupa": cupa,
-        "cue": cue,
-        "departamento": departamento,
-        "municipio": municipio,
-        "latitud": latitud,
-        "longitud": longitud,
-        "distanciaCalculada": distanciaCalculada,
-        "fechaAlta": fechaAlta.toUtc().toIso8601String(),
-        "tipoAlta": tipoAlta,
-        "token": token,
-        "codhabilitado": codhabilitado,
-        "idorganizacion": int.tryParse(idorganizacion) ?? 0,
-        "fotoBovInicial": fotoBovInicial,
-        "fotoBovFinal": fotoBovFinal,
-        "fotoFicha": fotoFicha, // <--- nuevo
-        "reposicion": reposicion,
-        "observaciones": observaciones,
-        "aplicaentrega": aplicaEntrega,
-        "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
-      };
+  Map<String, dynamic> toJsonEnvio() {
+    // Función auxiliar para quitar el prefijo '558' y ceros a la izquierda
+    String stripTag(int value) {
+      var s = value.toString();
+      if (s.startsWith('558')) {
+        s = s.substring(3);
+      }
+      s = s.replaceFirst(RegExp(r'^0+'), '');
+      return s.isEmpty ? '0' : s;
+    }
+    final riShort = int.tryParse(stripTag(rangoInicial)) ?? rangoInicial;
+    final rfShort = int.tryParse(stripTag(rangoFinal)) ?? rangoFinal;
+    return {
+      "idAlta": idAlta,
+      "rangoInicial": riShort,
+      "rangoFinal": rfShort,
+      "cupa": cupa,
+      "cue": cue,
+      "departamento": departamento,
+      "municipio": municipio,
+      "latitud": latitud,
+      "longitud": longitud,
+      "distanciaCalculada": distanciaCalculada,
+      "fechaAlta": fechaAlta.toUtc().toIso8601String(),
+      "tipoAlta": tipoAlta,
+      "token": token,
+      "codhabilitado": codhabilitado,
+      "idorganizacion": int.tryParse(idorganizacion) ?? 0,
+      "fotoBovInicial": fotoBovInicial,
+      "fotoBovFinal": fotoBovFinal,
+      "fotoFicha": fotoFicha,
+      "reposicion": reposicion,
+      "observaciones": observaciones,
+      "aplicaentrega": aplicaEntrega,
+      "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
+    };
+  }
 }
 
 @HiveType(typeId: 11)
@@ -218,6 +231,10 @@ class BovinoResumen {
 
   @HiveField(11)
   final String regPadre;
+
+  @HiveField(12)
+  final String motivoEstadoAreteId; 
+
   // ──────────────────────────────
 
   BovinoResumen({
@@ -233,6 +250,7 @@ class BovinoResumen {
     this.aretePadre = '',
     this.regMadre = '',
     this.regPadre = '',
+    this.motivoEstadoAreteId = '0',
   });
 
   Map<String, dynamic> toJson() => {
@@ -248,5 +266,6 @@ class BovinoResumen {
         "aretePadre": aretePadre,
         "regMadre": regMadre,
         "regPadre": regPadre,
+        "motivoEstadoAreteId": motivoEstadoAreteId,
       };
 }

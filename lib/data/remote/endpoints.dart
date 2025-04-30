@@ -3,3 +3,5 @@ String urlcatalogs = '$urlbasApi/catalogos';
 String urlentregas = '$urlbasApi/operador';
 String urlogin = '$urlbasApi/login';
 String urlaltas = '$urlbasApi/alta';
+String urlreposicion = '$urlbasApi/reposicion';
+String urlbajabovino = '$urlbasApi/bajabovino';

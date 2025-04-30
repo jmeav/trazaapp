@@ -8,11 +8,15 @@ import 'package:trazaapp/data/models/productores/productor.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 import 'package:trazaapp/data/models/bag/bag_operadora.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
+import 'package:trazaapp/data/models/motivosbajaarete/motivosbajaarete.dart';
+import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
 import 'package:trazaapp/data/repositories/catalogs/departamentos_repo.dart';
 import 'package:trazaapp/data/repositories/catalogs/establecimientos_repo.dart';
 import 'package:trazaapp/data/repositories/catalogs/municipios_repo.dart';
 import 'package:trazaapp/data/repositories/catalogs/productores_repo.dart';
 import 'package:trazaapp/data/repositories/catalogs/razas.dart';
+import 'package:trazaapp/data/repositories/catalogs/motivosbajaarete_repo.dart';
+import 'package:trazaapp/data/repositories/catalogs/motivosbajabovino_repo.dart';
 import 'package:trazaapp/data/repositories/entregas/entregas_bag_repo.dart';
 import 'package:trazaapp/data/repositories/entregas/entregas_repo.dart';
 import 'package:trazaapp/presentation/homescreen/home.dart';
@@ -29,6 +33,8 @@ class CatalogosController extends GetxController {
   var entregas = <Entregas>[].obs;
   var razas = <Raza>[].obs;
   var bag = Rxn<Bag>();
+  var motivosBajaArete = <MotivoBajaArete>[].obs;
+  var motivosBajaBovino = <MotivoBajaBovino>[].obs;
 
   var municipiosFiltrados = <Municipio>[].obs;
   var establecimientosFiltrados = <Establecimiento>[].obs;
@@ -40,6 +46,8 @@ class CatalogosController extends GetxController {
   var lastUpdateEntregas = ''.obs;
   var lastUpdateRazas = ''.obs;
   var lastUpdateBag = ''.obs;
+  var lastUpdateMotivosBajaArete = ''.obs;
+  var lastUpdateMotivosBajaBovino = ''.obs;
 
   final DepartamentosRepository _departamentosRepo = DepartamentosRepository();
   final MunicipiosRepository _municipiosRepo = MunicipiosRepository();
@@ -48,8 +56,10 @@ class CatalogosController extends GetxController {
   final EntregasRepository _entregasRepo = EntregasRepository();
   final BagRepository _bagRepo = BagRepository();
   final RazasRepository _razasRepo = RazasRepository();
+  final MotivosBajaAreteRepository _motivosBajaAreteRepo = MotivosBajaAreteRepository();
+  final MotivosBajaBovinoRepository _motivosBajaBovinoRepo = MotivosBajaBovinoRepository();
   var currentStep = 0.obs;
-  final totalSteps = 7; // número fijo de catálogos
+  final totalSteps = 9; // número fijo de catálogos
   var isForcedDownload = false.obs;
 
 
@@ -82,12 +92,26 @@ class CatalogosController extends GetxController {
 
   void checkCatalogStatus() {
     try {
+      // Imprimir estado de cajas
+      print("Estado de cajas Hive:");
+      print("- Departamentos: " + (Hive.isBoxOpen('departamentos') ? "abierta" : "cerrada"));
+      print("- Municipios: " + (Hive.isBoxOpen('municipios') ? "abierta" : "cerrada"));
+      print("- Establecimientos: " + (Hive.isBoxOpen('establecimientos') ? "abierta" : "cerrada"));
+      print("- Productores: " + (Hive.isBoxOpen('productores') ? "abierta" : "cerrada"));
+      print("- Entregas: " + (Hive.isBoxOpen('entregas') ? "abierta" : "cerrada"));
+      print("- Razas: " + (Hive.isBoxOpen('razas') ? "abierta" : "cerrada"));
+      print("- MotivosBajaArete: " + (Hive.isBoxOpen('motivosbajaarete') ? "abierta" : "cerrada"));
+      print("- MotivosBajaBovino: " + (Hive.isBoxOpen('motivosbajabovino') ? "abierta" : "cerrada"));
+      print("- Bag: " + (Hive.isBoxOpen('bag') ? "abierta" : "cerrada"));
+
       if (!Hive.isBoxOpen('departamentos') || 
           !Hive.isBoxOpen('municipios') || 
           !Hive.isBoxOpen('establecimientos') ||
           !Hive.isBoxOpen('productores') ||
           !Hive.isBoxOpen('entregas') ||
           !Hive.isBoxOpen('razas') ||
+          !Hive.isBoxOpen('motivosbajaarete') ||
+          !Hive.isBoxOpen('motivosbajabovino') ||
           !Hive.isBoxOpen('bag')) {
         print("Algunas cajas no están abiertas aún");
         return;
@@ -99,7 +123,21 @@ class CatalogosController extends GetxController {
       var boxProd = Hive.box<Productor>('productores');
       var boxEnt = Hive.box<Entregas>('entregas');
       var boxRaz = Hive.box<Raza>('razas');
+      var boxMotBajaArete = Hive.box<MotivoBajaArete>('motivosbajaarete');
+      var boxMotBajaBovino = Hive.box<MotivoBajaBovino>('motivosbajabovino');
       var boxBag = Hive.box<Bag>('bag');
+
+      // Imprimir cantidad de elementos
+      print("Cantidad de elementos en cada caja:");
+      print("- Departamentos: ${boxDep.length}");
+      print("- Municipios: ${boxMun.length}");
+      print("- Establecimientos: ${boxEst.length}");
+      print("- Productores: ${boxProd.length}");
+      print("- Entregas: ${boxEnt.length}");
+      print("- Razas: ${boxRaz.length}");
+      print("- MotivosBajaArete: ${boxMotBajaArete.length}");
+      print("- MotivosBajaBovino: ${boxMotBajaBovino.length}");
+      print("- Bag: ${boxBag.length}");
 
       departamentos.assignAll(boxDep.values.toList());
       municipios.assignAll(boxMun.values.toList());
@@ -107,11 +145,54 @@ class CatalogosController extends GetxController {
       productores.assignAll(boxProd.values.toList());
       entregas.assignAll(boxEnt.values.toList());
       razas.assignAll(boxRaz.values.toList());
+      motivosBajaArete.assignAll(boxMotBajaArete.values.toList());
+      motivosBajaBovino.assignAll(boxMotBajaBovino.values.toList());
+      
+      // Imprimir detalles sobre los valores cargados
+      print('MotivosBajaArete IDs cargados: ${motivosBajaArete.map((m) => m.id).toList()}');
+      print('MotivosBajaBovino IDs cargados: ${motivosBajaBovino.map((m) => m.id).toList()}');
+      
+      print('MotivosBajaArete detalles:');
+      for (var motivo in motivosBajaArete) {
+        print('ID: ${motivo.id}, Nombre: ${motivo.nombre}');
+      }
+      
+      print('MotivosBajaBovino detalles:');
+      for (var motivo in motivosBajaBovino) {
+        print('ID: ${motivo.id}, Nombre: ${motivo.nombre}');
+      }
+      
       bag.value = boxBag.isNotEmpty ? boxBag.getAt(0) : null;
+
+      // Imprimir estado después de cargar
+      print("Estado después de cargar:");
+      print("- Departamentos: ${departamentos.length}");
+      print("- Municipios: ${municipios.length}");
+      print("- Establecimientos: ${establecimientos.length}");
+      print("- Productores: ${productores.length}");
+      print("- Entregas: ${entregas.length}");
+      print("- Razas: ${razas.length}");
+      print("- MotivosBajaArete: ${motivosBajaArete.length}");
+      print("- MotivosBajaBovino: ${motivosBajaBovino.length}");
+      print("- Bag: ${bag.value != null ? 'cargado' : 'no cargado'}");
 
       _loadLastUpdates();
     } catch (e) {
       print("Error al verificar el estado de los catálogos: $e");
+      
+      // Intentar abrir cajas específicas si hay error
+      try {
+        if (!Hive.isBoxOpen('motivosbajaarete')) {
+          Hive.openBox<MotivoBajaArete>('motivosbajaarete');
+          print("Caja motivosbajaarete abierta después del error");
+        }
+        if (!Hive.isBoxOpen('motivosbajabovino')) {
+          Hive.openBox<MotivoBajaBovino>('motivosbajabovino');
+          print("Caja motivosbajabovino abierta después del error");
+        }
+      } catch (boxError) {
+        print("Error al intentar abrir cajas después del error principal: $boxError");
+      }
     }
   }
 
@@ -127,6 +208,8 @@ class CatalogosController extends GetxController {
       lastUpdateProductores.value = updatesBox.get('Productores', defaultValue: 'Nunca');
       lastUpdateEntregas.value = updatesBox.get('Entregas', defaultValue: 'Nunca');
       lastUpdateRazas.value = updatesBox.get('Razas', defaultValue: 'Nunca');
+      lastUpdateMotivosBajaArete.value = updatesBox.get('MotivosBajaArete', defaultValue: 'Nunca');
+      lastUpdateMotivosBajaBovino.value = updatesBox.get('MotivosBajaBovino', defaultValue: 'Nunca');
       lastUpdateBag.value = updatesBox.get('Bag', defaultValue: 'Nunca');
     } catch (e) {
       print("Error al cargar las últimas actualizaciones: $e");
@@ -163,6 +246,12 @@ Future<void> downloadAllCatalogsSequential({
   currentStep.value++;
 
   await downloadRazas(token: token, codhabilitado: codhabilitado);
+  currentStep.value++;
+
+  await downloadMotivosBajaArete(token: token, codhabilitado: codhabilitado);
+  currentStep.value++;
+
+  await downloadMotivosBajaBovino(token: token, codhabilitado: codhabilitado);
   currentStep.value++;
 
   isDownloading.value = false;
@@ -309,6 +398,64 @@ Future<void> downloadAllCatalogsSequential({
       progressText.value = "Error al descargar Bag: $e";
     } finally {
       isDownloading.value = false;
+    }
+  }
+
+  Future<void> downloadMotivosBajaArete({
+    required String token,
+    required String codhabilitado,
+  }) async {
+    try {
+      print('Iniciando descarga de motivos de baja arete...');
+      if (!Hive.isBoxOpen('motivosbajaarete')) {
+        print('Abriendo caja motivosbajaarete...');
+        await Hive.openBox<MotivoBajaArete>('motivosbajaarete');
+      }
+      
+      var box = Hive.box<MotivoBajaArete>('motivosbajaarete');
+      
+      await _downloadCatalog(
+        title: "MotivosBajaArete",
+        fetchFunction: (t, c) => _motivosBajaAreteRepo.fetchMotivosBajaArete(token: t, codhabilitado: c),
+        box: box,
+        list: motivosBajaArete,
+        lastUpdate: lastUpdateMotivosBajaArete,
+        token: token,
+        codhabilitado: codhabilitado,
+      );
+      print('Finalizada descarga de motivos de baja arete: ${motivosBajaArete.length} registros');
+    } catch (e) {
+      print('Error al descargar motivos de baja arete: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> downloadMotivosBajaBovino({
+    required String token,
+    required String codhabilitado,
+  }) async {
+    try {
+      print('Iniciando descarga de motivos de baja bovino...');
+      if (!Hive.isBoxOpen('motivosbajabovino')) {
+        print('Abriendo caja motivosbajabovino...');
+        await Hive.openBox<MotivoBajaBovino>('motivosbajabovino');
+      }
+      
+      var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
+      
+      await _downloadCatalog(
+        title: "MotivosBajaBovino",
+        fetchFunction: (t, c) => _motivosBajaBovinoRepo.fetchMotivosBajaBovino(token: t, codhabilitado: c),
+        box: box,
+        list: motivosBajaBovino,
+        lastUpdate: lastUpdateMotivosBajaBovino,
+        token: token,
+        codhabilitado: codhabilitado,
+      );
+      print('Finalizada descarga de motivos de baja bovino: ${motivosBajaBovino.length} registros');
+    } catch (e) {
+      print('Error al descargar motivos de baja bovino: $e');
+      rethrow;
     }
   }
 }
