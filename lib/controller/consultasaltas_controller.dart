@@ -82,11 +82,15 @@ class ConsultasController extends GetxController {
       final appConfigBox = Hive.box<AppConfig>('appConfig');
       final config = appConfigBox.get('config');
       final codHabilitado = config?.codHabilitado ?? '';
+      final nombreHabilitado = config?.nombre ?? '';
+      final cedulaHabilitado = config?.cedula ?? '';
       
-      // Generar el PDF pasando el código de habilitado
+      // Generar el PDF pasando el código de habilitado, nombre y cédula
       final pdfPath = await PdfGenerator.generateFichaPdf(
         altaData,
         codHabilitado: codHabilitado,
+        nombreHabilitado: nombreHabilitado,
+        cedulaHabilitado: cedulaHabilitado,
       );
       
       Get.to(() => PdfViewerScreen(pdfPath: pdfPath));

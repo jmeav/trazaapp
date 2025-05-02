@@ -21,15 +21,19 @@ class ConsultasRepoController extends GetxController {
       return resultados;
     }
     return resultados.where((item) {
-      // Adaptar la lógica de estado para reposiciones
-      // Asumiendo que el campo se llama 'estadoRepo' o similar y los valores son 'Enviada', 'Rechazada', 'Lista'
-      final estado = item['estadoRepo']?.toString().toLowerCase() ?? 'pendiente'; // Ajusta el nombre del campo y el valor por defecto
+      // Usar el campo 'estadoproceso' para filtrar
+      final estado = item['estadoproceso']?.toString() ?? '0';
       String estadoTexto;
       switch (estado) {
-        case 'enviada': estadoTexto = 'Enviado'; break;
-        case 'rechazada': estadoTexto = 'Rechazado'; break; // Si aplica
-        case 'lista': estadoTexto = 'Pendiente'; break; // O 'Lista'
-        default: estadoTexto = 'Pendiente';
+        case '1':
+          estadoTexto = 'Procesado';
+          break;
+        case '2':
+          estadoTexto = 'Rechazado';
+          break;
+        case '0':
+        default:
+          estadoTexto = 'Pendiente';
       }
       return estadoTexto == filterStatus.value;
     }).toList();

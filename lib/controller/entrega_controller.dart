@@ -698,6 +698,15 @@ class EntregaController extends GetxController {
       Get.snackbar('Error', 'No se encontró la reposición con ID: $repoId');
       return;
     }
-    await envioReposicionRepository.enviarReposicion(repo.toJsonEnvio());
+    try {
+      await envioReposicionRepository.enviarReposicion(repo.toJsonEnvio());
+      // Si el envío fue exitoso, actualiza el estado localmente
+      final repoActualizado = repo.copyWith(estadoRepo: 'Enviada');
+      await repoBox.put(repoId, repoActualizado);
+      // Recarga la lista para que desaparezca de "listas para enviar"
+      cargarReposListas();
+    } catch (e) {
+      // El error ya se muestra en el repositorio
+    }
   }
 }

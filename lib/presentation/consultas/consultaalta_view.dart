@@ -22,6 +22,18 @@ class ConsultasView extends StatelessWidget {
     }
   }
 
+  // Función para calcular los días desde el envío
+  int calcularDiasDesdeEnvio(String? fechaSistema) {
+    if (fechaSistema == null) return 0;
+    try {
+      final fecha = DateTime.parse(fechaSistema);
+      final ahora = DateTime.now();
+      return ahora.difference(fecha).inDays;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ConsultasController controller = Get.find();
@@ -272,6 +284,8 @@ class ConsultasView extends StatelessWidget {
 
         // Determinar si está procesado
         final bool estaProcesado = item['estadoproceso']?.toString() == '1';
+        final bool esPendiente = item['estadoproceso']?.toString() != '1' && item['estadoproceso']?.toString() != '2';
+        final int diasPendiente = calcularDiasDesdeEnvio(item['fecha_sistema']?.toString());
 
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -297,6 +311,7 @@ class ConsultasView extends StatelessWidget {
                         Text(
                             'Rango: ${formatArete(item['rangoInicial'])} - ${formatArete(item['rangoFinal'])} ',
                             style: const TextStyle(fontSize: 14)),
+                       
                         Row(
                           children: [
                             Expanded(
@@ -318,6 +333,19 @@ class ConsultasView extends StatelessWidget {
                                     style: const TextStyle(fontSize: 14))),
                           ],
                         ),
+                         if (estaProcesado)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              'Cantidad de bovinos: '
+                                '${(int.tryParse(item['rangoFinal']?.toString() ?? '') ?? 0) - (int.tryParse(item['rangoInicial']?.toString() ?? '') ?? 0) + 1}',
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
                         if (item['motivorechazo'] != null &&
                             item['motivorechazo'].toString().isNotEmpty)
                           Padding(
@@ -327,6 +355,14 @@ class ConsultasView extends StatelessWidget {
                                 style: const TextStyle(
                                     color: Colors.red,
                                     fontWeight: FontWeight.bold)),
+                          ),
+                        if (esPendiente)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              'Enviado hace $diasPendiente día${diasPendiente == 1 ? '' : 's'}',
+                              style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            ),
                           ),
                       ],
                     ),
@@ -372,14 +408,7 @@ class ConsultasView extends StatelessWidget {
                         tooltip: 'Generar y Ver Ficha',
                         onPressed: () => controller.generarYMostrarFicha(item),
                         color: Theme.of(context).colorScheme.primary,
-                      ),
-                      if (item['FichaUrl'] != null && (item['FichaUrl'] as String).isNotEmpty)
-                        IconButton(
-                          icon: const Icon(FontAwesomeIcons.whatsapp),
-                          tooltip: 'Compartir Ficha (URL Original) por WhatsApp',
-                          onPressed: () => _shareViaWhatsApp(item['FichaUrl'] as String),
-                          color: Colors.green,
-                        ),
+                      ),                   
                     ],
                   ),
                 )
@@ -399,7 +428,7 @@ class ConsultasView extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Definir el ancho mínimo para la tabla
-    final double tableMinWidth = isLandscape ? 1300 : 1300;
+    final double tableMinWidth = isLandscape ? 1400 : 1400;
 
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
@@ -427,6 +456,7 @@ class ConsultasView extends StatelessWidget {
                     _buildTableHeader('CUE', width: 80),
                     _buildTableHeader('Finca', width: 140),
                     _buildTableHeader('Estado', width: 100),
+                    _buildTableHeader('Días Pendiente', width: 120),
                     _buildTableHeader('Motivo Rechazo', width: 180),
                     _buildTableHeader('Acciones', width: 100),
                   ],
@@ -439,6 +469,8 @@ class ConsultasView extends StatelessWidget {
                     getEstadoInfo(item['estadoproceso']?.toString());
                 final bool estaProcesado =
                     item['estadoproceso']?.toString() == '1';
+                final bool esPendiente = item['estadoproceso']?.toString() != '1' && item['estadoproceso']?.toString() != '2';
+                final int diasPendiente = calcularDiasDesdeEnvio(item['fecha_sistema']?.toString());
 
                 return Container(
                   margin: const EdgeInsets.symmetric(vertical: 1),
@@ -484,6 +516,10 @@ class ConsultasView extends StatelessWidget {
                             ),
                           ),
                         ),
+                        _buildTableCell(
+                          esPendiente ? '$diasPendiente día${diasPendiente == 1 ? '' : 's'}' : '-',
+                          width: 120,
+                        ),
                         _buildTableCell(item['motivorechazo']?.toString() ?? '',
                             width: 180, maxLines: 2),
                         Container(
@@ -505,22 +541,7 @@ class ConsultasView extends StatelessWidget {
                                           controller.generarYMostrarFicha(item),
                                       color: theme.colorScheme.primary,
                                       iconSize: 20,
-                                    ),
-                                    if (item['FichaUrl'] != null && (item['FichaUrl'] as String).isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(left: 12.0),
-                                        child: IconButton(
-                                          icon:
-                                              const Icon(FontAwesomeIcons.whatsapp),
-                                          tooltip: 'Compartir Ficha (URL Original) por WhatsApp',
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(),
-                                          onPressed: () =>
-                                              _shareViaWhatsApp(item['FichaUrl'] as String),
-                                          color: Colors.green,
-                                          iconSize: 18,
-                                        ),
-                                      ),
+                                    ),                                   
                                   ],
                                 )
                               : const SizedBox.shrink(),

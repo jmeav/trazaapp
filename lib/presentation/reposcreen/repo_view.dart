@@ -188,12 +188,17 @@ class RepoView extends GetView<EntregaController> {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.assignment_turned_in, size: 18),
                   label: const Text('Realizar'),
-                  onPressed: () => Get.toNamed('/formrepo', arguments: {
-                    'entregaId': entrega.entregaId.split('_').first,
-                    'repoId': entrega.entregaId,
-                    'rangoInicial': entrega.rangoInicial,
-                    'cantidad': entrega.cantidad,
-                  }),
+                  onPressed: () async {
+                    final result = await Get.toNamed('/formrepo', arguments: {
+                      'entregaId': entrega.entregaId.split('_').first,
+                      'repoId': entrega.entregaId,
+                      'rangoInicial': entrega.rangoInicial,
+                      'cantidad': entrega.cantidad,
+                    });
+                    if (result == true) {
+                      controller.refreshData();
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     minimumSize: Size(100, 36),

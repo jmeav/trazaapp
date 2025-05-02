@@ -182,10 +182,12 @@ class AltaEntrega {
       "idorganizacion": int.tryParse(idorganizacion) ?? 0,
       "fotoBovInicial": fotoBovInicial,
       "fotoBovFinal": fotoBovFinal,
-      "fotoFicha": fotoFicha,
+      "fotoFicha": fotoFicha, 
       "reposicion": reposicion,
       "observaciones": observaciones,
       "aplicaentrega": aplicaEntrega,
+      "detalleentrega": "detalleentrega",   //REVISAR
+      "rangodetalle": "rangodetalle",       //REVISAR
       "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
     };
   }

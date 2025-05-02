@@ -88,36 +88,45 @@ class FormBovinosView extends StatelessWidget {
               const SizedBox(height: 8),
 
               // Botón Llenado Rápido
-             Row(
-  mainAxisAlignment: MainAxisAlignment.end,
-  children: [
-    // 1) Botón "Llenado Rápido"
-    FloatingActionButton.small(
-      heroTag: 'llenado_rapido',
-      onPressed: () {
-        showDialog(
-          context: context,
-          builder: (_) => _buildQuickFillDialog(context),
-        );
-      },
-      child: const Icon(Icons.flash_on),
-    ),
-    const SizedBox(width: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // 1) Botón "Llenado Rápido"
+                  FloatingActionButton.small(
+                    heroTag: 'llenado_rapido',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => _buildQuickFillDialog(context),
+                      );
+                    },
+                    child: const Icon(Icons.flash_on),
+                  ),
+                  const SizedBox(width: 16),
 
-    // 2) Botón "Ver Bovinos"
-    FloatingActionButton.small(
-      heroTag: 'ver_bovinos',
-      backgroundColor: Colors.orange,
-      onPressed: () {
-        _showBovinosNavigator(context);
-      },
-      child: const Icon(Icons.list_alt),
-    ),
-    const SizedBox(width: 16),
-  ],
-),
-
-
+                  // 2) Botón "Ver Bovinos"
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      minimumSize: Size(0, 32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: () {
+                      _showBovinosNavigator(context);
+                    },
+                    icon: const Icon(Icons.visibility, size: 18),
+                    label: const Text('Vista Previa',
+                        style: TextStyle(fontSize: 14)),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+              ),
               const Divider(
                 height: 20,
                 thickness: 1,
@@ -146,55 +155,57 @@ class FormBovinosView extends StatelessWidget {
               ),
 
               // BOTONES Navegación
-             Padding(
-  padding: const EdgeInsets.all(8.0),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      // BOTÓN ANTERIOR
-      Visibility(
-        visible: controller.currentPage.value < controller.rangos.length,
-        child: ElevatedButton.icon(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: controller.previousPage,
-          label: const Text('Anterior'),
-        ),
-      ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // BOTÓN ANTERIOR
+                    Visibility(
+                      visible: controller.currentPage.value <
+                          controller.rangos.length,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: controller.previousPage,
+                        label: const Text('Anterior'),
+                      ),
+                    ),
 
-      // BOTÓN SIGUIENTE (oculto en la página final)
-      Obx(() {
-        final current = controller.currentPage.value;
+                    // BOTÓN SIGUIENTE (oculto en la página final)
+                    Obx(() {
+                      final current = controller.currentPage.value;
 
-        // Si estamos en la página final (fotos, index == rangos.length), NO se muestra el botón
-        if (current == controller.rangos.length) {
-          return const SizedBox(); // devuelves un widget vacío
-        }
+                      // Si estamos en la página final (fotos, index == rangos.length), NO se muestra el botón
+                      if (current == controller.rangos.length) {
+                        return const SizedBox(); // devuelves un widget vacío
+                      }
 
-        // Caso contrario (páginas de bovinos)
-        return ElevatedButton.icon(
-          icon: const Icon(Icons.arrow_forward),
-          label: Text(
-            // Si es el último bovino => "Ir a Fotos/Docs"
-            (current == controller.rangos.length - 1)
-                ? 'Ir a Fotos/Docs'
-                : 'Siguiente',
-          ),
-          onPressed: () {
-            // si estás en el último bovino => saltar a la página final
-            if (current == controller.rangos.length - 1) {
-              controller.currentPage.value = controller.rangos.length;
-              controller.pageController.jumpToPage(controller.rangos.length);
-            } else {
-              // si no, siguiente
-              controller.nextPage();
-            }
-          },
-        );
-      }),
-    ],
-  ),
-),
-
+                      // Caso contrario (páginas de bovinos)
+                      return ElevatedButton.icon(
+                        icon: const Icon(Icons.arrow_forward),
+                        label: Text(
+                          // Si es el último bovino => "Ir a Fotos/Docs"
+                          (current == controller.rangos.length - 1)
+                              ? 'Ir a Fotos/Docs'
+                              : 'Siguiente',
+                        ),
+                        onPressed: () {
+                          // si estás en el último bovino => saltar a la página final
+                          if (current == controller.rangos.length - 1) {
+                            controller.currentPage.value =
+                                controller.rangos.length;
+                            controller.pageController
+                                .jumpToPage(controller.rangos.length);
+                          } else {
+                            // si no, siguiente
+                            controller.nextPage();
+                          }
+                        },
+                      );
+                    }),
+                  ],
+                ),
+              ),
             ],
           );
         }),
@@ -221,36 +232,61 @@ class FormBovinosView extends StatelessWidget {
           const SizedBox(height: 12),
 
           // EstadoArete
-          Row(
-            children: [
-              const Text('Estado del Arete:'),
-              const SizedBox(width: 10),
-              DropdownButton<String>(
-                value: bovinoData.estadoArete,
-                items: const ['Bueno', 'Dañado'].map((e) {
-                  return DropdownMenuItem(value: e, child: Text(e));
-                }).toList(),
-                onChanged: (val) {
-                  var updated = bovinoData.copyWith(
-                    estadoArete: val ?? 'Bueno',
-                    motivoEstadoAreteId: val == 'Dañado' ? '249' : '0',
-                  );
-                  if (val != 'Bueno') {
-                    // Si no es Bueno => limpiamos
-                    updated = updated.copyWith(
-                      edad: 0,
-                      sexo: '',
-                      razaId: '',
-                      areteMadre: '',
-                      aretePadre: '',
-                      regMadre: '',
-                      regPadre: '',
-                    );
-                  }
-                  controller.bovinoInfo[bovinoID] = updated;
-                },
-              ),
-            ],
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.10),
+              border: Border.all(color: Colors.orange, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info, color: Colors.orange, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Estado del Arete:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      DropdownButton<String>(
+                        value: bovinoData.estadoArete,
+                        items: const ['Bueno', 'Dañado'].map((e) {
+                          return DropdownMenuItem(value: e, child: Text(e));
+                        }).toList(),
+                        onChanged: (val) {
+                          var updated = bovinoData.copyWith(
+                            estadoArete: val ?? 'Bueno',
+                            motivoEstadoAreteId: val == 'Dañado' ? '249' : '0',
+                          );
+                          if (val != 'Bueno') {
+                            // Si no es Bueno => limpiamos
+                            updated = updated.copyWith(
+                              edad: 0,
+                              sexo: '',
+                              razaId: '',
+                              areteMadre: '',
+                              aretePadre: '',
+                              regMadre: '',
+                              regPadre: '',
+                            );
+                          }
+                          controller.bovinoInfo[bovinoID] = updated;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 10),
@@ -291,7 +327,10 @@ class FormBovinosView extends StatelessWidget {
               controller: TextEditingController(
                 text: bovinoData.edad > 0 ? '${bovinoData.edad}' : '',
               )..selection = TextSelection.fromPosition(
-                  TextPosition(offset: bovinoData.edad > 0 ? '${bovinoData.edad}'.length : 0),
+                  TextPosition(
+                      offset: bovinoData.edad > 0
+                          ? '${bovinoData.edad}'.length
+                          : 0),
                 ),
               onChanged: (value) {
                 final e = int.tryParse(value) ?? 0;
@@ -338,7 +377,6 @@ class FormBovinosView extends StatelessWidget {
                 controller.bovinoInfo[bovinoID] = updated;
               },
             ),
-
 
             const SizedBox(height: 16),
 
@@ -708,7 +746,6 @@ class FormBovinosView extends StatelessWidget {
     );
   }
 
-
   void _showBovinosNavigator(BuildContext context) {
     showDialog(
       context: context,
@@ -724,7 +761,7 @@ class FormBovinosView extends StatelessWidget {
               itemBuilder: (context, i) {
                 final areteID = allRangos[i];
                 return ListTile(
-                  leading: const Icon(Icons.pets),
+                  leading: const Icon(Icons.tag),
                   title: Text('Arete: $areteID'),
                   onTap: () {
                     // Cierra el diálogo

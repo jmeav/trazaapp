@@ -66,6 +66,8 @@ import 'package:trazaapp/presentation/consultas/consultarepo_view.dart';
 import 'package:trazaapp/controller/consultasrepo_controller.dart';
 import 'package:trazaapp/presentation/consultas/consultas_menu_view.dart';
 import 'package:trazaapp/presentation/sendscreen/send_menu_view.dart';
+import 'package:trazaapp/presentation/consultas/consultabaja_view.dart';
+import 'package:trazaapp/controller/consultasbajas_controller.dart';
 
 
 void main() async {
@@ -196,6 +198,13 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/sendrepo', page: () => SendRepoView()),
           GetPage(name: '/perfil', page: () => const ProfileView()),
           GetPage(name: '/send/menu', page: () => const SendMenuView()),
+          GetPage(
+            name: '/consultas/bajas',
+            page: () => const ConsultaBajaView(),
+            binding: BindingsBuilder(() {
+              Get.lazyPut(() => ConsultasBajasController());
+            }),
+          ),
         ],
       );
     });

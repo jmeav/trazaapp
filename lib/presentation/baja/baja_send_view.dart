@@ -138,7 +138,7 @@ class _BajaSendViewState extends State<BajaSendView> {
                                    Text('CUE: ${baja.cue}', style: theme.textTheme.bodyLarge),
                                    const SizedBox(width: 10),
                                    Chip(
-                                     avatar: Icon(Icons.pets, size: 14, color: theme.colorScheme.secondary),
+                                     avatar: Icon(Icons.tag, size: 14, color: theme.colorScheme.secondary),
                                      label: Text('${baja.cantidad} Aretes'),
                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                                      labelPadding: const EdgeInsets.only(left: 2),

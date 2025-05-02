@@ -307,7 +307,7 @@ class ConsultasRepoView extends StatelessWidget {
               runSpacing: 4.0,
               children: [
                 // Ajustar los estados según la lógica de getEstadoInfo
-                'Todos', 'Enviado', 'Rechazado', 'Pendiente' 
+                'Todos', 'Procesado', 'Rechazado', 'Pendiente' 
               ].map((status) {
                 return ChoiceChip(
                   label: Text(status),
@@ -375,31 +375,33 @@ class ConsultasRepoView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'ID Repo: $idRepo',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            // Chip con cantidad de bovinos
-                            Chip(
-                               avatar: Icon(Icons.pets, size: 14, color: Theme.of(context).colorScheme.secondary),
-                               label: Text('${detalleBovinos.length} Aretes'),
-                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                               labelPadding: const EdgeInsets.only(left: 2),
-                               visualDensity: VisualDensity.compact,
-                               backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.5),
-                            )
-                          ],
+                        Text(
+                          'ID Repo: $idRepo',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         const SizedBox(height: 8),
                         Text('Origen: $entregaOrigen', style: const TextStyle(fontSize: 14)),
-                        Text('CUPA: $cupa', style: const TextStyle(fontSize: 14)),
-                        Text('CUE: $cue', style: const TextStyle(fontSize: 14)),
-                         if (fechaRepoDate != null)
-                            Text('Fecha: ${dateFormat.format(fechaRepoDate)}', style: const TextStyle(fontSize: 14)),
-                        if (motivoRechazo.isNotEmpty && motivoRechazo != "0000-00-00 00:00:00") // Mostrar solo si hay motivo real
+                        Row(
+                          children: [
+                            Expanded(child: Text('CUPA: $cupa', style: const TextStyle(fontSize: 14))),
+                            Expanded(child: Text('CUE: $cue', style: const TextStyle(fontSize: 14))),
+                          ],
+                        ),
+                        if (fechaRepoDate != null)
+                          Text('Fecha: ${dateFormat.format(fechaRepoDate)}', style: const TextStyle(fontSize: 14)),
+                        // Cantidad de aretes en una línea
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            'Cantidad de aretes: ${detalleBovinos.length}',
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        if (motivoRechazo.isNotEmpty && motivoRechazo != "0000-00-00 00:00:00")
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text('Motivo rechazo: $motivoRechazo', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
@@ -407,22 +409,30 @@ class ConsultasRepoView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Chip de estado
+                  // Chip de estado igual que en consultaalta_view.dart
                   Positioned(
-                    top: 8, 
-                    right: 8, 
+                    top: 1,
+                    right: 1,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), 
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
                         color: estadoColor,
-                        borderRadius: BorderRadius.circular(16), 
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: estadoColor.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Text(
                         estadoTexto,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12, 
+                          fontSize: 13,
+                          letterSpacing: 1,
                         ),
                       ),
                     ),

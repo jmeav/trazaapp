@@ -623,15 +623,9 @@ class FormRepoController extends GetxController {
       // 3. NO actualizamos la entrega original aquí
       // La actualización a 'completada' se hará al "enviar" desde la pantalla de SendRepoView
 
-      Get.snackbar(
-        'Guardado',
-        'Reposición guardada y lista para enviar.',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
 
-      // Navegar a la pantalla de envío de reposiciones
-      Get.offNamed('/sendrepo');
+      // Navegar a la pantalla de envío de reposiciones y mostrar éxito
+      Get.offNamed('/sendrepo', arguments: {'showSuccess': true});
 
     } catch (e) {
       print('❌ Error al guardar reposición: $e');
@@ -646,16 +640,7 @@ class FormRepoController extends GetxController {
     }
   }
 
-  Future<void> enviarReposicion(String repoId) async {
-    final envioReposicionRepository = EnvioReposicionRepository();
-    final repo = repoBox.get(repoId);
-    if (repo == null) {
-      Get.snackbar('Error', 'No se encontró la reposición con ID: $repoId');
-      return;
-    }
-    await envioReposicionRepository.enviarReposicion(repo.toJsonEnvio());
-  }
-
+ 
   @override
   void onClose() {
     observacionesController.dispose();

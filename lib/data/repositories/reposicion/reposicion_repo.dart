@@ -51,8 +51,9 @@ class EnvioReposicionRepository {
       print("Headers: ${response.headers}");
       print("Body: ${response.body}");
 
+      Get.back(); // Cerrar diálogo de carga SIEMPRE
+
       if (response.statusCode == 201) {
-        Get.back(); // Cerrar diálogo de carga
         Get.snackbar(
           'Éxito',
           'Reposición enviada correctamente',
@@ -61,7 +62,6 @@ class EnvioReposicionRepository {
         );
         print("✅ Reposición enviada con éxito: ${response.body}");
       } else {
-        Get.back(); // Cerrar diálogo de carga
         Get.snackbar(
           'Error',
           'Error al enviar reposición: ${response.statusCode}',
@@ -75,7 +75,6 @@ class EnvioReposicionRepository {
         } catch (e) {
           print("⚠️ No se pudo parsear la respuesta del servidor: $e");
           print("⚠️ Respuesta raw: ${response.body}");
-          
           if (response.body.contains('<html>')) {
             throw Exception("El servidor ha rechazado la solicitud. Por favor, verifica la configuración del servidor o contacta al administrador.");
           }
@@ -83,7 +82,7 @@ class EnvioReposicionRepository {
         throw Exception("Error al enviar reposición.");
       }
     } catch (e) {
-      Get.back(); // Cerrar diálogo de carga
+      Get.back(); // Cerrar diálogo de carga si hay excepción
       Get.snackbar(
         'Error',
         'Excepción al enviar reposición: $e',

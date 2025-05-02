@@ -60,7 +60,7 @@ class EnviarView extends StatelessWidget {
                               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Chip(
-                               avatar: Icon(Icons.pets, size: 14, color: theme.colorScheme.primary),
+                               avatar: Icon(Icons.tag, size: 14, color: theme.colorScheme.primary),
                                label: Text('${alta.detalleBovinos.length} Bovinos'),
                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                                labelPadding: const EdgeInsets.only(left: 2),

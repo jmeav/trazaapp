@@ -37,10 +37,7 @@ class ConsultasMenuView extends StatelessWidget {
               context: context,
               label: 'Consultar Bajas',
               icon: FontAwesomeIcons.arrowDown,
-              onTap: () {
-                  // TODO: Implementar navegación a consulta de bajas cuando esté lista
-                  Get.snackbar('Próximamente', 'Consulta de bajas estará disponible pronto.');
-              },
+              onTap: () => Get.toNamed('/consultas/bajas'), // Navegación real
             ),
           ],
         ),

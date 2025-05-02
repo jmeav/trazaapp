@@ -19,6 +19,17 @@ class SendRepoView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final args = Get.arguments;
+    if (args != null && args['showSuccess'] == true) {
+      Future.microtask(() {
+        Get.snackbar(
+          'Guardado',
+          'Reposición guardada y lista para enviar.',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      });
+    }
     // Cargar reposiciones listas al construir la vista, si no están cargando ya
     // Esto asegura que se muestren si vienes directo del formulario
     if (!controller.isLoading.value) {
@@ -116,7 +127,7 @@ class SendRepoView extends StatelessWidget {
                                    Text('ID: ${repo.idRepo.length > 5 ? repo.idRepo.substring(0, 5) : repo.idRepo}...', style: theme.textTheme.bodyLarge),
                                    const SizedBox(width: 10),
                                    Chip(
-                                     avatar: Icon(Icons.pets, size: 14, color: theme.colorScheme.secondary),
+                                     avatar: Icon(Icons.tag, size: 14, color: theme.colorScheme.secondary),
                                      label: Text('${repo.detalleBovinos.length} Aretes'),
                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                                      labelPadding: const EdgeInsets.only(left: 2),

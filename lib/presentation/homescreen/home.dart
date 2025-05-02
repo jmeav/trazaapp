@@ -50,11 +50,6 @@ class _HomeViewState extends State<HomeView> {
         // Ya estamos en Inicio, no hacemos nada o refrescamos
         break;
       case 1:
-        Get.toNamed('/consultas');
-        // Reset index a 0 para que Inicio quede seleccionado al volver
-        Future.delayed(Duration.zero, () => setState(() => _selectedIndex = 0));
-        break;
-      case 2:
         Get.toNamed('/configs');
         // Reset index a 0 para que Inicio quede seleccionado al volver
         Future.delayed(Duration.zero, () => setState(() => _selectedIndex = 0));
@@ -121,24 +116,19 @@ class _HomeViewState extends State<HomeView> {
                   ),
               ]),
               const SizedBox(height: 24),
-              _buildSectionTitle(context, 'Envío al Server'),
+              _buildSectionTitle(context, 'Envíos y Consultas'),
               _buildActionGrid([
                 _ActionButton(
-                  label: 'Enviar Eventos', // Botón único para envíos
-                  icon: FontAwesomeIcons.paperPlane, // Icono general de envío
-                  onTap: () => Get.toNamed('/send/menu'), // Navega al menú de envíos
+                  label: 'Enviar Eventos',
+                  icon: FontAwesomeIcons.paperPlane,
+                  onTap: () => Get.toNamed('/send/menu'),
                 ),
-                // Se eliminan los botones específicos de envío
-              ]),
-              const SizedBox(height: 24),
-              _buildSectionTitle(context, 'Consultas'),
-              _buildActionGrid([
+             
                 _ActionButton(
-                  label: 'Consultas', // Botón único
-                  icon: FontAwesomeIcons.search, // Icono general
-                  onTap: () => Get.toNamed('/consultas/menu'), // Navega al menú
+                  label: 'Consultas',
+                  icon: FontAwesomeIcons.search,
+                  onTap: () => Get.toNamed('/consultas/menu'),
                 ),
-                // Se eliminan los botones específicos de consulta de altas, etc.
               ]),
             ],
           ),

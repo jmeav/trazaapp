@@ -94,13 +94,24 @@ class FormRepoView extends GetView<FormRepoController> {
                     child: const Icon(Icons.flash_on),
                   ),
                   const SizedBox(width: 16),
-                  FloatingActionButton.small(
-                    heroTag: 'ver_bovinos',
-                    backgroundColor: Colors.orange,
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      minimumSize: Size(0, 32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 2,
+                    ),
                     onPressed: () {
                       _showBovinosNavigator(context);
                     },
-                    child: const Icon(Icons.list_alt),
+                    icon: const Icon(Icons.visibility, size: 18),
+                    label: const Text('Vista Previa',
+                        style: TextStyle(fontSize: 14)),
                   ),
                   const SizedBox(width: 16),
                 ],
@@ -120,7 +131,8 @@ class FormRepoView extends GetView<FormRepoController> {
                   onPageChanged: (index) {
                     controller.currentPage.value = index;
                   },
-                  itemCount: controller.bovinosRepo.length + 1, // +1 para la página final
+                  itemCount: controller.bovinosRepo.length +
+                      1, // +1 para la página final
                   itemBuilder: (context, index) {
                     // Si es la última página, mostrar la página final
                     if (index == controller.bovinosRepo.length) {
@@ -172,8 +184,10 @@ class FormRepoView extends GetView<FormRepoController> {
                         onPressed: () {
                           // Si estás en el último bovino => saltar a la página final
                           if (current == controller.bovinosRepo.length - 1) {
-                            controller.currentPage.value = controller.bovinosRepo.length;
-                            controller.pageController.jumpToPage(controller.bovinosRepo.length);
+                            controller.currentPage.value =
+                                controller.bovinosRepo.length;
+                            controller.pageController
+                                .jumpToPage(controller.bovinosRepo.length);
                           } else {
                             // Si no, siguiente
                             controller.nextPage();
@@ -193,106 +207,107 @@ class FormRepoView extends GetView<FormRepoController> {
 
   // Página de formulario para un Bovino
   Widget _buildFormPage(int index) {
-                    final bovino = controller.bovinosRepo[index];
-    
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Bovino ${index + 1} de ${controller.bovinosRepo.length}',
+    final bovino = controller.bovinosRepo[index];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bovino ${index + 1} de ${controller.bovinosRepo.length}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 16),
-          
-                          Row(
-                            children: [
-                              Expanded(
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
                 child: GetBuilder<FormRepoController>(
                   builder: (ctrl) => CustomTextField(
-                                  label: 'Arete Anterior',
-                                  initialValue: bovino.areteAnterior,
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(13),
-                                  ],
-                    onChanged: (value) => controller.updateAreteAnterior(index, value),
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.qr_code_scanner),
-                                onPressed: () async {
-                                  try {
-                                    final result = await Get.toNamed('/scanner');
-                                    if (result != null && result is String) {
-                                      controller.updateAreteAnterior(index, result);
-                                      controller.update();
-                                      Get.snackbar(
-                                        'Éxito',
-                                        'Arete escaneado correctamente',
-                                        backgroundColor: Colors.green,
-                                        colorText: Colors.white,
-                                      );
-                                    }
-                                  } catch (e) {
-                                    print('Error al escanear: $e');
-                                    Get.snackbar(
-                                      'Error',
-                                      'Error al escanear el código: $e',
-                                      backgroundColor: Colors.red,
-                                      colorText: Colors.white,
-                                    );
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-          
-                          const SizedBox(height: 16),
-                          Text(
-                            'Arete Nuevo: ${bovino.arete}',
+                    label: 'Arete Anterior',
+                    initialValue: bovino.areteAnterior,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(13),
+                    ],
+                    onChanged: (value) =>
+                        controller.updateAreteAnterior(index, value),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.qr_code_scanner),
+                onPressed: () async {
+                  try {
+                    final result = await Get.toNamed('/scanner');
+                    if (result != null && result is String) {
+                      controller.updateAreteAnterior(index, result);
+                      controller.update();
+                      Get.snackbar(
+                        'Éxito',
+                        'Arete escaneado correctamente',
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
+                      );
+                    }
+                  } catch (e) {
+                    print('Error al escanear: $e');
+                    Get.snackbar(
+                      'Error',
+                      'Error al escanear el código: $e',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+          Text(
+            'Arete Nuevo: ${bovino.arete}',
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 16),
-          
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CustomTextField(
-                                  label: 'Edad (meses)',
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: CustomTextField(
+                  label: 'Edad (meses)',
                   initialValue: bovino.edad > 0 ? bovino.edad.toString() : '',
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                  onChanged: (value) => controller.updateEdad(
-                                    index,
-                                    int.tryParse(value) ?? 0,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: CustomDropdown<String>(
-                                  label: 'Sexo',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  onChanged: (value) => controller.updateEdad(
+                    index,
+                    int.tryParse(value) ?? 0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: CustomDropdown<String>(
+                  label: 'Sexo',
                   value: bovino.sexo.isEmpty ? null : bovino.sexo,
-                                  items: const ['M', 'H'],
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      controller.updateSexo(index, value);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-          
-                          const SizedBox(height: 16),
-                          CustomDropdown<String>(
-                            label: 'Raza',
+                  items: const ['M', 'H'],
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.updateSexo(index, value);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+          CustomDropdown<String>(
+            label: 'Raza',
             value: bovino.razaId.isEmpty ? null : bovino.razaId,
             items: controller.razas.map((raza) => raza.id).toList(),
             itemToString: (id) {
@@ -301,13 +316,13 @@ class FormRepoView extends GetView<FormRepoController> {
               );
               return raza?.nombre ?? id;
             },
-                            onChanged: (value) {
-                              if (value != null) {
-                                controller.updateRaza(index, value);
-                              }
-                            },
-                          ),
-          
+            onChanged: (value) {
+              if (value != null) {
+                controller.updateRaza(index, value);
+              }
+            },
+          ),
+
           const SizedBox(height: 16),
           CustomDropdown<String>(
             label: 'Traza',
@@ -319,7 +334,7 @@ class FormRepoView extends GetView<FormRepoController> {
               }
             },
           ),
-          
+
           // Si es PURO => genealogía
           if (bovino.traza == 'PURO') ...[
             const SizedBox(height: 16),
@@ -349,57 +364,88 @@ class FormRepoView extends GetView<FormRepoController> {
               onChanged: (value) => controller.updateRegPadre(index, value),
             ),
           ],
-          
-                          const SizedBox(height: 16),
-                          CustomDropdown<String>(
-                            label: 'Estado del Arete',
-                            value: bovino.estadoArete,
-                            items: const ['Bueno', 'Dañado'],
-                            onChanged: (value) {
-                              if (value != null) {
-                                controller.updateEstadoArete(index, value);
-                              }
-                            },
+
+          const SizedBox(height: 16),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border.all(color: Colors.orange, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info, color: Colors.orange, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Estado del Arete:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      CustomDropdown<String>(
+                        label: '',
+                        value: bovino.estadoArete,
+                        items: const ['Bueno', 'Dañado'],
+                        onChanged: (value) {
+                          if (value != null) {
+                            controller.updateEstadoArete(index, value);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          if (bovino.estadoArete == 'Dañado') ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: CustomButton(
+                    text: 'Tomar Foto del Arete',
+                    icon: Icons.camera_alt,
+                    onPressed: () => controller.tomarFotoArete(index),
+                  ),
+                ),
+                if (bovino.fotoArete.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.remove_red_eye),
+                    onPressed: () {
+                      Get.dialog(
+                        Dialog(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.memory(
+                                Utils.base64ToImage(bovino.fotoArete),
+                              ),
+                              TextButton(
+                                onPressed: () => Get.back(),
+                                child: const Text('Cerrar'),
+                              ),
+                            ],
                           ),
-          
-                          if (bovino.estadoArete == 'Dañado') ...[
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: CustomButton(
-                                    text: 'Tomar Foto del Arete',
-                                    icon: Icons.camera_alt,
-                                    onPressed: () => controller.tomarFotoArete(index),
-                                  ),
-                                ),
-                                if (bovino.fotoArete.isNotEmpty) ...[
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    icon: const Icon(Icons.remove_red_eye),
-                                    onPressed: () {
-                                      Get.dialog(
-                                        Dialog(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Image.memory(
-                                                Utils.base64ToImage(bovino.fotoArete),
-                                              ),
-                                              TextButton(
-                                                onPressed: () => Get.back(),
-                                                child: const Text('Cerrar'),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -414,6 +460,24 @@ class FormRepoView extends GetView<FormRepoController> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (controller.error.value != null && controller.error.value!.isNotEmpty)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.15),
+                  border: Border.all(color: Colors.red, width: 1.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(controller.error.value!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
+                  ],
+                ),
+              ),
             const Text(
               'Fotos y Documento Final',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -426,7 +490,8 @@ class FormRepoView extends GetView<FormRepoController> {
               decoration: const InputDecoration(
                 labelText: 'Observaciones',
                 border: OutlineInputBorder(),
-                hintText: 'Ingrese aquí cualquier observación relevante sobre la reposición',
+                hintText:
+                    'Ingrese aquí cualquier observación relevante sobre la reposición',
               ),
               maxLines: 3,
             ),
@@ -500,37 +565,37 @@ class FormRepoView extends GetView<FormRepoController> {
     int? edad;
     String? sexo;
     String? raza;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-                title: const Text('Llenado Rápido'),
+          title: const Text('Llenado Rápido'),
           content: SingleChildScrollView(
             child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CustomTextField(
-                      label: 'Edad (meses)',
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      onChanged: (value) {
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomTextField(
+                  label: 'Edad (meses)',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  onChanged: (value) {
                     edad = int.tryParse(value) ?? 0;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    CustomDropdown<String>(
-                      label: 'Sexo',
-                      items: const ['M', 'H'],
-                      onChanged: (value) {
+                  },
+                ),
+                const SizedBox(height: 8),
+                CustomDropdown<String>(
+                  label: 'Sexo',
+                  items: const ['M', 'H'],
+                  onChanged: (value) {
                     sexo = value;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    CustomDropdown<String>(
-                      label: 'Raza',
+                  },
+                ),
+                const SizedBox(height: 8),
+                CustomDropdown<String>(
+                  label: 'Raza',
                   items: controller.razas.map((raza) => raza.id).toList(),
                   itemToString: (id) {
                     final raza = controller.razas.firstWhereOrNull(
@@ -538,20 +603,20 @@ class FormRepoView extends GetView<FormRepoController> {
                     );
                     return raza?.nombre ?? id;
                   },
-                      onChanged: (value) {
+                  onChanged: (value) {
                     raza = value;
-                      },
-                    ),
-                  ],
-            ),
+                  },
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    child: const Text('Cancelar'),
-                  ),
-                  TextButton(
-                    onPressed: () {
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
                 // Validar que se hayan seleccionado todos los campos
                 if ((edad == null || edad! <= 0) ||
                     sexo == null ||
@@ -564,25 +629,25 @@ class FormRepoView extends GetView<FormRepoController> {
                   );
                   return;
                 }
-                
+
                 // Aplicar los valores a todos los bovinos
                 controller.applyQuickFill(
                   edad: edad!,
                   sexo: sexo!,
                   raza: raza!,
                 );
-                
-                      Get.back();
+
+                Get.back();
                 Get.snackbar(
                   'Éxito',
                   'Datos aplicados correctamente a todos los bovinos',
                   backgroundColor: Colors.green,
                   colorText: Colors.white,
                 );
-                    },
-                    child: const Text('Aplicar'),
-                  ),
-                ],
+              },
+              child: const Text('Aplicar'),
+            ),
+          ],
         );
       },
     );
@@ -658,22 +723,24 @@ class FormRepoView extends GetView<FormRepoController> {
     // Verificar que todos los bovinos tengan la información necesaria
     bool datosCompletos = true;
     String mensajeError = '';
-    
+
     for (int i = 0; i < controller.bovinosRepo.length; i++) {
       final bovino = controller.bovinosRepo[i];
       if (bovino.sexo.isEmpty || bovino.razaId.isEmpty || bovino.edad <= 0) {
         datosCompletos = false;
-        mensajeError = 'El bovino \\${i+1} no tiene todos los datos requeridos';
+        mensajeError =
+            'El bovino \\${i + 1} no tiene todos los datos requeridos';
         break;
       }
-      
+
       if (bovino.estadoArete == 'Dañado' && bovino.fotoArete.isEmpty) {
         datosCompletos = false;
-        mensajeError = 'El bovino \\${i+1} tiene arete dañado pero no tiene foto';
+        mensajeError =
+            'El bovino \\${i + 1} tiene arete dañado pero no tiene foto';
         break;
       }
     }
-    
+
     // Verificar que las fotos y observaciones estén completas
     if (datosCompletos) {
       if (controller.fotoBovInicial.value.isEmpty) {
@@ -690,7 +757,7 @@ class FormRepoView extends GetView<FormRepoController> {
         mensajeError = 'Debe ingresar observaciones';
       }
     }
-    
+
     if (!datosCompletos) {
       Get.snackbar(
         'Error',
@@ -701,7 +768,7 @@ class FormRepoView extends GetView<FormRepoController> {
       );
       return;
     }
-    
+
     // Si todo está completo, guardar la reposición
     controller.guardarReposicion();
   }
@@ -721,7 +788,7 @@ class FormRepoView extends GetView<FormRepoController> {
               itemBuilder: (context, i) {
                 final bovino = controller.bovinosRepo[i];
                 return ListTile(
-                  leading: const Icon(Icons.pets),
+                  leading: const Icon(Icons.tag),
                   title: Text('Arete: ${bovino.arete}'),
                   subtitle: Text('Anterior: ${bovino.areteAnterior}'),
                   onTap: () {
@@ -745,4 +812,4 @@ class FormRepoView extends GetView<FormRepoController> {
       },
     );
   }
-} 
+}
