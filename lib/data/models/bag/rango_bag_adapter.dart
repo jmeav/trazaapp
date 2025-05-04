@@ -1,31 +1,29 @@
 import 'package:hive/hive.dart';
 import 'bag_operadora.dart';
 
-class BagAdapter extends TypeAdapter<Bag> {
+class RangoBagAdapter extends TypeAdapter<RangoBag> {
   @override
-  final int typeId = 6;
+  final int typeId = 20;
 
   @override
-  Bag read(BinaryReader reader) {
-    return Bag(
+  RangoBag read(BinaryReader reader) {
+    return RangoBag(
       id: reader.readInt(),
       rangoInicial: reader.readInt(),
       rangoFinal: reader.readInt(),
       cantidad: reader.readInt(),
-      dias: reader.readInt(),
       existencia: reader.readInt(),
-      rangosAdicionales: (reader.readList() as List).cast<RangoBag>(),
+      dias: reader.readInt(),
     );
   }
 
   @override
-  void write(BinaryWriter writer, Bag obj) {
+  void write(BinaryWriter writer, RangoBag obj) {
     writer.writeInt(obj.id);
     writer.writeInt(obj.rangoInicial);
     writer.writeInt(obj.rangoFinal);
     writer.writeInt(obj.cantidad);
-    writer.writeInt(obj.dias);
     writer.writeInt(obj.existencia);
-    writer.writeList(obj.rangosAdicionales);
+    writer.writeInt(obj.dias);
   }
-}
+} 

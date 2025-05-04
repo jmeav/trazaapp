@@ -13,6 +13,26 @@ class FormBovinosView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Obtener los argumentos pasados desde la asignación
+    final args = Get.arguments ?? {};
+    final List<String> aretesAsignados = (args['aretes'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+    final entrega = args['entrega'];
+
+    // Detectar subrangos
+    List<List<String>> subrangos = [];
+    if (aretesAsignados.isNotEmpty) {
+      List<String> actual = [aretesAsignados.first];
+      for (int i = 1; i < aretesAsignados.length; i++) {
+        if (int.parse(aretesAsignados[i]) == int.parse(aretesAsignados[i - 1]) + 1) {
+          actual.add(aretesAsignados[i]);
+        } else {
+          subrangos.add(List.from(actual));
+          actual = [aretesAsignados[i]];
+        }
+      }
+      if (actual.isNotEmpty) subrangos.add(actual);
+    }
+
     return WillPopScope(
       onWillPop: () async {
         final result = await Get.dialog<bool>(
@@ -73,14 +93,22 @@ class FormBovinosView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 5),
+                    // Mostrar subrangos
+                    ...subrangos.map((rango) => Text(
+                      'Rango: ${rango.first} - ${rango.last} (${rango.length})',
+                      style: const TextStyle(fontSize: 14),
+                    )),
                     Text(
-                      'Rango: ${controller.rangos.first} - ${controller.rangos.last}',
+                      'Cantidad total: ${aretesAsignados.length}',
                       style: const TextStyle(fontSize: 14),
                     ),
-                    Text(
-                      'Cantidad total: ${controller.rangos.length}',
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                    // Mostrar detalles de entrega si existen
+                    if (entrega != null) ...[
+                      if (entrega.rangoInicial != null && entrega.rangoFinal != null)
+                        Text('rangoInicial: ${entrega.rangoInicial}, rangoFinal: ${entrega.rangoFinal}'),
+                      if (entrega.rangoInicialExt != null && entrega.rangoFinalExt != null)
+                        Text('rangoInicialExt: ${entrega.rangoInicialExt}, rangoFinalExt: ${entrega.rangoFinalExt}'),
+                    ]
                   ],
                 ),
               ),
@@ -259,16 +287,15 @@ class FormBovinosView extends StatelessWidget {
                       const SizedBox(height: 4),
                       DropdownButton<String>(
                         value: bovinoData.estadoArete,
-                        items: const ['Bueno', 'Dañado'].map((e) {
+                        items: const ['Bueno', 'Dañado', 'No Trazado'].map((e) {
                           return DropdownMenuItem(value: e, child: Text(e));
                         }).toList(),
                         onChanged: (val) {
                           var updated = bovinoData.copyWith(
                             estadoArete: val ?? 'Bueno',
-                            motivoEstadoAreteId: val == 'Dañado' ? '249' : '0',
+                            motivoEstadoAreteId: val == 'Dañado' ? '249' : (val == 'No Trazado' ? '-1' : '0'),
                           );
                           if (val != 'Bueno') {
-                            // Si no es Bueno => limpiamos
                             updated = updated.copyWith(
                               edad: 0,
                               sexo: '',
@@ -294,7 +321,7 @@ class FormBovinosView extends StatelessWidget {
           // Si estadoArete != Bueno => tomar foto arete
           if (bovinoData.estadoArete != 'Bueno') ...[
             const Text(
-              'Por favor, toma una foto del arete dañado/perdido:',
+              'Por favor, toma una foto del arete Dañado/No trazado:',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),

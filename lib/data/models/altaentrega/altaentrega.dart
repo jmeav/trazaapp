@@ -73,6 +73,16 @@ class AltaEntrega {
   // ──
   @HiveField(22) // ← siguiente campo libre
   final bool aplicaEntrega;
+  
+  // Campos para rangos mixtos
+  @HiveField(23)
+  final String rangoInicialExt;
+
+  @HiveField(24)
+  final String rangoFinalExt;
+
+  @HiveField(25)
+  final bool esRangoMixto;
 
   AltaEntrega({
     required this.idAlta,
@@ -98,6 +108,9 @@ class AltaEntrega {
     required this.estadoAlta,
     this.fotoFicha = '', // se inicializa vacío
     required this.aplicaEntrega,
+    this.rangoInicialExt = '',
+    this.rangoFinalExt = '',
+    this.esRangoMixto = false,
   });
 
   AltaEntrega copyWith({
@@ -124,6 +137,9 @@ class AltaEntrega {
     String? estadoAlta,
     String? fotoFicha,
     bool? aplicaEntrega,
+    String? rangoInicialExt,
+    String? rangoFinalExt,
+    bool? esRangoMixto,
   }) {
     return AltaEntrega(
       idAlta: idAlta ?? this.idAlta,
@@ -149,6 +165,9 @@ class AltaEntrega {
       estadoAlta: estadoAlta ?? this.estadoAlta,
       fotoFicha: fotoFicha ?? this.fotoFicha,
       aplicaEntrega: aplicaEntrega ?? this.aplicaEntrega,
+      rangoInicialExt: rangoInicialExt ?? this.rangoInicialExt,
+      rangoFinalExt: rangoFinalExt ?? this.rangoFinalExt,
+      esRangoMixto: esRangoMixto ?? this.esRangoMixto,
     );
   }
 
@@ -162,12 +181,23 @@ class AltaEntrega {
       s = s.replaceFirst(RegExp(r'^0+'), '');
       return s.isEmpty ? '0' : s;
     }
+    
+    // Procesar rango principal
     final riShort = int.tryParse(stripTag(rangoInicial)) ?? rangoInicial;
     final rfShort = int.tryParse(stripTag(rangoFinal)) ?? rangoFinal;
+    
+    // Procesar rangos extendidos si existen
+    final String riExtShort = rangoInicialExt.isEmpty ? '' : 
+      stripTag(int.tryParse(rangoInicialExt) ?? 0);
+    final String rfExtShort = rangoFinalExt.isEmpty ? '' : 
+      stripTag(int.tryParse(rangoFinalExt) ?? 0);
+    
     return {
       "idAlta": idAlta,
       "rangoInicial": riShort,
       "rangoFinal": rfShort,
+      "rangoInicialExt": int.tryParse(riExtShort) ?? 0,
+      "rangoFinalExt": int.tryParse(rfExtShort) ?? 0,
       "cupa": cupa,
       "cue": cue,
       "departamento": departamento,
@@ -186,8 +216,6 @@ class AltaEntrega {
       "reposicion": reposicion,
       "observaciones": observaciones,
       "aplicaentrega": aplicaEntrega,
-      "detalleentrega": "detalleentrega",   //REVISAR
-      "rangodetalle": "rangodetalle",       //REVISAR
       "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
     };
   }

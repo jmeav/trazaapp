@@ -82,42 +82,44 @@
           return;
         }
 
-        final args = Get.arguments as Map<String, dynamic>;
-        if (!args.containsKey('entregaId')) {
-          throw Exception('Argumento "entregaId" no proporcionado.');
+        final args = Get.arguments as Map<String, dynamic>?;
+        if (args == null) {
+          throw Exception('Argumentos no proporcionados.');
         }
-        entregaId = args['entregaId'];
 
-        // Usar los rangos que vienen como argumentos en lugar de los de la entrega
-        final rangoInicial = args['rangoInicial'] as int;
-        final rangoFinal = args['rangoFinal'] as int;
-        final generatedRangos = generateRangos(rangoInicial, rangoFinal);
-        rangos.assignAll(generatedRangos);
+        if (!args.containsKey('aretes') || args['aretes'] is! List) {
+          throw Exception('Argumento "aretes" (List<String>) no proporcionado o no es una lista.');
+        }
+        final List<dynamic> aretesDynamic = args['aretes'] as List<dynamic>;
+        final List<String> aretesRecibidos = aretesDynamic.map((e) => e.toString()).toList();
+        rangos.assignAll(aretesRecibidos);
+        
+        final entregaArg = args['entrega'] as Entregas?;
+        if (entregaArg == null) {
+          throw Exception('Argumento "entrega" no proporcionado.');
+        }
+        entregaId = entregaArg.entregaId;
 
-        final entrega = entregasBox.values.firstWhere(
-          (e) => e.entregaId == entregaId,
-          orElse: () =>
-              throw Exception('No se encontró la entrega con ID=$entregaId.'),
-        );
-
-        // Inicializa un Bovino por cada arete
         for (var id in rangos) {
           bovinoInfo[id] = Bovino(
             arete: id,
             edad: 0,
             sexo: '',
             estadoArete: 'Bueno',
-            cue: entrega.cue,
-            cupa: entrega.cupa,
+            cue: entregaArg.cue,
+            cupa: entregaArg.cupa,
             traza: 'CRUCE',
             entregaId: entregaId,
             fotoArete: '',
             areteMadre: '',
             aretePadre: '',
             regMadre: '',
-            regPadre: '', razaId: '',
+            regPadre: '',
+            razaId: '',
           );
         }
+        print("🐄 FormBovinosController inicializado con ${rangos.length} aretes exactos.");
+
       } catch (e) {
         print('Error al inicializar FormBovinosController: $e');
         Get.snackbar(
@@ -127,14 +129,6 @@
           colorText: Colors.white,
         );
       }
-    }
-
-    /// Genera los IDs del rango basado en el rango inicial y final
-    List<String> generateRangos(int rangoInicial, int rangoFinal) {
-      return List<String>.generate(
-        rangoFinal - rangoInicial + 1,
-        (index) => (rangoInicial + index).toString(),
-      );
     }
 
     void nextPage() {
@@ -389,7 +383,7 @@
             aretePadre: bovino.aretePadre,
             regMadre: bovino.regMadre,
             regPadre: bovino.regPadre,
-            motivoEstadoAreteId: bovino.estadoArete == 'Dañado' ? '249' : '0',
+            motivoEstadoAreteId: bovino.estadoArete == 'Dañado' ? '249' : (bovino.estadoArete == 'No Trazado' ? '-1' : '0'),
           );
         }).toList();
 
@@ -398,6 +392,8 @@
           idAlta: uniqueAltaId,
           rangoInicial: entrega.rangoInicial,
           rangoFinal: entrega.rangoFinal,
+          rangoInicialExt: entrega.rangoInicialExt ?? '',
+          rangoFinalExt: entrega.rangoFinalExt ?? '',
           cupa: entrega.cupa,
           cue: entrega.cue,
           departamento: entrega.departamento,
@@ -419,6 +415,14 @@
           detalleBovinos: detalleBovinos,
           estadoAlta: 'Lista',
         );
+
+        // Imprimir el JSON de envío (sin imágenes base64)
+        final jsonEnvio = altaEntrega.toJsonEnvio();
+        jsonEnvio.remove('fotoBovInicial');
+        jsonEnvio.remove('fotoBovFinal');
+        jsonEnvio.remove('fotoFicha');
+        print('🟢 JSON a enviar (sin imágenes):');
+        print(const JsonEncoder.withIndent('  ').convert(jsonEnvio));
 
         // Guardar en Hive
         await altaEntregaBox.put(uniqueAltaId, altaEntrega);

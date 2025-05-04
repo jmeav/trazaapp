@@ -312,23 +312,27 @@ class _BajaSendViewState extends State<BajaSendView> {
   // --- Función para obtener nombre del motivo --- 
   String _getNombreMotivo(int motivoId, CatalogosController catalogsCtlr, {bool includeId = true}) {
     MotivoBajaBovino? motivo;
-    
     // Intentar buscar en el controlador primero
     if (catalogsCtlr.motivosBajaBovino.isNotEmpty) {
        motivo = catalogsCtlr.motivosBajaBovino.firstWhereOrNull((m) => m.id == motivoId);
     }
-    
     // Si no se encontró en el controlador, intentar buscar en la caja local
     if (motivo == null) {
        var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
        motivo = box.values.firstWhereOrNull((m) => m.id == motivoId);
     }
-
+    // Log para depuración
+    if (motivo == null) {
+      print('[BAJA] Motivo de baja NO encontrado para ID: $motivoId');
+      print('[BAJA] Motivos en controlador: ' + catalogsCtlr.motivosBajaBovino.map((m) => m.id).join(', '));
+      var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
+      print('[BAJA] Motivos en Hive: ' + box.values.map((m) => m.id).join(', '));
+    }
     // Devolver el formato según includeId
     if (motivo != null) {
       return includeId ? "[${motivo.id}] ${motivo.nombre}" : motivo.nombre;
     } else {
-      return "ID: $motivoId (Desconocido)";
+      return "ID: $motivoId (Desconocido - revisa catálogo)";
     }
   }
 

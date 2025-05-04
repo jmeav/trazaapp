@@ -385,16 +385,31 @@ Future<void> downloadAllCatalogsSequential({
     try {
       isDownloading.value = true;
       progressText.value = "Descargando Bag...";
-      Bag data = await _bagRepo.fetchBag(token: token, codhabilitado: codhabilitado);
-      var box = await Hive.openBox<Bag>('bag');
-      await box.clear();
-      await box.put(0, data);
-      bag.value = data;
+      
+      print("🔄 Iniciando descarga de Bag en CatalogsController");
+      
+      // Usar fetchAllBags para obtener todos los rangos
+      List<Bag> bagsData = await _bagRepo.fetchAllBags(token: token, codhabilitado: codhabilitado);
+      
+      if (bagsData.isEmpty) {
+        progressText.value = "No se encontraron Bags disponibles";
+        return;
+      }
+      
+      print("✅ Bags descargados: ${bagsData.length} con el primer bag teniendo ${bagsData[0].rangosAdicionales.length} rangos adicionales");
+      
+      // El método fetchAllBags ya guarda el bag en Hive, solo necesitamos actualizar la UI
+      bag.value = bagsData[0];
+      
+      // Actualizar última vez actualizado
       var updatesBox = await Hive.openBox('catalog_updates');
       await updatesBox.put("Bag", DateTime.now().toIso8601String());
       lastUpdateBag.value = DateTime.now().toIso8601String();
+      
       progressText.value = "Bag descargado con éxito";
+      print("✅ Descarga de Bag finalizada con éxito");
     } catch (e) {
+      print("❌ Error en downloadBag: $e");
       progressText.value = "Error al descargar Bag: $e";
     } finally {
       isDownloading.value = false;

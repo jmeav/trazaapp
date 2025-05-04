@@ -68,6 +68,7 @@ import 'package:trazaapp/presentation/consultas/consultas_menu_view.dart';
 import 'package:trazaapp/presentation/sendscreen/send_menu_view.dart';
 import 'package:trazaapp/presentation/consultas/consultabaja_view.dart';
 import 'package:trazaapp/controller/consultasbajas_controller.dart';
+import 'package:trazaapp/data/models/bag/rango_bag_adapter.dart';
 
 
 void main() async {
@@ -80,6 +81,7 @@ void main() async {
   Hive.registerAdapter(EstablecimientoAdapter());
   Hive.registerAdapter(ProductorAdapter());
   Hive.registerAdapter(BagAdapter());
+  Hive.registerAdapter(RangoBagAdapter());
   Hive.registerAdapter(DepartamentoAdapter());
   Hive.registerAdapter(MunicipioAdapter());
   Hive.registerAdapter(AppConfigAdapter());
@@ -118,6 +120,7 @@ void main() async {
 
  
 //  await Hive.box<Entregas>('entregas').clear();
+//  await Hive.box<Bag>('bag').clear();
 //   await Hive.box<AltaEntrega>('altaentregas').clear();
 //   await Hive.box<RepoEntrega>('repoentregas').clear();
 //   print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");

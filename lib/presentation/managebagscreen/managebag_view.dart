@@ -107,37 +107,32 @@ class ManageBagView extends StatelessWidget {
                     controller.cantidadController, 'Cantidad a asignar',
                     isNumeric: true),
                 const SizedBox(height: 16),
-               Center(
-  child: ElevatedButton.icon(
-    icon: const Icon(Icons.assignment_turned_in),
-    label: const Text('Realizar Entrega'),
-    onPressed: () async {
-      if (_validarSeleccion()) {
-        final cantidadText = controller.cantidadController.text;
 
-        if (cantidadText.isNotEmpty) {
-          final cantidad = int.tryParse(cantidadText);
+                Center(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.assignment_turned_in),
+                    label: const Text('Realizar Entrega'),
+                    onPressed: () async {
+                      if (_validarSeleccion()) {
+                        final cantidadText = controller.cantidadController.text;
 
-          if (cantidad != null) {
-            bool exito = await controller.asignarAretes(cantidad);
+                        if (cantidadText.isNotEmpty) {
+                          final cantidad = int.tryParse(cantidadText);
 
-            if (exito) {
-              controller.resetForm();
-              // 🔹 No es necesario llamar a `Get.back()` porque `asignarEntrega` ya lo hace
-            }
-          } else {
-            Get.snackbar('Error', 'La cantidad debe ser un número válido.');
-          }
-        } else {
-          Get.snackbar('Error', 'Debes ingresar una cantidad.');
-        }
-      } else {
-        Get.snackbar('Error', 'Debes seleccionar todas las opciones antes de continuar.');
-      }
-    },
-  ),
-),
-
+                          if (cantidad != null) {
+                            bool exito = await controller.asignarAretes(cantidad);
+                          } else {
+                            Get.snackbar('Error', 'La cantidad debe ser un número válido.');
+                          }
+                        } else {
+                          Get.snackbar('Error', 'Debes ingresar una cantidad.');
+                        }
+                      } else {
+                        Get.snackbar('Error', 'Debes seleccionar todas las opciones antes de continuar.');
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -213,6 +208,18 @@ class ManageBagView extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 15),
+              
+              // Botón para detalles del bolsón
+              Center(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.info_outline),
+                  label: const Text('Ver Detalles del Bolsón'),
+                  onPressed: () => controller.mostrarDetallesBag(),
+                ),
+              ),
+              
+              const SizedBox(height: 10),
+              
               // Botón para rangos residuales
               Obx(() => controller.tieneRangosResiduales
                 ? Center(

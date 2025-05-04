@@ -18,7 +18,24 @@ class ResumenAltaView extends StatelessWidget {
           children: [
             _buildEncabezado(),
             const SizedBox(height: 16),
-            Expanded(child: _buildDataTable()),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('N°')),
+                    DataColumn(label: Text('Arete')),
+                    DataColumn(label: Text('Edad')),
+                    DataColumn(label: Text('Sexo')),
+                    DataColumn(label: Text('Raza')),
+                    DataColumn(label: Text('Traza')),
+                    DataColumn(label: Text('Estado Arete')),
+                    DataColumn(label: Text('F. Nacimiento')),
+                  ],
+                  rows: _buildDataRows(),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -39,54 +56,38 @@ class ResumenAltaView extends StatelessWidget {
     );
   }
 
-  Widget _buildDataTable() {
+  List<DataRow> _buildDataRows() {
     int totalBuenos = alta.detalleBovinos.where((b) => b.estadoArete.toLowerCase() == 'bueno').length;
     int totalDanados = alta.detalleBovinos.where((b) => b.estadoArete.toLowerCase() == 'dañado').length;
+    int totalNoTrazados = alta.detalleBovinos.where((b) => b.estadoArete.toLowerCase() == 'no trazado').length;
 
-    return SingleChildScrollView(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('N°')),
-            DataColumn(label: Text('Arete')),
-            DataColumn(label: Text('Edad')),
-            DataColumn(label: Text('Sexo')),
-            DataColumn(label: Text('Raza')),
-            DataColumn(label: Text('Traza')),
-            DataColumn(label: Text('Estado Arete')),
-            DataColumn(label: Text('F. Nacimiento')),
-          ],
-          rows: [
-            ...alta.detalleBovinos.asMap().entries.map((entry) {
-              final index = entry.key + 1;
-              final b = entry.value;
-              return DataRow(cells: [
-                DataCell(Text('$index')),
-                DataCell(Text(b.arete)),
-                DataCell(Text('${b.edad}')),
-                DataCell(Text(b.sexo)),
-                DataCell(Text(b.raza)),
-                DataCell(Text(b.traza)),
-                DataCell(Text(b.estadoArete)),
-                DataCell(Text(DateFormat('dd/MM/yyyy').format(b.fechaNacimiento))),
-              ]);
-            }).toList(),
-            DataRow(
-              cells: [
-                const DataCell(Text('')),
-                const DataCell(Text('')),
-                const DataCell(Text('')),
-                const DataCell(Text('')),
-                const DataCell(Text('')),
-                const DataCell(Text('')),
-                DataCell(Text('Total Buenos: $totalBuenos', style: const TextStyle(fontWeight: FontWeight.bold))),
-                DataCell(Text('Total Dañados: $totalDanados', style: const TextStyle(fontWeight: FontWeight.bold))),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    final rows = <DataRow>[];
+    rows.addAll(alta.detalleBovinos.asMap().entries.map((entry) {
+      final index = entry.key + 1;
+      final b = entry.value;
+      return DataRow(cells: [
+        DataCell(Text('$index')),
+        DataCell(Text(b.arete)),
+        DataCell(Text('${b.edad}')),
+        DataCell(Text(b.sexo)),
+        DataCell(Text(b.raza)),
+        DataCell(Text(b.traza)),
+        DataCell(Text(b.estadoArete)),
+        DataCell(Text(DateFormat('dd/MM/yyyy').format(b.fechaNacimiento))),
+      ]);
+    }));
+    rows.add(DataRow(
+      cells: [
+        const DataCell(Text('')),
+        const DataCell(Text('')),
+        const DataCell(Text('')),
+        const DataCell(Text('')),
+        const DataCell(Text('')),
+        const DataCell(Text('')),
+        DataCell(Text('Buenos: $totalBuenos\nDañados: $totalDanados\nNo Trazado: $totalNoTrazados', style: const TextStyle(fontWeight: FontWeight.bold))),
+        const DataCell(Text('')),
+      ],
+    ));
+    return rows;
   }
 }

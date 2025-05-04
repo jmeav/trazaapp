@@ -88,8 +88,9 @@ class EnviarView extends StatelessWidget {
                                  );
                                  try {
                                     await controller.enviarAlta(alta.idAlta);
-                                    Get.back();
                                  } catch (e) {
+                                    // Puedes mostrar un snackbar de error aquí si quieres
+                                 } finally {
                                     Get.back();
                                  }
                                   },

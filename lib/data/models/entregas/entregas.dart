@@ -91,6 +91,19 @@ class Entregas {
   @HiveField(27)
   final int? cantidadReposicion;
 
+  // Nuevos campos para rangos mixtos
+  @HiveField(28)
+  final String? rangoInicialExt;
+
+  @HiveField(29)
+  final String? rangoFinalExt;
+
+  @HiveField(30)
+  final bool esRangoMixto;
+
+  @HiveField(31)
+  final List<int> aretesAsignados;
+
   Entregas({
     required this.entregaId,
     required this.fechaEntrega,
@@ -120,6 +133,10 @@ class Entregas {
     this.idReposicion,
     this.estadoReposicion = 'pendiente',
     this.cantidadReposicion,
+    this.rangoInicialExt,
+    this.rangoFinalExt,
+    this.esRangoMixto = false,
+    required this.aretesAsignados,
   });
 
   Entregas copyWith({
@@ -151,6 +168,10 @@ class Entregas {
     String? idReposicion,
     String? estadoReposicion,
     int? cantidadReposicion,
+    String? rangoInicialExt,
+    String? rangoFinalExt,
+    bool? esRangoMixto,
+    List<int>? aretesAsignados,
   }) {
     return Entregas(
       entregaId: entregaId ?? this.entregaId,
@@ -181,6 +202,10 @@ class Entregas {
       idReposicion: idReposicion ?? this.idReposicion,
       estadoReposicion: estadoReposicion ?? this.estadoReposicion,
       cantidadReposicion: cantidadReposicion ?? this.cantidadReposicion,
+      rangoInicialExt: rangoInicialExt ?? this.rangoInicialExt,
+      rangoFinalExt: rangoFinalExt ?? this.rangoFinalExt,
+      esRangoMixto: esRangoMixto ?? this.esRangoMixto,
+      aretesAsignados: aretesAsignados ?? this.aretesAsignados,
     );
   }
 
@@ -234,6 +259,10 @@ class Entregas {
       idReposicion: json['idReposicion'],
       estadoReposicion: json['estadoReposicion'] ?? 'pendiente',
       cantidadReposicion: json['cantidadReposicion'],
+      rangoInicialExt: json['rangoInicialExt'],
+      rangoFinalExt: json['rangoFinalExt'],
+      esRangoMixto: json['esRangoMixto'] ?? false,
+      aretesAsignados: json['aretesAsignados'] ?? [],
     );
   }
 
@@ -268,6 +297,10 @@ class Entregas {
       'idReposicion': idReposicion,
       'estadoReposicion': estadoReposicion,
       'cantidadReposicion': cantidadReposicion,
+      'rangoInicialExt': rangoInicialExt,
+      'rangoFinalExt': rangoFinalExt,
+      'esRangoMixto': esRangoMixto,
+      'aretesAsignados': aretesAsignados,
     };
   }
 }

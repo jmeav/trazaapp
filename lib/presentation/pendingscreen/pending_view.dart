@@ -226,13 +226,30 @@ class EntregasView extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Get.back();
+
+                List<String> aretesParaForm = [];
+
+                if (entrega.tipo == 'manual') {
+                  aretesParaForm = (entrega.aretesAsignados ?? []).map((e) => e.toString()).toList();
+                  if (aretesParaForm.isEmpty) {
+                    Get.snackbar('Error', 'La entrega manual no tiene aretes asignados registrados.');
+                    return;
+                  }
+                } else {
+                  if (entrega.rangoInicial != null && entrega.cantidad > 0) {
+                    aretesParaForm = List.generate(
+                       entrega.cantidad, 
+                       (i) => (entrega.rangoInicial! + i).toString()
+                    );
+                  } else {
+                     Get.snackbar('Error', 'La entrega de sistema no tiene un rango válido para generar aretes.');
+                     return;
+                  }
+                }
+                    
                 Get.toNamed('/formbovinos', arguments: {
-                  'entregaId': entrega.entregaId,
-                  'cue': entrega.cue,
-                  'rangoInicial': entrega.rangoInicial,
-                  'rangoFinal': entrega.rangoFinal,
-                  'cantidad': entrega.cantidad,
-                  'esReposicion': false,
+                  'aretes': aretesParaForm,
+                  'entrega': entrega,
                 });
               },
               child: Text('Uso Normal (${entrega.cantidad} aretes)'),
@@ -371,7 +388,9 @@ class EntregasView extends StatelessWidget {
               _buildDetailRow('Productor', entrega.nombreProductor),
               _buildDetailRow('CUPA', entrega.cupa),
               _buildDetailRow('Cantidad', '${entrega.cantidad} aretes'),
-              _buildDetailRow('Rango', '${entrega.rangoInicial} - ${entrega.rangoFinal}'),
+              _buildDetailRow('Rango Principal', '${entrega.rangoInicial} - ${entrega.rangoFinal}'),
+              if (entrega.esRangoMixto && entrega.rangoInicialExt != null && entrega.rangoFinalExt != null)
+                _buildDetailRow('Rango Extra', '${entrega.rangoInicialExt} - ${entrega.rangoFinalExt}'),
               if (entrega.distanciaCalculada != null)
                 _buildDetailRow('Distancia', entrega.distanciaCalculada!),
             ],

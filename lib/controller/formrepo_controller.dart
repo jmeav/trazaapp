@@ -263,7 +263,7 @@ class FormRepoController extends GetxController {
     final bovino = bovinosRepo[index];
     final updated = bovino.copyWith(
       estadoArete: value,
-      motivoEstadoAreteId: value == 'Dañado' ? "249" : "0",
+      motivoEstadoAreteId: value == 'Dañado' ? "249" : (value == 'No Trazado' ? "-1" : "0"),
       fotoArete: value == 'Bueno' ? '' : bovino.fotoArete,
     );
     bovinosBox.put(bovino.arete, updated);
@@ -331,7 +331,7 @@ class FormRepoController extends GetxController {
     for (var i = 0; i < bovinosRepo.length; i++) {
       final bovino = bovinosRepo[i];
       // Asegurar que motivoEstadoAreteId concuerde con estadoArete
-      final motivoId = bovino.estadoArete == 'Dañado' ? "249" : "0";
+      final motivoId = bovino.estadoArete == 'Dañado' ? "249" : (bovino.estadoArete == 'No Trazado' ? "-1" : "0");
       
       final updated = BovinoRepo(
         arete: bovino.arete,
@@ -374,7 +374,7 @@ class FormRepoController extends GetxController {
       }
 
       // Asegurar que motivoEstadoAreteId sea coherente con estadoArete
-      final motivoId = bovino.estadoArete == 'Dañado' ? "249" : "0";
+      final motivoId = bovino.estadoArete == 'Dañado' ? "249" : (bovino.estadoArete == 'No Trazado' ? "-1" : "0");
       final bovinoActualizado = bovino.copyWith(motivoEstadoAreteId: motivoId);
 
       // Guardar el bovino
