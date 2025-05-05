@@ -6,11 +6,17 @@ import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/presentation/sendscreen/resumen_view.dart';
 import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
 
-class EnviarView extends StatelessWidget {
+class EnviarView extends StatefulWidget {
+  EnviarView({Key? key}) : super(key: key);
+
+  @override
+  State<EnviarView> createState() => _EnviarViewState();
+}
+
+class _EnviarViewState extends State<EnviarView> {
   final EntregaController controller = Get.put(EntregaController());
   final JsonEncoder _encoder = const JsonEncoder.withIndent('  ');
-
-  EnviarView({super.key});
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +37,18 @@ class EnviarView extends StatelessWidget {
             ),
           );
         } else {
+          if (isLoading) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Enviando alta, por favor espera...'),
+                ],
+              ),
+            );
+          }
           return RefreshIndicator(
             onRefresh: controller.refreshData,
             child: ListView.builder(
@@ -81,20 +99,10 @@ class EnviarView extends StatelessWidget {
                               icon: Icons.cloud_upload,
                               label: 'Enviar',
                               color: theme.colorScheme.primary,
-                                  onPressed: () async {
-                                 Get.dialog(
-                                    const Center(child: CircularProgressIndicator()),
-                                    barrierDismissible: false, 
-                                 );
-                                 try {
-                                    await controller.enviarAlta(alta.idAlta);
-                                 } catch (e) {
-                                    // Puedes mostrar un snackbar de error aquí si quieres
-                                 } finally {
-                                    Get.back();
-                                 }
-                                  },
-                                ),
+                              onPressed: isLoading
+                                  ? () {}
+                                  : () => _enviarAltaAsync(alta.idAlta),
+                            ),
                             
                             _buildActionButton(
                               context: context,
@@ -161,10 +169,6 @@ class EnviarView extends StatelessWidget {
       );
 
       if (confirm == true) {
-         Get.dialog(
-            const Center(child: CircularProgressIndicator()),
-            barrierDismissible: false, 
-         );
          try {
             await controller.eliminarAlta(altaId); 
             Get.back();
@@ -172,5 +176,24 @@ class EnviarView extends StatelessWidget {
             Get.back();
          }
       }
+  }
+
+  void _enviarAltaAsync(String idAlta) async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      await controller.enviarAlta(idAlta);
+    } catch (e) {
+      // Puedes mostrar un snackbar de error aquí si quieres
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+      // Si hay un diálogo abierto, ciérralo
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+    }
   }
 }

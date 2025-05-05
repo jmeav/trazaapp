@@ -416,14 +416,6 @@
           estadoAlta: 'Lista',
         );
 
-        // Imprimir el JSON de envío (sin imágenes base64)
-        final jsonEnvio = altaEntrega.toJsonEnvio();
-        jsonEnvio.remove('fotoBovInicial');
-        jsonEnvio.remove('fotoBovFinal');
-        jsonEnvio.remove('fotoFicha');
-        print('🟢 JSON a enviar (sin imágenes):');
-        print(const JsonEncoder.withIndent('  ').convert(jsonEnvio));
-
         // Guardar en Hive
         await altaEntregaBox.put(uniqueAltaId, altaEntrega);
 

@@ -393,7 +393,7 @@ class BajaController extends GetxController {
         detalleAretes: updatedAretes,
       );
 
-      await bajaBox.add(baja);
+      await bajaBox.put(bajaId, baja);
       clearForm();
       
       Get.snackbar(
@@ -710,5 +710,9 @@ class BajaController extends GetxController {
       return;
     }
     await envioBajaRepository.enviarBaja(baja.toJsonEnvio());
+    // Marcar como enviada y actualizar en Hive
+    final bajaEnviada = baja.copyWith(estado: 'enviada');
+    await bajaBox.put(bajaId, bajaEnviada);
+    cargarBajasPendientes();
   }
 } 

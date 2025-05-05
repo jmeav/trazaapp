@@ -284,7 +284,7 @@ class BovinoResumen {
   });
 
   Map<String, dynamic> toJson() => {
-        "arete": arete,
+        "arete": _formatearArete(arete),
         "edad": edad,
         "sexo": sexo,
         "raza": raza,
@@ -298,4 +298,16 @@ class BovinoResumen {
         "regPadre": regPadre,
         "motivoEstadoAreteId": motivoEstadoAreteId,
       };
+
+  String _formatearArete(String arete) {
+    String base = arete;
+    if (base.startsWith('558')) {
+      // Si ya tiene el prefijo, solo rellenar hasta 12 dígitos
+      return base.padLeft(12, '0');
+    } else {
+      // Si no, agregar el prefijo y rellenar hasta 12 dígitos
+      String sinPrefijo = base.padLeft(9, '0');
+      return '558$sinPrefijo';
+    }
+  }
 }

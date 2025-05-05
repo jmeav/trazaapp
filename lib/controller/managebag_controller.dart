@@ -295,7 +295,7 @@ class ManageBagController extends GetxController {
                   } else {
                     Get.snackbar('Error', 'El rango seleccionado no tiene suficientes aretes');
                   }
-                },
+            },
                 child: Text('Rango ${rango.first}-${rango.last} (${rango.length} aretes)')
               )
             ).toList(),
@@ -303,10 +303,10 @@ class ManageBagController extends GetxController {
         TextButton(
           onPressed: () {
             Get.back();
-              },
+          },
               child: Text('Usar rangos mixtos'),
-            ),
-          ],
+        ),
+      ],
         ),
         actions: [
           TextButton(

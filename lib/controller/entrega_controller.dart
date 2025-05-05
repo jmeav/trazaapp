@@ -442,10 +442,11 @@ class EntregaController extends GetxController {
   // Para gestión en campo
   List<Entregas> get entregasPendientes => entregas
       .where((entrega) => 
-        // Incluir entregas en estado pendiente y que no sean reposiciones
-        (entrega.estado.trim().toLowerCase() == 'pendiente' && !entrega.reposicion) ||
+        // Solo incluir entregas en estado pendiente y que no sean reposiciones ni fullrepo
+        (entrega.estado.trim().toLowerCase() == 'pendiente'
+          && !entrega.reposicion && entrega.estado.trim().toLowerCase() != 'fullrepo') ||
         // También incluir entregas con idAlta que todavía están en estado pendiente
-        (entrega.idAlta != null && entrega.estado.trim().toLowerCase() == 'pendiente' && !entrega.reposicion)
+        (entrega.idAlta != null && entrega.estado.trim().toLowerCase() == 'pendiente' && !entrega.reposicion && entrega.estado.trim().toLowerCase() != 'fullrepo')
       )
       .toList();
 
@@ -469,10 +470,10 @@ class EntregaController extends GetxController {
       }
 
       // Validar que la cantidad de reposición sea válida
-      if (cantidadReposicion >= entrega.cantidad) {
+      if (cantidadReposicion <= 0 || cantidadReposicion > entrega.cantidad) {
         Get.snackbar(
           'Error',
-          'La cantidad para reposición no puede ser mayor o igual al total',
+          'La cantidad para reposición debe ser mayor a 0 y menor o igual al total',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -498,6 +499,10 @@ class EntregaController extends GetxController {
       final nuevoRangoFinal = entrega.rangoFinal - cantidadReposicion;
       final nuevoRangoInicial = entrega.rangoInicial;
 
+      // Dividir los aretes asignados
+      final nuevosAretesReposicion = List<int>.from(entrega.aretesAsignados.take(cantidadReposicion));
+      final nuevosAretesOriginal = List<int>.from(entrega.aretesAsignados.skip(cantidadReposicion));
+
       // Crear la entrega de reposición
       final entregaReposicion = entrega.copyWith(
         entregaId: '${entrega.entregaId}_repo',
@@ -507,13 +512,16 @@ class EntregaController extends GetxController {
         rangoInicial: nuevoRangoFinal + 1,
         rangoFinal: entrega.rangoFinal,
         fechaEntrega: DateTime.now(),
+        aretesAsignados: nuevosAretesReposicion,
       );
 
       // Actualizar la entrega original con el nuevo rango
+      final nuevaCantidad = entrega.cantidad - cantidadReposicion;
       final entregaActualizada = entrega.copyWith(
-        cantidad: entrega.cantidad - cantidadReposicion,
+        cantidad: nuevaCantidad,
         rangoFinal: nuevoRangoFinal,
-        estado: 'Pendiente',
+        estado: (nuevaCantidad == 0 && entrega.idAlta == null) ? 'fullrepo' : 'Pendiente',
+        aretesAsignados: nuevosAretesOriginal,
       );
 
       // Guardar ambas entregas
@@ -709,4 +717,9 @@ class EntregaController extends GetxController {
       // El error ya se muestra en el repositorio
     }
   }
+
+  // Reposiciones reales pendientes de enviar
+  List<RepoEntrega> get reposicionesPendientes => repoBox.values
+      .where((repo) => repo.estadoRepo.trim().toLowerCase() == 'lista' || repo.estadoRepo.trim().toLowerCase() == 'pendiente')
+      .toList();
 }

@@ -122,7 +122,7 @@ void main() async {
 //  await Hive.box<Entregas>('entregas').clear();
 //  await Hive.box<Bag>('bag').clear();
 //   await Hive.box<AltaEntrega>('altaentregas').clear();
-//   await Hive.box<RepoEntrega>('repoentregas').clear();
+//  await Hive.box<RepoEntrega>('repoentregas').clear();
 //   print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");
 
   // Inicializa controladores

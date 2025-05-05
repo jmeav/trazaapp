@@ -44,7 +44,7 @@ class ConsultasView extends StatelessWidget {
 
     String formatArete(String? arete) {
       if (arete == null) return '';
-      final s = arete.padLeft(10, '0');
+      final s = arete.padLeft(9, '0');
       return '558$s';
     }
 
@@ -336,14 +336,37 @@ class ConsultasView extends StatelessWidget {
                          if (estaProcesado)
                           Padding(
                             padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              'Cantidad de bovinos: '
-                                '${(int.tryParse(item['rangoFinal']?.toString() ?? '') ?? 0) - (int.tryParse(item['rangoInicial']?.toString() ?? '') ?? 0) + 1}',
-                              style: const TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
+                            child: Builder(
+                              builder: (_) {
+                                int rangoInicial = int.tryParse(item['rangoInicial']?.toString() ?? '') ?? 0;
+                                int rangoFinal = int.tryParse(item['rangoFinal']?.toString() ?? '') ?? 0;
+                                int totalAretes = (rangoFinal - rangoInicial + 1).clamp(0, 999999999);
+                                int bovinosRegistrados = (item['detalleBovinos'] as List?)?.length ?? 0;
+                                int aretesNoTrazados = totalAretes - bovinosRegistrados;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (bovinosRegistrados > 0)
+                                      Text(
+                                        '$bovinosRegistrados bovinos registrados',
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    if (aretesNoTrazados > 0)
+                                      Text(
+                                        '$aretesNoTrazados aretes no trazados',
+                                        style: const TextStyle(
+                                          color: Colors.amber,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
                         if (item['motivorechazo'] != null &&

@@ -13,13 +13,13 @@ class ResumenAltaView extends StatelessWidget {
       appBar: AppBar(title: const Text('Resumen de Alta')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildEncabezado(),
-            const SizedBox(height: 16),
-            Expanded(
-              child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildEncabezado(),
+              const SizedBox(height: 16),
+              SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
                   columns: const [
@@ -35,8 +35,8 @@ class ResumenAltaView extends StatelessWidget {
                   rows: _buildDataRows(),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -84,7 +84,7 @@ class ResumenAltaView extends StatelessWidget {
         const DataCell(Text('')),
         const DataCell(Text('')),
         const DataCell(Text('')),
-        DataCell(Text('Buenos: $totalBuenos\nDañados: $totalDanados\nNo Trazado: $totalNoTrazados', style: const TextStyle(fontWeight: FontWeight.bold))),
+        DataCell(Text('Buenos: $totalBuenos Dañados: $totalDanados No Trazado: $totalNoTrazados', style: const TextStyle(fontWeight: FontWeight.bold))),
         const DataCell(Text('')),
       ],
     ));

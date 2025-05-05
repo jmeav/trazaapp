@@ -33,9 +33,21 @@ class AreteBaja {
   // Método para convertir a JSON para envío al servidor
   Map<String, dynamic> toJson() {
     return {
-      'arete': arete,
+      'arete': _formatearArete(arete),
       'motivoId': motivoId,
     };
+  }
+
+  String _formatearArete(String arete) {
+    String base = arete;
+    if (base.startsWith('558')) {
+      // Si ya tiene el prefijo, solo rellenar hasta 12 dígitos
+      return base.padLeft(12, '0');
+    } else {
+      // Si no, agregar el prefijo y rellenar hasta 12 dígitos
+      String sinPrefijo = base.padLeft(9, '0');
+      return '558$sinPrefijo';
+    }
   }
 
   // Constructor factory desde JSON (puede necesitar ajustes si la fuente es diferente)

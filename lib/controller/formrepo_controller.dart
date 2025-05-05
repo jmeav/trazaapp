@@ -14,6 +14,8 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:trazaapp/data/repositories/reposicion/reposicion_repo.dart';
+import 'package:trazaapp/controller/entrega_controller.dart';
+import 'package:geolocator/geolocator.dart';
 
 class FormRepoController extends GetxController {
   late Box<Entregas> entregasBox;
@@ -415,6 +417,13 @@ class FormRepoController extends GetxController {
         entrega.value = updatedEntrega;
       }
 
+      // Llamar a EntregaController para asegurar que la entrega reposición se marque como completada
+      final entregaController = Get.find<EntregaController>();
+      await entregaController.completarReposicion(entrega.value!.entregaId);
+      // Refrescar datos para que desaparezca de las listas
+      await entregaController.fetchEntregas();
+      entregaController.refreshData();
+
       Get.snackbar(
         'Éxito',
         'Reposición completada correctamente',
@@ -584,6 +593,11 @@ class FormRepoController extends GetxController {
 
       final config = configBox.values.first;
 
+      // Obtener la ubicación actual del usuario
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
       // 1. Crear/Actualizar RepoEntrega con estado 'Lista'
       final repoFinal = RepoEntrega(
         idRepo: repoId!, // Usar el ID existente o generado en onInit
@@ -592,8 +606,8 @@ class FormRepoController extends GetxController {
         cue: entrega.value!.cue,
         departamento: entrega.value!.departamento,
         municipio: entrega.value!.municipio,
-        latitud: entrega.value!.latitud, // Usar lat/lon de la entrega original
-        longitud: entrega.value!.longitud,
+        latitud: position.latitude, // Usar lat/lon actual del usuario
+        longitud: position.longitude,
         distanciaCalculada: entrega.value!.distanciaCalculada,
         fechaRepo: DateTime.now(), // Fecha actual de guardado
         token: config.imei,
@@ -609,6 +623,7 @@ class FormRepoController extends GetxController {
         estadoRepo: 'Lista', // Marcar como lista para enviar
         rangoInicialRepo: rangoInicial.value,
         rangoFinalRepo: rangoFinal.value,
+        aplicaEntrega: entrega.value!.tipo == 'manual',
       );
 
       // 2. Guardar RepoEntrega y sus BovinoRepo asociados
@@ -620,9 +635,13 @@ class FormRepoController extends GetxController {
         await bovinosBox.put(bovinoActualizado.id, bovinoActualizado);
       }
 
+      // Refrescar datos para que desaparezca de las listas
+      final entregaController = Get.find<EntregaController>();
+      await entregaController.fetchEntregas();
+      entregaController.refreshData();
+
       // 3. NO actualizamos la entrega original aquí
       // La actualización a 'completada' se hará al "enviar" desde la pantalla de SendRepoView
-
 
       // Navegar a la pantalla de envío de reposiciones y mostrar éxito
       Get.offNamed('/sendrepo', arguments: {'showSuccess': true});

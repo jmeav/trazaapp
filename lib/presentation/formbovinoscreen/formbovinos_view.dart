@@ -84,7 +84,6 @@ class FormBovinosView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tomamos el primer bovino para mostrar su CUE
                     Text(
                       'CUE: ${controller.bovinoInfo.values.first.cue}',
                       style: const TextStyle(
@@ -92,23 +91,20 @@ class FormBovinosView extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    // Mostrar subrangos
-                    ...subrangos.map((rango) => Text(
-                      'Rango: ${rango.first} - ${rango.last} (${rango.length})',
-                      style: const TextStyle(fontSize: 14),
-                    )),
                     Text(
-                      'Cantidad total: ${aretesAsignados.length}',
-                      style: const TextStyle(fontSize: 14),
+                      'CUPA: ${controller.bovinoInfo.values.first.cupa}',
+                     style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    // Mostrar detalles de entrega si existen
-                    if (entrega != null) ...[
-                      if (entrega.rangoInicial != null && entrega.rangoFinal != null)
-                        Text('rangoInicial: ${entrega.rangoInicial}, rangoFinal: ${entrega.rangoFinal}'),
-                      if (entrega.rangoInicialExt != null && entrega.rangoFinalExt != null)
-                        Text('rangoInicialExt: ${entrega.rangoInicialExt}, rangoFinalExt: ${entrega.rangoFinalExt}'),
-                    ]
+                    Text(
+                      'Cantidad: ${aretesAsignados.length}',
+                       style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -247,6 +243,15 @@ class FormBovinosView extends StatelessWidget {
   Widget _buildFormPage(String bovinoID) {
     // Tomamos el bovino actual
     final bovinoData = controller.bovinoInfo[bovinoID]!;
+    final index = controller.rangos.indexOf(bovinoID);
+    final total = controller.rangos.length;
+    String _formatearArete(String arete) {
+      if (arete.startsWith('558')) {
+        return arete.padLeft(12, '0');
+      } else {
+        return '558' + arete.padLeft(9, '0');
+      }
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -254,8 +259,12 @@ class FormBovinosView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bovino Arete: $bovinoID',
+            'Arete: ${_formatearArete(bovinoID)}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            '${index + 1} de $total',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
 
@@ -359,8 +368,22 @@ class FormBovinosView extends StatelessWidget {
                           ? '${bovinoData.edad}'.length
                           : 0),
                 ),
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
               onChanged: (value) {
-                final e = int.tryParse(value) ?? 0;
+                int e = int.tryParse(value) ?? 0;
+                if (e > 240) {
+                  e = 240;
+                  Get.snackbar(
+                    'Límite de edad',
+                    'La edad máxima permitida es 240 meses.',
+                    backgroundColor: Colors.orange,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 2),
+                  );
+                }
                 final updated = bovinoData.copyWith(edad: e);
                 controller.bovinoInfo[bovinoID] = updated;
               },
@@ -567,7 +590,7 @@ class FormBovinosView extends StatelessWidget {
                   controller.saveFinalData();
                 },
                 child: const Text(
-                  "Finalizar Entrega",
+                  "Finalizar",
                   style: TextStyle(fontSize: 16),
                 ),
               ),
@@ -677,8 +700,23 @@ class FormBovinosView extends StatelessWidget {
                     labelText: 'Edad',
                     border: OutlineInputBorder(),
                   ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(3),
+                  ],
                   onChanged: (value) {
-                    controller.quickFillEdad.value = value;
+                    int edad = int.tryParse(value) ?? 0;
+                    if (edad > 240) {
+                      edad = 240;
+                      Get.snackbar(
+                        'Límite de edad',
+                        'La edad máxima permitida es 240 meses.',
+                        backgroundColor: Colors.orange,
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 2),
+                      );
+                    }
+                    controller.quickFillEdad.value = edad.toString();
                   },
                 ),
                 const SizedBox(height: 12),

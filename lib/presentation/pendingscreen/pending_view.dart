@@ -276,9 +276,8 @@ class EntregasView extends StatelessWidget {
 
     void handleAccept() {
       if (!isDialogOpen) return;
-      
       final cantidad = int.tryParse(cantidadController.text);
-      if (cantidad != null && cantidad < entrega.cantidad) {
+      if (cantidad != null && cantidad > 0 && cantidad <= entrega.cantidad) {
         isDialogOpen = false;
         Get.back();
         controller.configurarReposicion(entrega.entregaId, cantidad);
@@ -286,7 +285,7 @@ class EntregasView extends StatelessWidget {
       } else {
         Get.snackbar(
           'Error',
-          'Por favor ingrese una cantidad válida',
+          'Por favor ingrese una cantidad válida (entre 1 y ${entrega.cantidad})',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -300,43 +299,42 @@ class EntregasView extends StatelessWidget {
     }
 
     Get.dialog(
-      WillPopScope(
-        onWillPop: () async {
-          handleCancel();
-          return false;
-        },
-        child: AlertDialog(
-          title: const Text('Cantidad para reposición'),
-          content: TextField(
-            controller: cantidadController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Ingrese la cantidad para reposición',
-              hintText: 'Máximo: ${entrega.cantidad - 1}',
-            ),
-            onChanged: (value) {
-              final cantidad = int.tryParse(value);
-              if (cantidad != null && cantidad >= entrega.cantidad) {
-                Get.snackbar(
-                  'Error',
-                  'La cantidad debe ser menor al total',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
+      AlertDialog(
+        title: const Text('Cantidad para reposición'),
+        content: TextField(
+          controller: cantidadController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'Ingrese la cantidad para reposición',
+            hintText: 'Máximo: ${entrega.cantidad}',
+          ),
+          onChanged: (value) {
+            final cantidad = int.tryParse(value);
+            if (cantidad != null && (cantidad <= 0 || cantidad > entrega.cantidad)) {
+              Get.snackbar(
+                'Error',
+                'La cantidad debe estar entre 1 y ${entrega.cantidad}',
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+              );
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (isDialogOpen) {
+                isDialogOpen = false;
+                Navigator.of(Get.context!).pop();
               }
             },
+            child: const Text('Cancelar'),
           ),
-          actions: [
-            TextButton(
-              onPressed: handleCancel,
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: handleAccept,
-              child: const Text('Aceptar'),
-            ),
-          ],
-        ),
+          TextButton(
+            onPressed: handleAccept,
+            child: const Text('Aceptar'),
+          ),
+        ],
       ),
     ).then((_) {
       if (isDialogOpen) {

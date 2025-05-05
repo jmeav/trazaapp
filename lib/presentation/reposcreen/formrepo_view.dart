@@ -69,14 +69,19 @@ class FormRepoView extends GetView<FormRepoController> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 5),
                     Text(
-                      'Rango: ${controller.rangoInicial.value} - ${controller.rangoFinal.value}',
-                      style: const TextStyle(fontSize: 14),
+                      'CUPA: ${controller.entrega.value?.cupa ?? ""}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
-                      'Cantidad total: ${controller.bovinosRepo.length}',
-                      style: const TextStyle(fontSize: 14),
+                      'Cantidad: ${controller.bovinosRepo.length}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -208,6 +213,14 @@ class FormRepoView extends GetView<FormRepoController> {
   // Página de formulario para un Bovino
   Widget _buildFormPage(int index) {
     final bovino = controller.bovinosRepo[index];
+    final total = controller.bovinosRepo.length;
+    String _formatearArete(String arete) {
+      if (arete.startsWith('558')) {
+        return arete.padLeft(12, '0');
+      } else {
+        return '558' + arete.padLeft(9, '0');
+      }
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -215,8 +228,12 @@ class FormRepoView extends GetView<FormRepoController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bovino ${index + 1} de ${controller.bovinosRepo.length}',
+            'Arete: ${_formatearArete(bovino.arete)}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            '${index + 1} de $total',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 16),
 
@@ -282,11 +299,22 @@ class FormRepoView extends GetView<FormRepoController> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(3),
                   ],
-                  onChanged: (value) => controller.updateEdad(
-                    index,
-                    int.tryParse(value) ?? 0,
-                  ),
+                  onChanged: (value) {
+                    int edad = int.tryParse(value) ?? 0;
+                    if (edad > 240) {
+                      edad = 240;
+                      Get.snackbar(
+                        'Límite de edad',
+                        'La edad máxima permitida es 240 meses.',
+                        backgroundColor: Colors.orange,
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 2),
+                      );
+                    }
+                    controller.updateEdad(index, edad);
+                  },
                 ),
               ),
               const SizedBox(width: 16),
@@ -394,7 +422,7 @@ class FormRepoView extends GetView<FormRepoController> {
                       CustomDropdown<String>(
                         label: '',
                         value: bovino.estadoArete,
-                        items: const ['Bueno', 'Dañado'],
+                        items: const ['Bueno', 'Dañado', 'No Trazado'],
                         onChanged: (value) {
                           if (value != null) {
                             controller.updateEstadoArete(index, value);
@@ -549,7 +577,7 @@ class FormRepoView extends GetView<FormRepoController> {
                   _validarYGuardarReposicion(controller);
                 },
                 child: const Text(
-                  "Finalizar Reposición",
+                  "Finalizar",
                   style: TextStyle(fontSize: 16),
                 ),
               ),
@@ -580,9 +608,21 @@ class FormRepoView extends GetView<FormRepoController> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(3),
                   ],
                   onChanged: (value) {
-                    edad = int.tryParse(value) ?? 0;
+                    int edad = int.tryParse(value) ?? 0;
+                    if (edad > 240) {
+                      edad = 240;
+                      Get.snackbar(
+                        'Límite de edad',
+                        'La edad máxima permitida es 240 meses.',
+                        backgroundColor: Colors.orange,
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 2),
+                      );
+                    }
+                    edad = edad;
                   },
                 ),
                 const SizedBox(height: 8),

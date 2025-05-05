@@ -69,6 +69,9 @@ class RepoEntrega {
   @HiveField(21)
   final int rangoFinalRepo;
 
+  @HiveField(22)
+  final bool aplicaEntrega;
+
   int get cantidad => rangoFinalRepo - rangoInicialRepo + 1;
 
   RepoEntrega({
@@ -94,6 +97,7 @@ class RepoEntrega {
     required this.idorganizacion,
     required this.rangoInicialRepo,
     required this.rangoFinalRepo,
+    required this.aplicaEntrega,
   });
 
   RepoEntrega copyWith({
@@ -119,6 +123,7 @@ class RepoEntrega {
     String? idorganizacion,
     int? rangoInicialRepo,
     int? rangoFinalRepo,
+    bool? aplicaEntrega,
   }) {
     return RepoEntrega(
       idRepo: idRepo ?? this.idRepo,
@@ -143,6 +148,7 @@ class RepoEntrega {
       idorganizacion: idorganizacion ?? this.idorganizacion,
       rangoInicialRepo: rangoInicialRepo ?? this.rangoInicialRepo,
       rangoFinalRepo: rangoFinalRepo ?? this.rangoFinalRepo,
+      aplicaEntrega: aplicaEntrega ?? this.aplicaEntrega,
     );
   }
 
@@ -182,6 +188,7 @@ class RepoEntrega {
       "rangoInicialRepo": riShort,  // Usar versión formateada (sin 558 y sin ceros a la izquierda)
       "rangoFinalRepo": rfShort,    // Usar versión formateada (sin 558 y sin ceros a la izquierda)
       "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),
+      "aplicaentrega": aplicaEntrega ? 1 : 0,
     };
   }
 } 

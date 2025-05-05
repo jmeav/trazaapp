@@ -36,7 +36,9 @@ class EntregasRepository {
         }
 
         List<Entregas> entregas =
-            listData.map((jsonItem) => Entregas.fromJson(jsonItem)).toList();
+            listData.map((jsonItem) => Entregas.fromJson(jsonItem))
+            .where((e) => e.existencia == e.cantidad)
+            .toList();
 
         var box = await Hive.openBox<Entregas>('entregas');
         await box.clear();

@@ -36,6 +36,7 @@ class RepoEntregaAdapter extends TypeAdapter<RepoEntrega> {
       idorganizacion: fields[19] as String,
       rangoInicialRepo: fields[20] as int,
       rangoFinalRepo: fields[21] as int,
+      aplicaEntrega: (fields[22] as bool?) ?? false,
     );
   }
 
@@ -86,6 +87,8 @@ class RepoEntregaAdapter extends TypeAdapter<RepoEntrega> {
       ..writeByte(20)
       ..write(obj.rangoInicialRepo)
       ..writeByte(21)
-      ..write(obj.rangoFinalRepo);
+      ..write(obj.rangoFinalRepo)
+      ..writeByte(22)
+      ..write(obj.aplicaEntrega);
   }
 } 

@@ -195,18 +195,21 @@ class ManageBagView extends StatelessWidget {
               const SizedBox(height: 15),
               // Rango disponible
               Text(
-                'Rango disponible:',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    // color: Colors.white.withOpacity(0.8), // Texto semi-transparente
-                    ),
+                'Rangos disponibles:',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(),
               ),
-              Text(
-                '${controller.rangoAsignado.value}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    // fontWeight: FontWeight.bold,
-                    // color: Colors.white, // Texto blanco
+              Obx(() => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: controller.rangosConsecutivos.map((rango) =>
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Text(
+                      '${_formatearArete(rango.first)} - ${_formatearArete(rango.last)}  (${rango.length} aretes)',
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
-              ),
+                  )
+                ).toList(),
+              )),
               const SizedBox(height: 15),
               
               // Botón para detalles del bolsón
@@ -214,7 +217,7 @@ class ManageBagView extends StatelessWidget {
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.info_outline),
                   label: const Text('Ver Detalles del Bolsón'),
-                  onPressed: () => controller.mostrarDetallesBag(),
+                  onPressed: () => _showBagInfoDialog(context),
                 ),
               ),
               
@@ -240,6 +243,61 @@ class ManageBagView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showBagInfoDialog(BuildContext context) {
+    final controller = Get.find<ManageBagController>();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Información del Bolsón'),
+          content: Obx(() => SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Resumen de Rangos:', style: const TextStyle(fontWeight: FontWeight.bold)),
+                ...controller.rangosConsecutivos.map((rango) =>
+                  ExpansionTile(
+                    title: Text(
+                      '${_formatearArete(rango.first)} - ${_formatearArete(rango.last)}  (${rango.length} aretes)',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, bottom: 8.0, right: 8.0),
+                        child: SelectableText(
+                          rango.map((arete) => _formatearArete(arete)).join(', '),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  )
+                ),
+                const SizedBox(height: 8),
+                Text('Total de aretes disponibles: ${controller.cantidadDisponible.value}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _formatearArete(int arete) {
+    final base = arete.toString();
+    if (base.startsWith('558')) {
+      return base.padLeft(12, '0');
+    } else {
+      return '558' + base.padLeft(9, '0');
+    }
   }
 
   Widget _buildDropdown<T>({
