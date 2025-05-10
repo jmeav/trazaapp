@@ -383,7 +383,7 @@
             aretePadre: bovino.aretePadre,
             regMadre: bovino.regMadre,
             regPadre: bovino.regPadre,
-            motivoEstadoAreteId: bovino.estadoArete == 'Dañado' ? '249' : (bovino.estadoArete == 'No Trazado' ? '-1' : '0'),
+            motivoEstadoAreteId: bovino.estadoArete == 'Dañado' ? '249' : (bovino.estadoArete == 'No Utilizado' ? '-1' : '0'),
           );
         }).toList();
 

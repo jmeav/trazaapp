@@ -29,12 +29,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       appBar: AppBar(
         title: const Text('Ficha Generada'),
         actions: [
-          // WhatsApp
-          IconButton(
-            icon: const Icon(FontAwesomeIcons.whatsapp, color: Colors.green),
-            tooltip: 'Compartir por WhatsApp',
-            onPressed: () => _shareViaWhatsApp(),
-          ),
           // Compartir
           IconButton(
             icon: const Icon(Icons.share),
@@ -42,11 +36,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             onPressed: () => _sharePdf(),
           ),
           // Guardar
-          IconButton(
-            icon: const Icon(Icons.save_alt),
-            tooltip: 'Guardar PDF',
-            onPressed: () => _savePdf(),
-          ),
         ],
       ),
       body: Stack(
@@ -163,88 +152,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         'Error',
         'No se pudo compartir el PDF: $e',
         snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  // Compartir por WhatsApp
-  Future<void> _shareViaWhatsApp() async {
-    try {
-      final String whatsappUrl = "https://wa.me/?text=Ficha%20de%20registro%20bovino";
-      
-      final Uri uri = Uri.parse(whatsappUrl);
-      if (await canLaunchUrl(uri)) {
-        await Share.shareFiles(
-          [widget.pdfPath],
-          subject: 'Ficha de registro bovino',
-        );
-      } else {
-        Get.snackbar(
-          'Error',
-          'WhatsApp no está instalado en este dispositivo',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'No se pudo compartir por WhatsApp: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
-
-  // Guardar PDF en el dispositivo
-  Future<void> _savePdf() async {
-    try {
-      final status = await Permission.storage.request();
-      
-      if (status.isGranted) {
-        final directory = await getExternalStorageDirectory();
-        if (directory == null) {
-          throw Exception('No se pudo acceder al almacenamiento');
-        }
-        
-        // Crear directorio para guardar los PDFs si no existe
-        final downloadsDir = Directory('${directory.path}/TrazaApp_PDFs');
-        if (!await downloadsDir.exists()) {
-          await downloadsDir.create(recursive: true);
-        }
-        
-        // Copiar el archivo al directorio de descargas
-        final String fileName = widget.pdfPath.split('/').last;
-        final String savePath = '${downloadsDir.path}/$fileName';
-        final File file = File(widget.pdfPath);
-        await file.copy(savePath);
-        
-        Get.snackbar(
-          'Guardado',
-          'PDF guardado en ${downloadsDir.path}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 5),
-        );
-      } else {
-        Get.snackbar(
-          'Permiso denegado',
-          'Se necesita permiso de almacenamiento para guardar el PDF',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'No se pudo guardar el PDF: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
     }
   }

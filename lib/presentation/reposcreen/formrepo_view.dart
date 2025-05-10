@@ -12,7 +12,11 @@ import 'package:trazaapp/utils/utils.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
 
 class FormRepoView extends GetView<FormRepoController> {
-  const FormRepoView({Key? key}) : super(key: key);
+  FormRepoView({Key? key}) : super(key: key);
+
+  // Declarar un controlador para el campo de búsqueda de raza
+  final TextEditingController searchRazaController = TextEditingController();
+  String searchRaza = '';
 
   @override
   Widget build(BuildContext context) {
@@ -334,20 +338,33 @@ class FormRepoView extends GetView<FormRepoController> {
           ),
 
           const SizedBox(height: 16),
-          CustomDropdown<String>(
-            label: 'Raza',
-            value: bovino.razaId.isEmpty ? null : bovino.razaId,
-            items: controller.razas.map((raza) => raza.id).toList(),
-            itemToString: (id) {
-              final raza = controller.razas.firstWhereOrNull(
-                (r) => r.id == id,
-              );
-              return raza?.nombre ?? id;
-            },
-            onChanged: (value) {
-              if (value != null) {
-                controller.updateRaza(index, value);
+          Autocomplete<Raza>(
+            optionsBuilder: (TextEditingValue textEditingValue) {
+              if (textEditingValue.text == '') {
+                return controller.razas;
               }
+              return controller.razas.where((Raza r) =>
+                  r.nombre.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+            },
+            displayStringForOption: (Raza option) => option.nombre,
+            initialValue: TextEditingValue(
+              text: bovino.razaId.isNotEmpty
+                  ? (controller.razas.firstWhereOrNull((r) => r.id == bovino.razaId)?.nombre ?? '')
+                  : '',
+            ),
+            onSelected: (Raza selection) {
+              controller.updateRaza(index, selection.id);
+            },
+            fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+              return TextField(
+                controller: textEditingController,
+                focusNode: focusNode,
+                decoration: const InputDecoration(
+                  labelText: 'Buscar raza',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.search),
+                ),
+              );
             },
           ),
 
@@ -422,7 +439,7 @@ class FormRepoView extends GetView<FormRepoController> {
                       CustomDropdown<String>(
                         label: '',
                         value: bovino.estadoArete,
-                        items: const ['Bueno', 'Dañado', 'No Trazado'],
+                        items: const ['Bueno', 'Dañado', 'No Utilizado'],
                         onChanged: (value) {
                           if (value != null) {
                             controller.updateEstadoArete(index, value);
@@ -436,7 +453,7 @@ class FormRepoView extends GetView<FormRepoController> {
             ),
           ),
 
-          if (bovino.estadoArete == 'Dañado') ...[
+          if (bovino.estadoArete == 'Dañado' || bovino.estadoArete == 'No Utilizado') ...[
             const SizedBox(height: 16),
             Row(
               children: [
@@ -634,17 +651,28 @@ class FormRepoView extends GetView<FormRepoController> {
                   },
                 ),
                 const SizedBox(height: 8),
-                CustomDropdown<String>(
-                  label: 'Raza',
-                  items: controller.razas.map((raza) => raza.id).toList(),
-                  itemToString: (id) {
-                    final raza = controller.razas.firstWhereOrNull(
-                      (r) => r.id == id,
-                    );
-                    return raza?.nombre ?? id;
+                Autocomplete<Raza>(
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text == '') {
+                      return controller.razas;
+                    }
+                    return controller.razas.where((Raza r) =>
+                        r.nombre.toLowerCase().contains(textEditingValue.text.toLowerCase()));
                   },
-                  onChanged: (value) {
-                    raza = value;
+                  displayStringForOption: (Raza option) => option.nombre,
+                  onSelected: (Raza selection) {
+                    raza = selection.id;
+                  },
+                  fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                    return TextField(
+                      controller: textEditingController,
+                      focusNode: focusNode,
+                      decoration: const InputDecoration(
+                        labelText: 'Buscar raza',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -773,10 +801,10 @@ class FormRepoView extends GetView<FormRepoController> {
         break;
       }
 
-      if (bovino.estadoArete == 'Dañado' && bovino.fotoArete.isEmpty) {
+      if ((bovino.estadoArete == 'Dañado' || bovino.estadoArete == 'No Utilizado') && bovino.fotoArete.isEmpty) {
         datosCompletos = false;
         mensajeError =
-            'El bovino \\${i + 1} tiene arete dañado pero no tiene foto';
+            'El bovino \\${i + 1} tiene arete ${bovino.estadoArete.toLowerCase()} pero no tiene foto';
         break;
       }
     }

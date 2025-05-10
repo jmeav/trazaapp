@@ -253,6 +253,8 @@ class FormBovinosView extends StatelessWidget {
       }
     }
 
+    String searchRaza = '';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -296,13 +298,13 @@ class FormBovinosView extends StatelessWidget {
                       const SizedBox(height: 4),
                       DropdownButton<String>(
                         value: bovinoData.estadoArete,
-                        items: const ['Bueno', 'Dañado', 'No Trazado'].map((e) {
+                        items: const ['Bueno', 'Dañado', 'No Utilizado'].map((e) {
                           return DropdownMenuItem(value: e, child: Text(e));
                         }).toList(),
                         onChanged: (val) {
                           var updated = bovinoData.copyWith(
                             estadoArete: val ?? 'Bueno',
-                            motivoEstadoAreteId: val == 'Dañado' ? '249' : (val == 'No Trazado' ? '-1' : '0'),
+                            motivoEstadoAreteId: val == 'Dañado' ? '249' : (val == 'No Utilizado' ? '-1' : '0'),
                           );
                           if (val != 'Bueno') {
                             updated = updated.copyWith(
@@ -330,7 +332,7 @@ class FormBovinosView extends StatelessWidget {
           // Si estadoArete != Bueno => tomar foto arete
           if (bovinoData.estadoArete != 'Bueno') ...[
             const Text(
-              'Por favor, toma una foto del arete Dañado/No trazado:',
+              'Por favor, toma una foto del arete Dañado/No Utilizado:',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
@@ -410,21 +412,34 @@ class FormBovinosView extends StatelessWidget {
             const SizedBox(height: 16),
 
             // RAZA
-            DropdownButtonFormField<String>(
-              value: bovinoData.razaId.isEmpty ? null : bovinoData.razaId,
-              decoration: const InputDecoration(
-                labelText: 'Raza',
-                border: OutlineInputBorder(),
+            Autocomplete<Raza>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text == '') {
+                  return controller.razas;
+                }
+                return controller.razas.where((Raza r) =>
+                    r.nombre.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+              },
+              displayStringForOption: (Raza option) => option.nombre,
+              initialValue: TextEditingValue(
+                text: bovinoData.razaId.isNotEmpty
+                    ? (controller.razas.firstWhereOrNull((r) => r.id == bovinoData.razaId)?.nombre ?? '')
+                    : '',
               ),
-              items: controller.razas.map((Raza r) {
-                return DropdownMenuItem(
-                  value: r.id,
-                  child: Text(r.nombre),
-                );
-              }).toList(),
-              onChanged: (val) {
-                final updated = bovinoData.copyWith(razaId: val ?? '');
+              onSelected: (Raza selection) {
+                final updated = bovinoData.copyWith(razaId: selection.id);
                 controller.bovinoInfo[bovinoID] = updated;
+              },
+              fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Buscar raza',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                );
               },
             ),
 

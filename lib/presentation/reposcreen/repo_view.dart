@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
-import 'package:trazaapp/data/models/repo/repoentrega.dart';
 import 'package:trazaapp/presentation/widgets/custom_button.dart';
 import 'package:trazaapp/presentation/widgets/loading_widget.dart';
 import 'package:trazaapp/utils/utils.dart';
@@ -32,7 +31,7 @@ class RepoView extends GetView<EntregaController> {
           return const LoadingWidget();
         }
 
-        final reposiciones = controller.reposicionesPendientes;
+        final reposiciones = controller.entregasConReposicionPendiente;
 
         return Column(
           children: [
@@ -45,8 +44,8 @@ class RepoView extends GetView<EntregaController> {
                       padding: const EdgeInsets.all(16.0),
                       itemCount: reposiciones.length,
                       itemBuilder: (context, index) {
-                        final repo = reposiciones[index];
-                        return _buildReposicionCard(repo);
+                        final entrega = reposiciones[index];
+                        return _buildReposicionCard(entrega);
                       },
                     ),
             ),
@@ -56,7 +55,7 @@ class RepoView extends GetView<EntregaController> {
     );
   }
 
-  Widget _buildReposicionCard(RepoEntrega repo) {
+  Widget _buildReposicionCard(Entregas entrega) {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
@@ -73,38 +72,45 @@ class RepoView extends GetView<EntregaController> {
               children: [
                 Expanded(
                   child: Text(
-                    'Reposición #${repo.idRepo}',
+                    'Reposición #${entrega.entregaId}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
+                // Agregar icono de información
                 IconButton(
                   icon: const Icon(Icons.info_outline),
-                  onPressed: () => _mostrarDetallesReposicion(repo),
+                  onPressed: () => _mostrarDetallesReposicion(entrega),
                   tooltip: 'Ver detalles',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
               ],
             ),
+            
             const Divider(height: 16),
+            
+            // Información principal en formato horizontal
             Row(
               children: [
+                // Columna izquierda: Establecimiento y CUE
                 Expanded(
                   flex: 3,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        repo.departamento,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        entrega.nombreEstablecimiento,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        'CUE: ${repo.cue}',
+                        'CUE: ${entrega.cue}',
                         style: TextStyle(
                           fontSize: 13,
                           color: Theme.of(Get.context!).textTheme.bodySmall?.color,
@@ -113,19 +119,23 @@ class RepoView extends GetView<EntregaController> {
                     ],
                   ),
                 ),
+                
+                // Columna derecha: Productor y CUPA
                 Expanded(
                   flex: 3,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        repo.cupa,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        entrega.nombreProductor,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        'Org: ${repo.idorganizacion}',
+                        'CUPA: ${entrega.cupa}',
                         style: TextStyle(
                           fontSize: 13,
                           color: Theme.of(Get.context!).textTheme.bodySmall?.color,
@@ -134,6 +144,8 @@ class RepoView extends GetView<EntregaController> {
                     ],
                   ),
                 ),
+                
+                // Columna cantidad de aretes
                 Expanded(
                   flex: 2,
                   child: Column(
@@ -146,7 +158,7 @@ class RepoView extends GetView<EntregaController> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '${repo.cantidad} aretes',
+                          '${entrega.cantidad} aretes',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
@@ -158,23 +170,34 @@ class RepoView extends GetView<EntregaController> {
                 ),
               ],
             ),
+            
             const SizedBox(height: 10),
+            
+            // Fecha y botón
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  formatFecha(repo.fechaRepo),
+                  formatFecha(entrega.fechaEntrega),
                   style: TextStyle(
                     fontSize: 13,
                     color: Theme.of(Get.context!).textTheme.bodySmall?.color,
                   ),
                 ),
+                
                 ElevatedButton.icon(
                   icon: const Icon(Icons.assignment_turned_in, size: 18),
-                  label: const Text('Enviar'),
+                  label: const Text('Realizar'),
                   onPressed: () async {
-                    // Aquí puedes poner la lógica para enviar la reposición
-                    // o navegar a un detalle si es necesario
+                    final result = await Get.toNamed('/formrepo', arguments: {
+                      'entregaId': entrega.entregaId.split('_').first,
+                      'repoId': entrega.entregaId,
+                      'rangoInicial': entrega.rangoInicial,
+                      'cantidad': entrega.cantidad,
+                    });
+                    if (result == true) {
+                      controller.refreshData();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -189,7 +212,8 @@ class RepoView extends GetView<EntregaController> {
     );
   }
 
-  void _mostrarDetallesReposicion(RepoEntrega repo) {
+  // Método para mostrar detalles de la reposición
+  void _mostrarDetallesReposicion(Entregas entrega) {
     Get.dialog(
       AlertDialog(
         title: Text('Detalles de Reposición'),
@@ -198,17 +222,19 @@ class RepoView extends GetView<EntregaController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow('ID', repo.idRepo),
-              _buildDetailRow('Fecha', formatFecha(repo.fechaRepo)),
-              _buildDetailRow('Estado', repo.estadoRepo),
-              _buildDetailRow('Departamento', repo.departamento),
-              _buildDetailRow('Municipio', repo.municipio),
-              _buildDetailRow('CUE', repo.cue),
-              _buildDetailRow('CUPA', repo.cupa),
-              _buildDetailRow('Cantidad', '${repo.cantidad} aretes'),
-              _buildDetailRow('Rango', '${repo.rangoInicialRepo} - ${repo.rangoFinalRepo}'),
-              if (repo.distanciaCalculada != null)
-                _buildDetailRow('Distancia', repo.distanciaCalculada!),
+              _buildDetailRow('ID', entrega.entregaId),
+              _buildDetailRow('Fecha', formatFecha(entrega.fechaEntrega)),
+              _buildDetailRow('Estado', entrega.estadoReposicion),
+              _buildDetailRow('Departamento', entrega.departamento),
+              _buildDetailRow('Municipio', entrega.municipio),
+              _buildDetailRow('Establecimiento', entrega.nombreEstablecimiento),
+              _buildDetailRow('CUE', entrega.cue),
+              _buildDetailRow('Productor', entrega.nombreProductor),
+              _buildDetailRow('CUPA', entrega.cupa),
+              _buildDetailRow('Cantidad', '${entrega.cantidad} aretes'),
+              _buildDetailRow('Rango', '${entrega.rangoInicial} - ${entrega.rangoFinal}'),
+              if (entrega.distanciaCalculada != null)
+                _buildDetailRow('Distancia', entrega.distanciaCalculada!),
             ],
           ),
         ),
@@ -221,7 +247,7 @@ class RepoView extends GetView<EntregaController> {
       ),
     );
   }
-
+  
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

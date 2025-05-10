@@ -23,7 +23,7 @@ class _EnviarViewState extends State<EnviarView> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Altas Pendientes')),
+      appBar: AppBar(title: const Text('Enviar Altas')),
       body: Obx(() {
         if (controller.altasListas.isEmpty) {
           return const Center(

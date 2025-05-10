@@ -42,7 +42,12 @@ class ThemeController extends GetxController {
       categoria: '',
       habilitadoOperadora: '',
       isFirstTime: false,
-      themeMode: themeMode, token: '',
+      themeMode: themeMode,
+      token: '',
+      fechaVencimiento: '',
+      fechaEmision: '',
+      foto: '',
+      qr: '',
     );
     config.themeMode = themeMode;
     await box.put('config', config);  // Guarda el objeto AppConfig directamente

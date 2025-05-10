@@ -22,7 +22,7 @@ class LoginRepository {
       var json = jsonDecode(responseData);
 
       var appConfig = AppConfig(
-        imei: imei, // ✅ Mantiene el IMEI ingresado
+        imei: imei,
         codHabilitado: json['CODIGO'] ?? '',
         nombre: json['NOMBRE'] ?? '',
         cedula: json['CEDULA'] ?? '',
@@ -33,7 +33,11 @@ class LoginRepository {
         habilitadoOperadora: json['HABILITADOOPERADORA'] ?? '',
         isFirstTime: false,
         themeMode: 'light',
-        token: imei, // ✅ Se asigna el `imei` como `token`
+        token: imei,
+        fechaVencimiento: json['FECHA_VENCIMIENTO'] ?? '',
+        fechaEmision: json['FECHA_EMISION'] ?? '',
+        foto: json['FOTO'] ?? '',
+        qr: json['QR'] ?? '',
       );
 
       var box = Hive.box<AppConfig>('appConfig');  // No abrirla de nuevo

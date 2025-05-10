@@ -18,7 +18,7 @@ class EntregasView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestión Pendientes'),
+        title: const Text('Gestión Entregas'),
       ),
       body: Obx(() {
         if (controller.entregasPendientes.isEmpty) {
@@ -221,6 +221,23 @@ class EntregasView extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Text(
+              'Entrega para el productor:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              entrega.nombreProductor,
+              style: TextStyle(
+                fontSize: 15,
+                color: Theme.of(Get.context!).colorScheme.primary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
             const Text('¿Cómo desea usar los aretes?'),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -261,7 +278,11 @@ class EntregasView extends StatelessWidget {
                   Get.back();
                   _handleReposicion(entrega);
                 },
-                child: const Text('Uso Parcial con Reposición'),
+                child: Text(
+                  entrega.tipo == 'manual' 
+                      ? 'Uso con Reposición'
+                      : 'Uso Parcial con Reposición'
+                ),
               ),
             ],
           ],
@@ -277,19 +298,34 @@ class EntregasView extends StatelessWidget {
     void handleAccept() {
       if (!isDialogOpen) return;
       final cantidad = int.tryParse(cantidadController.text);
-      if (cantidad != null && cantidad > 0 && cantidad <= entrega.cantidad) {
-        isDialogOpen = false;
-        Get.back();
-        controller.configurarReposicion(entrega.entregaId, cantidad);
-        // No mostramos mensaje de éxito aquí ya que el controller lo manejará
+      
+      // Validación especial para entregas manuales
+      if (entrega.tipo == 'manual') {
+        if (cantidad != entrega.cantidad) {
+          Get.snackbar(
+            'Error',
+            'Para entregas manuales debe usar el total de aretes asignados (${entrega.cantidad} para la reposicion total)',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+          return;
+        }
       } else {
-        Get.snackbar(
-          'Error',
-          'Por favor ingrese una cantidad válida (entre 1 y ${entrega.cantidad})',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        // Validación normal para entregas del sistema
+        if (cantidad == null || cantidad <= 0 || cantidad > entrega.cantidad) {
+          Get.snackbar(
+            'Error',
+            'Por favor ingrese una cantidad válida (entre 1 y ${entrega.cantidad})',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+          return;
+        }
       }
+
+      isDialogOpen = false;
+      Get.back();
+      controller.configurarReposicion(entrega.entregaId, cantidad!);
     }
 
     void handleCancel() {
@@ -300,25 +336,56 @@ class EntregasView extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Cantidad para reposición'),
-        content: TextField(
-          controller: cantidadController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Ingrese la cantidad para reposición',
-            hintText: 'Máximo: ${entrega.cantidad}',
-          ),
-          onChanged: (value) {
-            final cantidad = int.tryParse(value);
-            if (cantidad != null && (cantidad <= 0 || cantidad > entrega.cantidad)) {
-              Get.snackbar(
-                'Error',
-                'La cantidad debe estar entre 1 y ${entrega.cantidad}',
-                backgroundColor: Colors.red,
-                colorText: Colors.white,
-              );
-            }
-          },
+        title: Text(entrega.tipo == 'manual' ? 'Reposición Total' : 'Cantidad para reposición'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (entrega.tipo == 'manual')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  'Para entregas manuales debe usar el total de aretes asignados (${entrega.cantidad}) para la reposicion total',
+                  style: TextStyle(
+                    color: Theme.of(Get.context!).colorScheme.error,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            TextField(
+              controller: cantidadController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: entrega.tipo == 'manual' 
+                    ? 'Cantidad total de aretes (${entrega.cantidad})'
+                    : 'Ingrese la cantidad para reposición',
+                hintText: entrega.tipo == 'manual'
+                    ? 'Debe ser ${entrega.cantidad}'
+                    : 'Máximo: ${entrega.cantidad}',
+              ),
+              onChanged: (value) {
+                final cantidad = int.tryParse(value);
+                if (entrega.tipo == 'manual') {
+                  if (cantidad != entrega.cantidad) {
+                    Get.snackbar(
+                      'Error',
+                      'Para entregas manuales debe usar el total de aretes asignados (${entrega.cantidad})',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
+                } else {
+                  if (cantidad != null && (cantidad <= 0 || cantidad > entrega.cantidad)) {
+                    Get.snackbar(
+                      'Error',
+                      'La cantidad debe estar entre 1 y ${entrega.cantidad}',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
+                }
+              },
+            ),
+          ],
         ),
         actions: [
           TextButton(

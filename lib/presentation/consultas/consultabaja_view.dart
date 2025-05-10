@@ -2,11 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/consultasbajas_controller.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ConsultaBajaView extends StatelessWidget {
   const ConsultaBajaView({Key? key}) : super(key: key);
+
+  Future<List<MotivoBajaBovino>> _fetchMotivosBaja() async {
+    try {
+      if (Hive.isBoxOpen('motivosBaja')) {
+        final box = Hive.box<MotivoBajaBovino>('motivosBaja');
+        return box.values.toList();
+      } else {
+        final box = await Hive.openBox<MotivoBajaBovino>('motivosBaja');
+        return box.values.toList();
+      }
+    } catch (e) {
+      print('Error al obtener motivos para la vista de consulta de bajas: $e');
+      return []; // Retornar lista vacía en caso de error
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,27 +34,211 @@ class ConsultaBajaView extends StatelessWidget {
     final codhabilitado = config?.codHabilitado ?? '';
     final DateFormat _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-    Map<String, dynamic> getEstadoInfo(String? motivo) {
-      if (motivo == null || motivo.isEmpty) {
-        return {'texto': 'Pendiente', 'color': Colors.orange};
-      } else {
-        return {'texto': 'Rechazado', 'color': Colors.red};
+    Map<String, dynamic> getEstadoInfo(String? estado) {
+      String estadoTexto;
+      Color estadoColor;
+      switch (estado) {
+        case '1': // Procesado/Enviado
+          estadoTexto = 'Procesado';
+          estadoColor = Colors.green;
+          break;
+        case '2': // Rechazado
+          estadoTexto = 'Rechazado';
+          estadoColor = Colors.red;
+          break;
+        case '0': // Pendiente
+        default:
+          estadoTexto = 'Pendiente';
+          estadoColor = Colors.orange;
       }
+      return {'texto': estadoTexto, 'color': estadoColor};
+    }
+
+    String calcularDiasPendientes(String fechaRegistroStr) {
+      try {
+        final fechaRegistro = DateTime.parse(fechaRegistroStr);
+        final now = DateTime.now();
+        final diferencia = now.difference(fechaRegistro);
+        return '${diferencia.inDays} días';
+      } catch (e) {
+        return 'N/A';
+      }
+    }
+
+    void mostrarDetalleAretes(BuildContext context, List<dynamic> aretes) {
+      // Función asíncrona para obtener los motivos del catálogo
+      Future<List<MotivoBajaBovino>> obtenerMotivos() async {
+        try {
+          // Si la caja ya está abierta
+          if (Hive.isBoxOpen('motivosBaja')) {
+            final box = Hive.box<MotivoBajaBovino>('motivosBaja');
+            return box.values.toList();
+          } else {
+            // Intentar abrir la caja
+            final box = await Hive.openBox<MotivoBajaBovino>('motivosBaja');
+            return box.values.toList();
+          }
+        } catch (e) {
+          print('Error al obtener motivos: $e');
+          return []; // Retornar lista vacía en caso de error
+        }
+      }
+
+      // Mostrar un diálogo de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Obtener los motivos y actualizar el diálogo
+      obtenerMotivos().then((motivos) {
+        // Cerrar el diálogo de carga
+        Navigator.pop(context);
+
+        // Mostrar el diálogo con los detalles de aretes
+        showDialog(
+          context: context,
+          builder: (context) => Dialog(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppBar(
+                  title: const Text('Detalle de Aretes', style: TextStyle(fontSize: 16)),
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: aretes.length,
+                    separatorBuilder: (_, __) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final arete = aretes[index];
+                      final String areteId = arete['arete']?.toString() ?? 'N/A';
+                      final String motivoId = arete['motivoId']?.toString() ?? 'N/A';
+                      
+                      // Texto a mostrar por defecto si no se encuentra el nombre
+                      String displayedMotivoText = 'ID: $motivoId';
+                      
+                      try {
+                        // Intentar buscar el motivo en el catálogo cargado
+                        if (motivos.isNotEmpty) {
+                          final int motivoIdInt = int.parse(motivoId);
+                          // Busca el motivo por ID. Si no lo encuentra o el nombre es vacío, usa el fallback
+                          final motivo = motivos.firstWhere(
+                            (m) => m.id == motivoIdInt && m.nombre.isNotEmpty,
+                            orElse: () => MotivoBajaBovino(id: 0, nombre: '') // Devuelve un motivo dummy si no cumple la condición
+                          );
+                          
+                          // Si se encontró un motivo con nombre válido, usarlo
+                          if (motivo.nombre.isNotEmpty) {
+                             displayedMotivoText = motivo.nombre; 
+                          }
+                        } else {
+                           // Si la lista de motivos está vacía, informar por consola
+                           print('Catálogo de motivos de baja vacío en Hive.');
+                        }
+                      } catch (e) {
+                        // Si hay un error (ej: parseo de ID), mantener el texto por defecto
+                        print('Error al buscar el motivo en el catálogo: $e');
+                      }
+                      
+                      return ListTile(
+                        title: Text('Arete: $areteId', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('$displayedMotivoText'),
+                        leading: const Icon(Icons.bookmark, color: Colors.blue),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).catchError((error) {
+        // Cerrar el diálogo de carga en caso de error
+        Navigator.pop(context);
+        
+        // Mostrar error
+        Get.snackbar(
+          'Error al cargar catálogo',
+          'No se pudo cargar el catálogo de motivos de baja desde el almacenamiento local. Los motivos se mostrarán por ID.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withOpacity(0.2),
+          colorText: Colors.red,
+          duration: const Duration(seconds: 5)
+        );
+        
+        // Mostrar el diálogo sin motivos, solo con IDs
+        showDialog(
+          context: context,
+          builder: (context) => Dialog(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppBar(
+                  title: const Text('Detalle de Aretes', style: TextStyle(fontSize: 16)),
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: aretes.length,
+                    separatorBuilder: (_, __) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final arete = aretes[index];
+                      final String areteId = arete['arete']?.toString() ?? 'N/A';
+                      final String motivoId = arete['motivoId']?.toString() ?? 'N/A';
+                      
+                      // Si no se pudo cargar el catálogo, mostrar solo el ID
+                      return ListTile(
+                        title: Text('Arete: $areteId', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('ID: $motivoId'),
+                        leading: const Icon(Icons.bookmark, color: Colors.blue),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      });
     }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Consulta de Bajas'),
         actions: [
-          Obx(() => IconButton(
-                icon: Icon(controller.isCardView.value
+          GetBuilder<ConsultasBajasController>(
+            builder: (controller) => IconButton(
+              icon: Icon(
+                controller.isCardView.value
                     ? Icons.table_rows_outlined
-                    : Icons.view_agenda_outlined),
-                tooltip: controller.isCardView.value
-                    ? 'Ver como tabla'
-                    : 'Ver como tarjetas',
-                onPressed: () => controller.toggleViewMode(),
-              )),
+                    : Icons.view_agenda_outlined
+              ),
+              tooltip: controller.isCardView.value
+                  ? 'Ver como tabla'
+                  : 'Ver como tarjetas',
+              onPressed: () => controller.toggleViewMode(),
+            ),
+          ),
         ],
       ),
       body: SafeArea(
@@ -89,9 +290,31 @@ class ConsultaBajaView extends StatelessWidget {
                     if (controller.filteredResultados.isEmpty && !controller.isLoading.value) {
                       return const Center(child: Text('No hay bajas para mostrar con los filtros seleccionados.'));
                     }
-                    return controller.isCardView.value
-                        ? _buildCardView(controller, getEstadoInfo, context, _dateFormat)
-                        : _buildTableView(context, controller, getEstadoInfo, isLandscape, _dateFormat);
+                    // Usar FutureBuilder para cargar los motivos antes de construir las vistas
+                    return FutureBuilder<List<MotivoBajaBovino>>(
+                      future: _fetchMotivosBaja(),
+                      builder: (context, snapshotMotivos) {
+                        // Aunque los motivos estén cargando o fallen, construimos la vista.
+                        // Las funciones _buildCardView y _buildTableView manejarán una lista de motivos vacía o nula.
+                        final List<MotivoBajaBovino> motivos = snapshotMotivos.data ?? [];
+                        
+                        // Pequeño indicador si los motivos aún no están listos pero hay resultados.
+                        if (snapshotMotivos.connectionState == ConnectionState.waiting && controller.filteredResultados.isNotEmpty) {
+                            // Podríamos mostrar un indicador sutil aquí, o simplemente dejar que la vista se construya
+                            // y los motivos se resuelvan a IDs/texto original temporalmente.
+                            // Por simplicidad, dejaremos que se construya directamente.
+                        }
+
+                        if (snapshotMotivos.hasError) {
+                          print("Error cargando motivos en FutureBuilder: ${snapshotMotivos.error}");
+                          // Proceder con motivos vacíos si hay error
+                        }
+                        
+                        return controller.isCardView.value
+                            ? _buildCardView(controller, getEstadoInfo, context, _dateFormat, calcularDiasPendientes, mostrarDetalleAretes, motivos)
+                            : _buildTableView(context, controller, getEstadoInfo, isLandscape, _dateFormat, calcularDiasPendientes, mostrarDetalleAretes, motivos);
+                      }
+                    );
                   }),
                 ),
               ],
@@ -176,7 +399,7 @@ class ConsultaBajaView extends StatelessWidget {
               spacing: 8.0,
               runSpacing: 4.0,
               children: [
-                'Todos', 'Pendiente', 'Rechazado'
+                'Todos', 'Procesado', 'Rechazado', 'Pendiente'
               ].map((status) {
                 return ChoiceChip(
                   label: Text(status),
@@ -201,24 +424,73 @@ class ConsultaBajaView extends StatelessWidget {
     );
   }
 
-  Widget _buildCardView(ConsultasBajasController controller, Function getEstadoInfo, BuildContext context, DateFormat dateFormat) {
+  Widget _buildCardView(
+    ConsultasBajasController controller, 
+    Function getEstadoInfo, 
+    BuildContext context, 
+    DateFormat dateFormat, 
+    Function calcularDiasPendientes,
+    Function mostrarDetalleAretes,
+    List<MotivoBajaBovino> motivos
+  ) {
     return ListView.builder(
       itemCount: controller.filteredResultados.length,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       itemBuilder: (context, index) {
         final item = controller.filteredResultados[index];
-        final motivo = item['motivorechazo']?.toString() ?? '';
-        final estadoInfo = getEstadoInfo(motivo);
+        final estado = item['estadoproceso']?.toString() ?? '0';
+        final motivoRechazoOriginal = item['motivorechazo']?.toString() ?? '';
+        final estadoInfo = getEstadoInfo(estado);
         final estadoTexto = estadoInfo['texto'];
         final estadoColor = estadoInfo['color'];
         final String idBaja = item['idBaja']?.toString() ?? 'N/A';
         final String cupa = item['cupa']?.toString() ?? 'N/A';
         final String cue = item['cue']?.toString() ?? 'N/A';
-        final String fechaBajaStr = item['fechaBaja']?.toString() ?? '';
+        final String fechaRegistroStr = item['fecharegistro']?.toString() ?? '';
+        final String fechaBajaStr = item['fechabaja']?.toString() ?? '';
+        final List<dynamic> detalleBovinos = item['detallearetes'] ?? [];
+        
+        DateTime? fechaRegistroDate;
+        try {
+          if (fechaRegistroStr.isNotEmpty) fechaRegistroDate = DateTime.parse(fechaRegistroStr);
+        } catch (e) {}
+        
         DateTime? fechaBajaDate;
         try {
           if (fechaBajaStr.isNotEmpty) fechaBajaDate = DateTime.parse(fechaBajaStr);
         } catch (e) {}
+        
+        final bool estaPendiente = estado == '0';
+        final String diasPendientes = estaPendiente && fechaRegistroDate != null 
+            ? calcularDiasPendientes(fechaRegistroStr)
+            : '';
+
+        String motivoRechazoDisplay = '';
+        if (motivoRechazoOriginal.isNotEmpty && motivoRechazoOriginal != "0000-00-00 00:00:00") {
+          try {
+            final int motivoId = int.parse(motivoRechazoOriginal);
+            if (motivos.isNotEmpty) {
+              final motivoEncontrado = motivos.firstWhere(
+                (m) => m.id == motivoId && m.nombre.isNotEmpty,
+                orElse: () => MotivoBajaBovino(id: 0, nombre: '') // Dummy si no se encuentra o nombre vacío
+              );
+              if (motivoEncontrado.nombre.isNotEmpty) {
+                motivoRechazoDisplay = motivoEncontrado.nombre;
+              } else {
+                // Si se parsea a int pero no se encuentra en catálogo o el nombre es vacío, mostrar ID.
+                motivoRechazoDisplay = 'ID Motivo: $motivoId'; 
+              }
+            } else {
+              // Si el catálogo de motivos está vacío, pero el motivo original es un ID numérico
+              motivoRechazoDisplay = 'ID Motivo: $motivoId';
+            }
+          } catch (e) {
+            // No es un ID numérico, o error de parseo, usar el string original.
+            motivoRechazoDisplay = motivoRechazoOriginal;
+          }
+        }
+        // No mostramos nada si el motivo original era la fecha/hora nula "0000-00-00 00:00:00"
+
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           elevation: 3,
@@ -244,12 +516,30 @@ class ConsultaBajaView extends StatelessWidget {
                             Expanded(child: Text('CUE: $cue', style: const TextStyle(fontSize: 14))),
                           ],
                         ),
+                        if (fechaRegistroDate != null)
+                          Text('Fecha Registro: ${dateFormat.format(fechaRegistroDate)}', style: const TextStyle(fontSize: 14)),
                         if (fechaBajaDate != null)
-                          Text('Fecha: ${dateFormat.format(fechaBajaDate)}', style: const TextStyle(fontSize: 14)),
-                        if (estadoTexto == 'Rechazado' && motivo.isNotEmpty)
+                          Text('Fecha Baja: ${dateFormat.format(fechaBajaDate)}', style: const TextStyle(fontSize: 14)),
+                        if (estaPendiente && diasPendientes.isNotEmpty)
+                          Text(
+                            'Pendiente desde hace: $diasPendientes', 
+                            style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            'Cantidad de aretes: ${detalleBovinos.length}',
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        if (motivoRechazoDisplay.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child: Text('Motivo rechazo: $motivo', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                            child: Text('Motivo rechazo: $motivoRechazoDisplay', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                           ),
                       ],
                     ),
@@ -281,6 +571,15 @@ class ConsultaBajaView extends StatelessWidget {
                       ),
                     ),
                   ),
+                  Positioned(
+                    bottom: 0,
+                    right: 8,
+                    child: IconButton(
+                      icon: const Icon(Icons.info_outline, color: Colors.blue),
+                      onPressed: () => mostrarDetalleAretes(context, detalleBovinos),
+                      tooltip: 'Ver detalle de aretes',
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -291,9 +590,19 @@ class ConsultaBajaView extends StatelessWidget {
     );
   }
 
-  Widget _buildTableView(BuildContext context, ConsultasBajasController controller, Function getEstadoInfo, bool isLandscape, DateFormat dateFormat) {
+  Widget _buildTableView(
+    BuildContext context, 
+    ConsultasBajasController controller, 
+    Function getEstadoInfo, 
+    bool isLandscape, 
+    DateFormat dateFormat, 
+    Function calcularDiasPendientes,
+    Function mostrarDetalleAretes,
+    List<MotivoBajaBovino> motivos
+  ) {
     final theme = Theme.of(context);
-    final double tableMinWidth = isLandscape ? 900 : 900;
+    final double tableMinWidth = isLandscape ? 1200 : 1200;
+    
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
       child: SingleChildScrollView(
@@ -313,25 +622,64 @@ class ConsultaBajaView extends StatelessWidget {
                     _buildTableHeader('ID Baja', width: 100),
                     _buildTableHeader('CUPA', width: 130),
                     _buildTableHeader('CUE', width: 120),
-                    _buildTableHeader('Fecha', width: 150),
+                    _buildTableHeader('Fecha Registro', width: 150),
+                    _buildTableHeader('Fecha Baja', width: 150),
+                    _buildTableHeader('Aretes', width: 60),
                     _buildTableHeader('Estado', width: 100),
+                    _buildTableHeader('Días Pendiente', width: 100),
                     _buildTableHeader('Motivo Rechazo', width: 200),
                   ],
                 ),
               ),
               ...controller.filteredResultados.map((item) {
-                final motivo = item['motivorechazo']?.toString() ?? '';
-                final estadoInfo = getEstadoInfo(motivo);
-                final estadoTexto = estadoInfo['texto'];
-                final estadoColor = estadoInfo['color'];
+                final estado = item['estadoproceso']?.toString() ?? '0';
+                final estadoInfo = getEstadoInfo(estado);
                 final String idBaja = item['idBaja']?.toString() ?? 'N/A';
                 final String cupa = item['cupa']?.toString() ?? 'N/A';
                 final String cue = item['cue']?.toString() ?? 'N/A';
-                final String fechaBajaStr = item['fechaBaja']?.toString() ?? '';
+                final String fechaRegistroStr = item['fecharegistro']?.toString() ?? '';
+                final String fechaBajaStr = item['fechabaja']?.toString() ?? '';
+                final motivoRechazoOriginal = item['motivorechazo']?.toString() ?? '';
+                final List<dynamic> detalleBovinos = item['detallearetes'] ?? [];
+                
+                DateTime? fechaRegistroDate;
+                try {
+                  if (fechaRegistroStr.isNotEmpty) fechaRegistroDate = DateTime.parse(fechaRegistroStr);
+                } catch (e) {}
+                
                 DateTime? fechaBajaDate;
                 try {
                   if (fechaBajaStr.isNotEmpty) fechaBajaDate = DateTime.parse(fechaBajaStr);
                 } catch (e) {}
+                
+                final bool estaPendiente = estado == '0';
+                final String diasPendientes = estaPendiente && fechaRegistroDate != null 
+                    ? calcularDiasPendientes(fechaRegistroStr)
+                    : 'N/A';
+
+                String motivoRechazoDisplay = '';
+                if (motivoRechazoOriginal.isNotEmpty && motivoRechazoOriginal != "0000-00-00 00:00:00") {
+                  try {
+                    final int motivoId = int.parse(motivoRechazoOriginal);
+                     if (motivos.isNotEmpty) {
+                        final motivoEncontrado = motivos.firstWhere(
+                          (m) => m.id == motivoId && m.nombre.isNotEmpty,
+                          orElse: () => MotivoBajaBovino(id: 0, nombre: '') // Dummy
+                        );
+                        if (motivoEncontrado.nombre.isNotEmpty) {
+                          motivoRechazoDisplay = motivoEncontrado.nombre;
+                        } else {
+                          motivoRechazoDisplay = 'ID Motivo: $motivoId';
+                        }
+                    } else {
+                        motivoRechazoDisplay = 'ID Motivo: $motivoId';
+                    }
+                  } catch (e) {
+                    motivoRechazoDisplay = motivoRechazoOriginal;
+                  }
+                }
+                // No mostramos nada si el motivo original era la fecha/hora nula "0000-00-00 00:00:00"
+
                 return Container(
                   margin: const EdgeInsets.symmetric(vertical: 1),
                   decoration: BoxDecoration(
@@ -344,7 +692,9 @@ class ConsultaBajaView extends StatelessWidget {
                         _buildTableCell(idBaja, width: 100),
                         _buildTableCell(cupa, width: 130),
                         _buildTableCell(cue, width: 120),
+                        _buildTableCell(fechaRegistroDate != null ? dateFormat.format(fechaRegistroDate) : 'N/A', width: 150),
                         _buildTableCell(fechaBajaDate != null ? dateFormat.format(fechaBajaDate) : 'N/A', width: 150),
+                        _buildTableCell(detalleBovinos.length.toString(), width: 60),
                         Container(
                           width: 100,
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
@@ -352,13 +702,13 @@ class ConsultaBajaView extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                             decoration: BoxDecoration(
-                              color: estadoColor.withOpacity(0.2),
+                              color: estadoInfo['color'].withOpacity(0.2),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
-                              estadoTexto,
+                              estadoInfo['texto'],
                               style: TextStyle(
-                                color: estadoColor,
+                                color: estadoInfo['color'],
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -366,7 +716,15 @@ class ConsultaBajaView extends StatelessWidget {
                             ),
                           ),
                         ),
-                        _buildTableCell(motivo, width: 200, maxLines: 2),
+                        _buildTableCell(
+                          estaPendiente ? diasPendientes : 'N/A', 
+                          width: 100
+                        ),
+                        _buildTableCell(
+                          motivoRechazoDisplay, 
+                          width: 200, 
+                          maxLines: 2
+                        ),                      
                       ],
                     ),
                   ),

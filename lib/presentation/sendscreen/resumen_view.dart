@@ -59,7 +59,7 @@ class ResumenAltaView extends StatelessWidget {
   List<DataRow> _buildDataRows() {
     int totalBuenos = alta.detalleBovinos.where((b) => b.estadoArete.toLowerCase() == 'bueno').length;
     int totalDanados = alta.detalleBovinos.where((b) => b.estadoArete.toLowerCase() == 'dañado').length;
-    int totalNoTrazados = alta.detalleBovinos.where((b) => b.estadoArete.toLowerCase() == 'no trazado').length;
+    int totalNoTrazados = alta.detalleBovinos.where((b) => b.estadoArete.toLowerCase() == 'No Utilizado').length;
 
     final rows = <DataRow>[];
     rows.addAll(alta.detalleBovinos.asMap().entries.map((entry) {
@@ -84,7 +84,7 @@ class ResumenAltaView extends StatelessWidget {
         const DataCell(Text('')),
         const DataCell(Text('')),
         const DataCell(Text('')),
-        DataCell(Text('Buenos: $totalBuenos Dañados: $totalDanados No Trazado: $totalNoTrazados', style: const TextStyle(fontWeight: FontWeight.bold))),
+        DataCell(Text('Buenos: $totalBuenos Dañados: $totalDanados No Utilizado: $totalNoTrazados', style: const TextStyle(fontWeight: FontWeight.bold))),
         const DataCell(Text('')),
       ],
     ));

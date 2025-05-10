@@ -41,6 +41,8 @@ class EntregaController extends GetxController {
   final RxList<AltaEntrega> altasListas = <AltaEntrega>[].obs;
   final RxList<RepoEntrega> reposListas = <RepoEntrega>[].obs;
 
+  final RxBool isInitialized = false.obs;
+
   @override
   void onInit() async {
     super.onInit();
@@ -56,6 +58,7 @@ class EntregaController extends GetxController {
       _listenLocationChanges();
       cargarAltasListas();
       cargarReposListas(); // Ahora se llama después de abrir repoBox
+      isInitialized.value = true;
     } catch (e) {
        print("Error en onInit EntregaController: $e");
        // Considera mostrar un Get.snackbar de error aquí si la inicialización falla
@@ -720,6 +723,6 @@ class EntregaController extends GetxController {
 
   // Reposiciones reales pendientes de enviar
   List<RepoEntrega> get reposicionesPendientes => repoBox.values
-      .where((repo) => repo.estadoRepo.trim().toLowerCase() == 'lista' || repo.estadoRepo.trim().toLowerCase() == 'pendiente')
+      .where((repo) => repo.estadoRepo.trim().toLowerCase() == 'pendiente' || repo.estadoRepo.trim().toLowerCase() == 'pendiente')
       .toList();
 }

@@ -8,6 +8,7 @@ import 'package:trazaapp/controller/baja_controller.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/data/models/baja/baja_model.dart'; // Importar Baja
 import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
+import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
 import 'package:hive/hive.dart';
 
 class BajaSendView extends StatefulWidget {
@@ -28,7 +29,7 @@ class _BajaSendViewState extends State<BajaSendView> {
     super.initState();
     // Cargar bajas al iniciar la vista si no están cargando ya
     if (!controller.isLoading.value) {
-      controller.cargarBajasPendientes();
+      Future.microtask(() => controller.cargarBajasPendientes());
     }
   }
 
@@ -38,7 +39,7 @@ class _BajaSendViewState extends State<BajaSendView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bajas Pendientes'), // Título actualizado
+        title: const Text('Enviar Bajas'),
         actions: [
           Obx(() => controller.isLoading.value
               ? const Padding(
@@ -56,7 +57,6 @@ class _BajaSendViewState extends State<BajaSendView> {
         ],
       ),
       body: Obx(() {
-        // Mostrar indicador de carga mientras isLoading es true
         if (controller.isLoading.value && controller.bajasPendientes.isEmpty) {
           return const Center(
             child: Column(
@@ -69,9 +69,15 @@ class _BajaSendViewState extends State<BajaSendView> {
             ),
           );
         }
+
+        // Obtener bajas sin origen
+        final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
+        final bajasSinOrigen = boxBajasSinOrigen.values.where((b) => b.estado == 'pendiente').toList();
         
-        // Si no hay bajas pendientes, mostrar mensaje
-        if (controller.bajasPendientes.isEmpty) {
+        // Combinar ambas listas
+        final totalBajas = controller.bajasPendientes.length + bajasSinOrigen.length;
+        
+        if (totalBajas == 0) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -97,8 +103,7 @@ class _BajaSendViewState extends State<BajaSendView> {
             ),
           );
         }
-        
-        // Mostrar la lista de bajas pendientes
+
         return Column(
           children: [
             Padding(
@@ -106,89 +111,184 @@ class _BajaSendViewState extends State<BajaSendView> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${controller.bajasPendientes.length} Bajas pendientes',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bajas pendientes',
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (controller.bajasPendientes.isNotEmpty)
+                            Chip(
+                              label: Text('${controller.bajasPendientes.length} Bovinos'),
+                              backgroundColor: theme.colorScheme.primaryContainer,
+                            ),
+                          if (controller.bajasPendientes.isNotEmpty && bajasSinOrigen.isNotEmpty)
+                            const SizedBox(width: 8),
+                          if (bajasSinOrigen.isNotEmpty)
+                            Chip(
+                              label: Text('${bajasSinOrigen.length} Sin Origen'),
+                              backgroundColor: Colors.orange.withOpacity(0.2),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: controller.bajasPendientes.length,
+                itemCount: totalBajas,
                 padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                 itemBuilder: (context, index) {
-                  final baja = controller.bajasPendientes[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-                    elevation: 1.5,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                               Row( // Grupo CUE y Cantidad
-                                 children: [
-                                   Icon(Icons.location_on_outlined, size: 18, color: Colors.grey[600]),
-                                   const SizedBox(width: 4),
-                                   Text('CUE: ${baja.cue}', style: theme.textTheme.bodyLarge),
-                                   const SizedBox(width: 10),
-                                   Chip(
-                                     avatar: Icon(Icons.tag, size: 14, color: theme.colorScheme.secondary),
-                                     label: Text('${baja.cantidad} Aretes'),
-                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                                     labelPadding: const EdgeInsets.only(left: 2),
-                                     visualDensity: VisualDensity.compact,
-                                     backgroundColor: theme.colorScheme.secondaryContainer.withOpacity(0.5),
-                                    )
-                                 ],
-                               ),
-                             ],
-                           ),
-                          const SizedBox(height: 4),
-                          Text('Fecha Baja: ${_dateFormat.format(baja.fechaBaja)}', style: theme.textTheme.bodySmall),
-                          const Divider(height: 16),
-                          // Fila de Botones
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildActionButton(
-                                context: context,
-                                icon: Icons.info_outline,
-                                label: 'Detalles',
-                                color: theme.colorScheme.secondary,
-                                onPressed: () => _showBajaDetailsDialog(context, baja, catalogsController)
-                              ),
-                              _buildActionButton(
-                                context: context,
-                                icon: Icons.delete_outline,
-                                label: 'Eliminar',
-                                color: theme.colorScheme.error,
-                                onPressed: () => _confirmDeleteBaja(context, baja.bajaId)
-                              ),
-                              _buildActionButton(
-                                context: context,
-                                icon: Icons.send,
-                                label: 'Enviar',
-                                color: Colors.green,
-                                onPressed: () => controller.enviarBaja(baja.bajaId),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  // Determinar si es una baja regular o sin origen
+                  if (index < controller.bajasPendientes.length) {
+                    final baja = controller.bajasPendientes[index];
+                    return _buildBajaRegularCard(context, baja, theme);
+                  } else {
+                    final bajaSinOrigen = bajasSinOrigen[index - controller.bajasPendientes.length];
+                    return _buildBajaSinOrigenCard(context, bajaSinOrigen, theme);
+                  }
                 },
               ),
             ),
           ],
         );
       }),
+    );
+  }
+
+  Widget _buildBajaRegularCard(BuildContext context, Baja baja, ThemeData theme) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 18, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text('CUE: ${baja.cue}', style: theme.textTheme.bodyLarge),
+                    const SizedBox(width: 10),
+                    Chip(
+                      avatar: Icon(Icons.tag, size: 14, color: theme.colorScheme.secondary),
+                      label: Text('${baja.cantidad} Aretes'),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                      labelPadding: const EdgeInsets.only(left: 2),
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: theme.colorScheme.secondaryContainer.withOpacity(0.5),
+                    )
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text('Fecha Baja: ${_dateFormat.format(baja.fechaBaja)}', style: theme.textTheme.bodySmall),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildActionButton(
+                  context: context,
+                  icon: Icons.info_outline,
+                  label: 'Detalles',
+                  color: theme.colorScheme.secondary,
+                  onPressed: () => _showBajaDetailsDialog(context, baja, catalogsController)
+                ),
+                _buildActionButton(
+                  context: context,
+                  icon: Icons.delete_outline,
+                  label: 'Eliminar',
+                  color: theme.colorScheme.error,
+                  onPressed: () => _confirmDeleteBaja(context, baja.bajaId)
+                ),
+                _buildActionButton(
+                  context: context,
+                  icon: Icons.send,
+                  label: 'Enviar',
+                  color: Colors.green,
+                  onPressed: () => controller.enviarBaja(baja.bajaId),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBajaSinOrigenCard(BuildContext context, BajaSinOrigen baja, ThemeData theme) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Container(
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                     
+                     Chip(
+                      label: Text('Sin Origen', style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.orange[700],
+                        fontWeight: FontWeight.bold
+                      )),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                      labelPadding: const EdgeInsets.only(left: 2),
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: theme.colorScheme.secondaryContainer.withOpacity(0.5),
+                    )
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text('Fecha: ${_dateFormat.format(baja.fecha)}', style: theme.textTheme.bodySmall),
+              Text('Arete: ${baja.arete}', style: theme.textTheme.bodySmall),
+              if (baja.observaciones != null && baja.observaciones!.isNotEmpty)
+                Text('Obs: ${baja.observaciones}', style: theme.textTheme.bodySmall),
+              const Divider(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildActionButton(
+                    context: context,
+                    icon: Icons.delete_outline,
+                    label: 'Eliminar',
+                    color: theme.colorScheme.error,
+                    onPressed: () => _confirmDeleteBajaSinOrigen(context, baja.id)
+                  ),
+                  _buildActionButton(
+                    context: context,
+                    icon: Icons.send,
+                    label: 'Enviar',
+                    color: Colors.green,
+                    onPressed: () => controller.enviarBajaSinOrigen(baja.id),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -334,6 +434,44 @@ class _BajaSendViewState extends State<BajaSendView> {
     } else {
       return "ID: $motivoId (Desconocido - revisa catálogo)";
     }
+  }
+
+  Future<void> _confirmDeleteBajaSinOrigen(BuildContext context, String id) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirmar eliminación'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                const Text('¿Estás seguro de eliminar esta baja sin origen?'),
+                const SizedBox(height: 8),
+                Text('ID: $id', style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text('Esta acción no se puede deshacer.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Eliminar'),
+              onPressed: () {
+                controller.eliminarBajaSinOrigen(id);
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
 } 

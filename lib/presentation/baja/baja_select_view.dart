@@ -18,9 +18,9 @@ class BajaSelectView extends StatelessWidget {
           children: [
             Card(
               child: ListTile(
-                leading: const Icon(Icons.add_circle_outline, size: 32),
-                title: const Text('Registrar Baja'),
-                subtitle: const Text('Registrar una o varias bajas'),
+                leading: const Icon(Icons.home, size: 32),
+                title: const Text('Baja Bovino en Establecimiento'),
+                subtitle: const Text('Registrar baja en un establecimiento'),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () => Get.toNamed('/baja/form'),
               ),
@@ -28,11 +28,11 @@ class BajaSelectView extends StatelessWidget {
             const SizedBox(height: 16),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.send_outlined, size: 32),
-                title: const Text('Bajas pendientes'),
-                subtitle: const Text('Ver y enviar bajas pendientes'),
+                leading: const Icon(Icons.qr_code, size: 32),
+                title: const Text('Baja General (Sin Origen)'),
+                subtitle: const Text('Registrar baja solo con código, motivo y evidencia'),
                 trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () => Get.toNamed('/baja/send'),
+                onTap: () => Get.toNamed('/baja/formany'),
               ),
             ),
           ],

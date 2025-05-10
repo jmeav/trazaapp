@@ -4,6 +4,7 @@ import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -28,9 +29,14 @@ class ProfileView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 50,
-              child: Icon(FontAwesomeIcons.userLarge, size: 50),
+              backgroundImage: user.foto.isNotEmpty
+                  ? CachedNetworkImageProvider(user.foto)
+                  : null,
+              child: user.foto.isEmpty
+                  ? const Icon(FontAwesomeIcons.userLarge, size: 50)
+                  : null,
             ),
             const SizedBox(height: 16),
             Text(user.nombre, style: theme.textTheme.headlineSmall),
@@ -68,11 +74,19 @@ class ProfileView extends StatelessWidget {
                         foregroundColor: Colors.white,
                         elevation: 2,
                         onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => Dialog(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              child: _CarnetWidget(user: user),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => Scaffold(
+                                appBar: AppBar(
+                                  title: const Text('Carnet de Habilitado'),
+                                ),
+                                body: Center(
+                                  child: SingleChildScrollView(
+                                    child: _CarnetWidget(user: user),
+                                  ),
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -136,13 +150,23 @@ class _CarnetWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fechaEmision = DateTime.now();
-    final fechaVencimiento = DateTime(fechaEmision.year + 1, fechaEmision.month, fechaEmision.day);
     final formatoFecha = DateFormat('dd/MM/yyyy');
+    final fechaEmision = user.fechaEmision.isNotEmpty 
+        ? DateTime.parse(user.fechaEmision)
+        : DateTime.now();
+    final fechaVencimiento = user.fechaVencimiento.isNotEmpty
+        ? DateTime.parse(user.fechaVencimiento)
+        : DateTime(fechaEmision.year + 1, fechaEmision.month, fechaEmision.day);
+
+    // Obtener el tamaño de la pantalla
+    final screenSize = MediaQuery.of(context).size;
+    final cardWidth = screenSize.width * 0.9; // 90% del ancho de la pantalla
+    final cardHeight = cardWidth * 1.5; // Proporción 2:3 para el carnet
 
     return Container(
-      width: 320,
-      height: 500,
+      width: cardWidth,
+      height: cardHeight,
+      margin: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         image: const DecorationImage(
@@ -159,75 +183,96 @@ class _CarnetWidget extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Fondo semitransparente para mejorar legibilidad
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               color: Colors.white.withOpacity(0.0),
             ),
           ),
-          // Contenido del carnet
           Positioned.fill(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Texto superior
-                  SizedBox(height: 80,),
+                  SizedBox(height: cardHeight * 0.15),
                   Text(
                     'DIRECCION DE TRAZABILIDAD\nPECUARIA\nHABILITADO DE TRAZABILIDAD BOVINA',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: cardWidth * 0.04,
+                      color: Colors.black
+                    ),
                   ),
-                   const SizedBox(height: 10),
-                  // const Spacer(),
-                  // // Foto (avatar)
+                  SizedBox(height: cardHeight * 0.02),
                   CircleAvatar(
-                    radius: 40,
+                    radius: cardWidth * 0.12,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 60, color: Colors.grey),
+                    backgroundImage: user.foto.isNotEmpty
+                        ? CachedNetworkImageProvider(user.foto)
+                        : null,
+                    child: user.foto.isEmpty
+                        ? Icon(Icons.person, size: cardWidth * 0.15, color: Colors.grey)
+                        : null,
                   ),
-                  const SizedBox(height: 12),
-                  // Nombre y datos
+                  SizedBox(height: cardHeight * 0.03),
                   Text(
                     user.nombre,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: cardWidth * 0.04,
+                      color: Colors.black
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   Text(
                     user.cedula,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: cardWidth * 0.035,
+                      color: Colors.black
+                    ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: cardHeight * 0.02),
                   Text(
                     'HB: ${user.codHabilitado}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: cardWidth * 0.035,
+                      color: Colors.black
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: cardHeight * 0.02),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       Text(
                         'FE: ${formatoFecha.format(fechaEmision)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: cardWidth * 0.035,
+                          color: Colors.black
+                        ),
                       ),
                       Text(
                         'FV: ${formatoFecha.format(fechaVencimiento)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: cardWidth * 0.035,
+                          color: Colors.black
+                        ),
                       ),
                     ],
                   ),
-                  // const Spacer(),
-                  // Código QR de validación
                   QrImageView(
-                    data: 'https://usuarioactivo.com',
+                    data: user.qr.isNotEmpty ? user.qr : 'https://usuarioactivo.com',
                     version: QrVersions.auto,
-                    size:60,
+                    size: cardWidth * 0.20,
                     backgroundColor: const Color.fromARGB(0, 255, 255, 255),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: cardHeight * 0.02),
                 ],
               ),
             ),

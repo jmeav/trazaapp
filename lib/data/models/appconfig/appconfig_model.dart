@@ -26,6 +26,14 @@ class AppConfig {
   bool isFirstTime;
   @HiveField(11)
   String themeMode;
+  @HiveField(12)
+  String fechaVencimiento;
+  @HiveField(13)
+  String fechaEmision;
+  @HiveField(14)
+  String foto;
+  @HiveField(15)
+  String qr;
 
   AppConfig({
     required this.imei,
@@ -40,6 +48,10 @@ class AppConfig {
     required this.token, // 🔹 Ahora `token` debe ser pasado como argumento
     required this.isFirstTime,
     required this.themeMode,
+    required this.fechaVencimiento,
+    required this.fechaEmision,
+    required this.foto,
+    required this.qr,
   });
 
   /// **📌 Método `copyWith()` corregido**
@@ -56,6 +68,10 @@ class AppConfig {
     String? token, // 🔹 Ahora `token` también es opcional
     bool? isFirstTime,
     String? themeMode,
+    String? fechaVencimiento,
+    String? fechaEmision,
+    String? foto,
+    String? qr,
   }) {
     return AppConfig(
       imei: imei ?? this.imei,
@@ -70,6 +86,10 @@ class AppConfig {
       token: token ?? this.token, // 🔹 Mantiene el valor original del token
       isFirstTime: isFirstTime ?? this.isFirstTime,
       themeMode: themeMode ?? this.themeMode,
+      fechaVencimiento: fechaVencimiento ?? this.fechaVencimiento,
+      fechaEmision: fechaEmision ?? this.fechaEmision,
+      foto: foto ?? this.foto,
+      qr: qr ?? this.qr,
     );
   }
 }

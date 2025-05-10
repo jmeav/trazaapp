@@ -32,7 +32,7 @@ class BajaView extends StatelessWidget {
                 _ActionCard(
                   title: 'Registrar Baja',
                   icon: FontAwesomeIcons.skullCrossbones,
-                  onTap: () => Get.toNamed('/baja/form'),
+                  onTap: () => Get.toNamed('/baja/select'),
                   color: theme.colorScheme.primary,
                 ),
                 _ActionCard(

@@ -30,13 +30,13 @@ class ConsultasMenuView extends StatelessWidget {
             _buildMenuButton(
               context: context,
               label: 'Consultar Reposiciones',
-              icon: FontAwesomeIcons.undo,
+              icon: FontAwesomeIcons.refresh,
               onTap: () => Get.toNamed('/consultas/repos'), // Nueva ruta
             ),
             _buildMenuButton(
               context: context,
               label: 'Consultar Bajas',
-              icon: FontAwesomeIcons.arrowDown,
+              icon: FontAwesomeIcons.arrowAltCircleDown,
               onTap: () => Get.toNamed('/consultas/bajas'), // Navegación real
             ),
           ],

@@ -69,6 +69,9 @@ import 'package:trazaapp/presentation/sendscreen/send_menu_view.dart';
 import 'package:trazaapp/presentation/consultas/consultabaja_view.dart';
 import 'package:trazaapp/controller/consultasbajas_controller.dart';
 import 'package:trazaapp/data/models/bag/rango_bag_adapter.dart';
+import 'package:trazaapp/presentation/baja/baja_form_any_view.dart';
+import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
+import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen_adapter.dart';
 
 
 void main() async {
@@ -94,6 +97,7 @@ void main() async {
   Hive.registerAdapter(AreteBajaAdapter());
   Hive.registerAdapter(MotivoBajaAreteAdapter());
   Hive.registerAdapter(MotivoBajaBovinoAdapter());
+  Hive.registerAdapter(BajaSinOrigenAdapter());
 
   await Future.wait([
     Hive.openBox<HomeStat>('homeStat'),
@@ -113,17 +117,31 @@ void main() async {
     Hive.openBox<Baja>('bajas'),
     Hive.openBox<MotivoBajaArete>('motivosbajaarete'),
     Hive.openBox<MotivoBajaBovino>('motivosbajabovino'),
+    Hive.openBox<BajaSinOrigen>('bajassinorigen'),
   ]);
 
   // 🚨 SOLO QUITAR LOS COMENTARIOS SI QUERÉS BORRAR LAS CAJAS EN USO
   // Esto elimina todo lo almacenado en esas cajas, útil para pruebas.
 
- 
 //  await Hive.box<Entregas>('entregas').clear();
 //  await Hive.box<Bag>('bag').clear();
-//   await Hive.box<AltaEntrega>('altaentregas').clear();
+//  await Hive.box<AltaEntrega>('altaentregas').clear();
 //  await Hive.box<RepoEntrega>('repoentregas').clear();
-//   print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");
+//  await Hive.box<Baja>('bajas').clear();
+//  await Hive.box<Bovino>('bovinos').clear();
+//  await Hive.box<Establecimiento>('establecimientos').clear();
+//  await Hive.box<Productor>('productores').clear();
+//  await Hive.box<Raza>('razas').clear();
+//  await Hive.box<BovinoResumen>('resumenBovino').clear();
+//  await Hive.box<MotivoBajaArete>('motivosbajaarete').clear();
+//  await Hive.box<MotivoBajaBovino>('motivosbajabovino').clear();
+//  await Hive.box<Departamento>('departamentos').clear();
+//  await Hive.box<Municipio>('municipios').clear();
+//  await Hive.box<BovinoRepo>('bovinosrepo').clear();
+//  await Hive.box<RepoEntrega>('repoentregas').clear();
+
+ 
+  print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");
 
   // Inicializa controladores
   Get.put(LoginController());
@@ -207,6 +225,10 @@ class MyApp extends StatelessWidget {
             binding: BindingsBuilder(() {
               Get.lazyPut(() => ConsultasBajasController());
             }),
+          ),
+          GetPage(
+            name: '/baja/formany',
+            page: () => const BajaFormAnyView(),
           ),
         ],
       );

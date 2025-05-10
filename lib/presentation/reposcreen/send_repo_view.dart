@@ -33,12 +33,12 @@ class SendRepoView extends StatelessWidget {
     // Cargar reposiciones listas al construir la vista, si no están cargando ya
     // Esto asegura que se muestren si vienes directo del formulario
     if (!controller.isLoading.value) {
-       controller.cargarReposListas();
+      Future.microtask(() => controller.cargarReposListas());
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reposiciones Listas'),
+        title: const Text('Enviar Reposiciones'),
         actions: [
           Obx(() => controller.isLoading.value
               ? const Padding(

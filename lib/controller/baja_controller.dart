@@ -15,17 +15,18 @@ import 'package:trazaapp/utils/utils.dart';
 import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/data/repositories/baja/baja_repo.dart';
+import 'package:trazaapp/controller/arete_input_controller.dart';
+import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
 
 class BajaController extends GetxController {
-  final areteController = TextEditingController();
   final motivoController = TextEditingController();
+  final AreteInputController areteInput = Get.put(AreteInputController(), tag: 'areteInput');
   final cueController = TextEditingController();
   final cupaController = TextEditingController();
   final fechaBajaController = TextEditingController();
   final evidenciaController = TextEditingController();
   final cantidadController = TextEditingController();
 
-  final RxBool isAreteScanned = false.obs;
   final RxString selectedMotivo = ''.obs;
   final Rx<DateTime> fechaBaja = DateTime.now().obs;
   final RxString evidenciaBase64 = ''.obs;
@@ -99,7 +100,6 @@ class BajaController extends GetxController {
     selectedMotivoId.value = 0;
     
     // Otros valores iniciales
-    isAreteScanned.value = false;
     currentAreteIndex.value = 0;
   }
 
@@ -111,7 +111,6 @@ class BajaController extends GetxController {
 
   @override
   void onClose() {
-    areteController.dispose();
     motivoController.dispose();
     cueController.dispose();
     cupaController.dispose();
@@ -129,10 +128,6 @@ class BajaController extends GetxController {
       5,
       (index) => chars[rand.nextInt(chars.length)],
     ).join();
-  }
-
-  void setAreteScanned(bool value) {
-    isAreteScanned.value = value;
   }
 
   void setMotivo(int id, String nombre) {
@@ -170,7 +165,7 @@ class BajaController extends GetxController {
   }
 
   void guardarAreteActual() {
-    if (areteController.text.isEmpty) {
+    if (areteInput.areteController.text.isEmpty) {
       Get.snackbar('Error', 'Debe ingresar un número de arete.');
       return;
     }
@@ -181,7 +176,7 @@ class BajaController extends GetxController {
     }
 
     final areteBaja = AreteBaja(
-      arete: areteController.text,
+      arete: areteInput.areteController.text,
       motivoId: selectedMotivoId.value.toString(),
       bajaId: 'temp',
     );
@@ -193,8 +188,7 @@ class BajaController extends GetxController {
       detalleAretes.add(areteBaja);
     }
 
-    areteController.clear();
-    isAreteScanned.value = false;
+    areteInput.clear();
 
     if (index < cantidadBajas.value - 1) {
       currentAreteIndex.value++;
@@ -207,7 +201,7 @@ class BajaController extends GetxController {
   void cargarAreteActual() {
     if (currentAreteIndex.value < detalleAretes.length) {
       final arete = detalleAretes[currentAreteIndex.value];
-      areteController.text = arete.arete;
+      areteInput.areteController.text = arete.arete;
       
       final motivoIdInt = int.tryParse(arete.motivoId) ?? 0;
       selectedMotivoId.value = motivoIdInt;
@@ -215,10 +209,9 @@ class BajaController extends GetxController {
       final motivo = motivos.firstWhereOrNull((m) => m.id == motivoIdInt);
       selectedMotivo.value = motivo?.nombre ?? '';
     } else {
-      areteController.clear();
+      areteInput.clear();
       selectedMotivo.value = motivos.isNotEmpty ? motivos.first.nombre : '';
       selectedMotivoId.value = motivos.isNotEmpty ? motivos.first.id : 0;
-      isAreteScanned.value = false;
     }
   }
 
@@ -420,7 +413,6 @@ class BajaController extends GetxController {
   }
 
   void clearForm() {
-    areteController.clear();
     motivoController.clear();
     cueController.clear();
     cupaController.clear();
@@ -432,12 +424,14 @@ class BajaController extends GetxController {
     tipoEvidencia.value = '';
     pdfFileName.value = '';
     evidenciaFileName.value = '';
-    isAreteScanned.value = false;
     fechaBaja.value = DateTime.now();
     fechaBajaController.text = _formatDate(fechaBaja.value);
     cantidadBajas.value = 1;
     detalleAretes.clear();
     currentAreteIndex.value = 0;
+    areteInput.clear();
+    selectedMotivo.value = '';
+    selectedMotivoId.value = 0;
   }
 
   void cargarBajasPendientes() {
@@ -498,8 +492,7 @@ class BajaController extends GetxController {
     try {
       final result = await Get.toNamed('/scanner');
       if (result != null) {
-        areteController.text = result;
-        setAreteScanned(true);
+        areteInput.areteController.text = result;
         Get.snackbar(
           'Éxito',
           'Arete escaneado correctamente',
@@ -714,5 +707,36 @@ class BajaController extends GetxController {
     final bajaEnviada = baja.copyWith(estado: 'enviada');
     await bajaBox.put(bajaId, bajaEnviada);
     cargarBajasPendientes();
+  }
+
+  Future<void> enviarBajaSinOrigen(String id) async {
+    try {
+      final box = Hive.box<BajaSinOrigen>('bajassinorigen');
+      final baja = box.get(id);
+      
+      if (baja == null) {
+        Get.snackbar('Error', 'No se encontró la baja sin origen', backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+
+      // TODO: Implementar lógica de envío al backend
+      // Por ahora solo marcamos como enviado
+      final bajaActualizada = baja.copyWith(enviado: true);
+      await box.put(id, bajaActualizada);
+      
+      Get.snackbar('Éxito', 'Baja sin origen enviada correctamente', backgroundColor: Colors.green, colorText: Colors.white);
+    } catch (e) {
+      Get.snackbar('Error', 'Error al enviar la baja sin origen: $e', backgroundColor: Colors.red, colorText: Colors.white);
+    }
+  }
+
+  Future<void> eliminarBajaSinOrigen(String id) async {
+    try {
+      final box = Hive.box<BajaSinOrigen>('bajassinorigen');
+      await box.delete(id);
+      Get.snackbar('Éxito', 'Baja sin origen eliminada correctamente', backgroundColor: Colors.green, colorText: Colors.white);
+    } catch (e) {
+      Get.snackbar('Error', 'Error al eliminar la baja sin origen: $e', backgroundColor: Colors.red, colorText: Colors.white);
+    }
   }
 } 

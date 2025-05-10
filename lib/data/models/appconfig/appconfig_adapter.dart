@@ -18,9 +18,13 @@ class AppConfigAdapter extends TypeAdapter<AppConfig> {
       idOrganizacion: reader.readString(),
       categoria: reader.readString(),
       habilitadoOperadora: reader.readString(),
-      token: reader.readString(), // 🔹 Ahora se lee el token correctamente
+      token: reader.readString(),
       isFirstTime: reader.readBool(),
       themeMode: reader.readString(),
+      fechaVencimiento: reader.readString(),
+      fechaEmision: reader.readString(),
+      foto: reader.readString(),
+      qr: reader.readString(),
     );
   }
 
@@ -35,9 +39,13 @@ class AppConfigAdapter extends TypeAdapter<AppConfig> {
     writer.writeString(obj.idOrganizacion);
     writer.writeString(obj.categoria);
     writer.writeString(obj.habilitadoOperadora);
-    writer.writeString(obj.token); // 🔹 Ahora se guarda el token correctamente
+    writer.writeString(obj.token);
     writer.writeBool(obj.isFirstTime);
     writer.writeString(obj.themeMode);
+    writer.writeString(obj.fechaVencimiento);
+    writer.writeString(obj.fechaEmision);
+    writer.writeString(obj.foto);
+    writer.writeString(obj.qr);
   }
 }
 

@@ -131,7 +131,7 @@ class ConsultasRepoView extends StatelessWidget {
       Color estadoColor;
       switch (estado) { // Ya viene como String desde la API
         case '1': // Procesado/Enviado
-          estadoTexto = 'Enviado';
+          estadoTexto = 'Procesado';
           estadoColor = Colors.green;
           break;
         case '2': // Rechazado
@@ -439,30 +439,7 @@ class ConsultasRepoView extends StatelessWidget {
                   ),
                 ],
               ),
-              // Botones de acción (Ver Ficha, Compartir)
-              if (fichaUrl != null && fichaUrl.isNotEmpty && estaProcesado)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.picture_as_pdf_outlined),
-                        tooltip: 'Ver Ficha',
-                        onPressed: () => _mostrarPDF(context, "https://trazabilidad.ipsa.gob.ni/$fichaUrl"), // Añadir base URL
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      IconButton(
-                        icon: const Icon(FontAwesomeIcons.whatsapp),
-                        tooltip: 'Compartir Ficha',
-                        onPressed: () => _shareViaWhatsApp("https://trazabilidad.ipsa.gob.ni/$fichaUrl"), // Añadir base URL
-                        color: Colors.green,
-                      ),
-                    ],
-                  ),
-                )
-              else
-                 const SizedBox(height: 8),
+              const SizedBox(height: 8),
             ],
           ),
         );
@@ -568,37 +545,12 @@ class ConsultasRepoView extends StatelessWidget {
                           (motivoRechazo.isNotEmpty && motivoRechazo != "0000-00-00 00:00:00") ? motivoRechazo : '' ,
                            width: 200, maxLines: 2
                         ),
-                        // Celda de acciones
+                        // Celda de acciones eliminada, solo mostrar un espacio vacío
                         Container(
-                          width: 110, 
+                          width: 110,
                           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                           alignment: Alignment.center,
-                          child: (fichaUrl != null && fichaUrl.isNotEmpty && estaProcesado)
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.picture_as_pdf_outlined),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () => _mostrarPDF(context, "https://trazabilidad.ipsa.gob.ni/$fichaUrl"), // Añadir base URL
-                                    color: theme.colorScheme.primary,
-                                    iconSize: 20,
-                                    tooltip: 'Ver Ficha',
-                                  ),
-                                  const SizedBox(width: 12),
-                                  IconButton(
-                                    icon: const Icon(FontAwesomeIcons.whatsapp),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () => _shareViaWhatsApp("https://trazabilidad.ipsa.gob.ni/$fichaUrl"), // Añadir base URL
-                                    color: Colors.green,
-                                    iconSize: 18,
-                                    tooltip: 'Compartir Ficha',
-                                  ),
-                                ],
-                              )
-                            : const SizedBox.shrink(),
+                          child: const SizedBox.shrink(),
                         ),
                       ],
                     ),

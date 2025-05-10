@@ -82,8 +82,13 @@ Future<void> login() async {
       idOrganizacion: config?.idOrganizacion ?? "",
       categoria: config?.categoria ?? "",
       habilitadoOperadora: config?.habilitadoOperadora ?? "",
-      isFirstTime: false, // Ya no es la primera vez
-      themeMode: config?.themeMode ?? "light", token: '',
+      isFirstTime: false,
+      themeMode: config?.themeMode ?? "light",
+      token: '',
+      fechaVencimiento: config?.fechaVencimiento ?? "",
+      fechaEmision: config?.fechaEmision ?? "",
+      foto: config?.foto ?? "",
+      qr: config?.qr ?? "",
     );
 
     await box.put('config', newConfig);

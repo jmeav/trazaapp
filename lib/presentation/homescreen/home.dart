@@ -7,6 +7,8 @@ import 'package:trazaapp/controller/managebag_controller.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/bag/bag_operadora.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
+import 'package:trazaapp/controller/baja_controller.dart';
+import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
 
 // Convertido a StatefulWidget para manejar BottomNavigationBar
 class HomeView extends StatefulWidget {
@@ -70,6 +72,7 @@ class _HomeViewState extends State<HomeView> {
     final theme = Theme.of(context);
     final bagBox = Hive.box<Bag>('bag');
     final showGestionarAretes = bagBox.isNotEmpty;
+    final bajaController = Get.put(BajaController(), permanent: true);
 
     return Scaffold(
       appBar: AppBar(
@@ -92,44 +95,67 @@ class _HomeViewState extends State<HomeView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionTitle(context, 'Registro de Eventos'),
-              _buildActionGrid([
-                if (showGestionarAretes)
+              Obx(() {
+                if (!entregaController.isInitialized.value || !bajaController.isInitialized.value) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                final entregasPendientes = entregaController.entregasPendientesCount;
+                final reposPendientes = entregaController.entregasConReposicionPendiente.length;
+                final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
+                final bajasSinOrigenPendientes = boxBajasSinOrigen.values.where((b) => b.estado == 'pendiente').length;
+                final bajasPendientes = bajaController.bajasPendientes.length + bajasSinOrigenPendientes;
+                return _buildActionGrid([
+                  if (showGestionarAretes)
+                    _ActionButton(
+                      label: 'Gestionar Aretes',
+                      icon: FontAwesomeIcons.tags,
+                      onTap: () => Get.toNamed('/managebag'),
+                    ),
                   _ActionButton(
-                    label: 'Gestionar Aretes',
-                    icon: FontAwesomeIcons.tags,
-                    onTap: () => Get.toNamed('/managebag'),
-                  ),
-                  _ActionButton(
-                  label: 'Registrar Alta', // Anterior: Entregas
-                  icon: FontAwesomeIcons.plusCircle, // Icono cambiado
+                    label: 'Registrar Alta',
+                    icon: FontAwesomeIcons.plusCircle,
                     onTap: () => Get.toNamed('/entrega'),
+                    badgeCount: entregasPendientes,
                   ),
                   _ActionButton(
                   label: 'Registrar Repo', // Anterior: Reposiciones
                   icon: FontAwesomeIcons.undo, // Icono cambiado
                     onTap: () => Get.toNamed('/repo'),
+                    badgeCount: reposPendientes,
                   ),
                   _ActionButton(
                     label: 'Registrar Baja',
                     icon: FontAwesomeIcons.skullCrossbones,
-                    onTap: () =>Get.toNamed('/baja/form'),
+                    onTap: () => Get.toNamed('/baja/select'),
                   ),
-              ]),
+                ]);
+              }),
               const SizedBox(height: 24),
               _buildSectionTitle(context, 'Envíos y Consultas'),
-              _buildActionGrid([
-                _ActionButton(
-                  label: 'Enviar Eventos',
-                  icon: FontAwesomeIcons.paperPlane,
-                  onTap: () => Get.toNamed('/send/menu'),
-                ),
-             
-                _ActionButton(
-                  label: 'Consultas',
-                  icon: FontAwesomeIcons.search,
-                  onTap: () => Get.toNamed('/consultas/menu'),
-                ),
-              ]),
+              Obx(() {
+                if (!entregaController.isInitialized.value || !bajaController.isInitialized.value) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
+                final bajasSinOrigenPendientes = boxBajasSinOrigen.values.where((b) => b.estado == 'pendiente').length;
+                final eventosPendientes = entregaController.altasParaEnviarCount + 
+                                       entregaController.reposListas.length + 
+                                       bajaController.bajasPendientes.length + 
+                                       bajasSinOrigenPendientes;
+                return _buildActionGrid([
+                  _ActionButton(
+                    label: 'Enviar Eventos',
+                    icon: FontAwesomeIcons.paperPlane,
+                    onTap: () => Get.toNamed('/send/menu'),
+                    badgeCount: eventosPendientes,
+                  ),
+                  _ActionButton(
+                    label: 'Consultas',
+                    icon: FontAwesomeIcons.search,
+                    onTap: () => Get.toNamed('/consultas/menu'),
+                  ),
+                ]);
+              }),
             ],
           ),
         ),
@@ -140,7 +166,6 @@ class _HomeViewState extends State<HomeView> {
             icon: Icon(Icons.home),
             label: 'Inicio',
           ),
-        
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Configuración',
@@ -189,11 +214,13 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+  final int badgeCount;
 
   const _ActionButton({
     required this.label,
     required this.icon,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   @override
@@ -204,10 +231,8 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        // width: 100, // Ancho fijo puede no ser ideal con GridView
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
-          // color: theme.colorScheme.surfaceVariant, // Color diferente para botones
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -215,20 +240,39 @@ class _ActionButton extends StatelessWidget {
               color: Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
               blurRadius: 3,
-              offset: const Offset(0, 1), // changes position of shadow
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 32, color: theme.colorScheme.primary), // Icono más grande y con color primario
+            Stack(
+              children: [
+                Icon(icon, size: 32, color: theme.colorScheme.primary),
+                if (badgeCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$badgeCount',
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith( // Texto más pequeño
-                  // color: theme.colorScheme.onSurfaceVariant
+              style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface
                   ),
             ),

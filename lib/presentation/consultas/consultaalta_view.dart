@@ -357,7 +357,7 @@ class ConsultasView extends StatelessWidget {
                                       ),
                                     if (aretesNoTrazados > 0)
                                       Text(
-                                        '$aretesNoTrazados aretes no trazados',
+                                        '$aretesNoTrazados aretes No Utilizados',
                                         style: const TextStyle(
                                           color: Colors.amber,
                                           fontWeight: FontWeight.bold,
