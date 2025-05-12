@@ -36,6 +36,9 @@ class Baja {
   @HiveField(12)
   final List<AreteBaja> detalleAretes; // Nueva lista de aretes para baja
 
+  @HiveField(13)
+  final String idorganizacion; // ID de la organización
+
   // Getter para cantidad de aretes
   int get cantidad => detalleAretes.length;
 
@@ -50,6 +53,7 @@ class Baja {
     this.estado = 'pendiente',
     required this.token,
     required this.codHabilitado,
+    required this.idorganizacion,
     required this.detalleAretes,
   });
 
@@ -65,6 +69,7 @@ class Baja {
     String? estado,
     String? token,
     String? codHabilitado,
+    String? idorganizacion,
     List<AreteBaja>? detalleAretes,
   }) {
     return Baja(
@@ -79,6 +84,7 @@ class Baja {
       token: token ?? this.token,
       codHabilitado: codHabilitado ?? this.codHabilitado,
       detalleAretes: detalleAretes ?? this.detalleAretes,
+      idorganizacion: idorganizacion ?? this.idorganizacion,
     );
   }
 
@@ -98,6 +104,7 @@ class Baja {
       estado: json['ESTADO'] ?? 'pendiente',
       token: json['TOKEN'] ?? '',
       codHabilitado: json['COD_HABILITADO'] ?? '',
+      idorganizacion: json['IDORGANIZACION'] ?? '',
       detalleAretes: detalles,
     );
   }
@@ -113,6 +120,7 @@ class Baja {
       'evidencia': evidencia,
       'token': token,
       'codhabilitado': codHabilitado,
+      'idorganizacion': idorganizacion,
       'detallearetes': detalleAretes.map((a) => a.toJson()).toList(), // Usa el toJson() actualizado de AreteBaja
     };
   }

@@ -20,6 +20,7 @@ class BajaAdapter extends TypeAdapter<Baja> {
       token: reader.readString(),
       codHabilitado: reader.readString(),
       detalleAretes: (reader.readList() as List).cast<AreteBaja>(),
+      idorganizacion: reader.readString(),
     );
   }
 
@@ -35,6 +36,7 @@ class BajaAdapter extends TypeAdapter<Baja> {
     writer.writeString(obj.estado);
     writer.writeString(obj.token);
     writer.writeString(obj.codHabilitado);
+    writer.writeString(obj.idorganizacion);
     writer.writeList(obj.detalleAretes);
   }
 } 

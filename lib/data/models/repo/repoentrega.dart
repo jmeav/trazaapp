@@ -184,7 +184,7 @@ class RepoEntrega {
       "fotoBovFinal": fotoBovFinal,
       "ficha": fotoFicha,
       "codhabilitado": codhabilitado,
-      "idorganizacion": int.tryParse(idorganizacion) ?? 0,
+      "idorganizacion": idorganizacion,
       "rangoInicialRepo": riShort,  // Usar versión formateada (sin 558 y sin ceros a la izquierda)
       "rangoFinalRepo": rfShort,    // Usar versión formateada (sin 558 y sin ceros a la izquierda)
       "detalleBovinos": detalleBovinos.map((b) => b.toJson()).toList(),

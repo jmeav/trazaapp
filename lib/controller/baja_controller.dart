@@ -341,6 +341,7 @@ class BajaController extends GetxController {
         token: config.imei,
         codHabilitado: config.codHabilitado,
         detalleAretes: updatedAretes,
+        idorganizacion: config.idOrganizacion,
       );
 
       await bajaBox.put(bajaId, baja);

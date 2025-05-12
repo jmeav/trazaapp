@@ -38,6 +38,9 @@ class BajaSinOrigen {
   @HiveField(11)
   final String? observaciones;
 
+  @HiveField(12)
+  final String idorganizacion;
+
   BajaSinOrigen({
     required this.id,
     required this.arete,
@@ -51,6 +54,7 @@ class BajaSinOrigen {
     required this.codHabilitado,
     this.enviado = false,
     this.observaciones,
+    required this.idorganizacion,
   });
 
   BajaSinOrigen copyWith({
@@ -80,6 +84,7 @@ class BajaSinOrigen {
       codHabilitado: codHabilitado ?? this.codHabilitado,
       enviado: enviado ?? this.enviado,
       observaciones: observaciones ?? this.observaciones,
+      idorganizacion: idorganizacion ?? this.idorganizacion,
     );
   }
 
@@ -97,6 +102,7 @@ class BajaSinOrigen {
       codHabilitado: json['codHabilitado'] ?? '',
       enviado: json['enviado'] ?? false,
       observaciones: json['observaciones'],
+      idorganizacion: json['idorganizacion'] ?? '',
     );
   }
 
@@ -111,6 +117,7 @@ class BajaSinOrigen {
       'evidencia': evidencia,
       'token': token,
       'codHabilitado': codHabilitado,
+      'idorganizacion': idorganizacion,
     };
   }
 

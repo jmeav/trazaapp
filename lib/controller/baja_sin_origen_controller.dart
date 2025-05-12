@@ -115,6 +115,7 @@ class BajaSinOrigenController extends GetxController {
         estado: 'pendiente',
         token: config.token,
         codHabilitado: config.codHabilitado,
+        idorganizacion: config.idOrganizacion,
       );
 
       print('💾 Guardando en Hive...');

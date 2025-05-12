@@ -18,6 +18,7 @@ class BajaSinOrigenAdapter extends TypeAdapter<BajaSinOrigen> {
       estado: reader.readString(),
       token: reader.readString(),
       codHabilitado: reader.readString(),
+      idorganizacion: reader.readString(),
     );
   }
 
@@ -33,5 +34,6 @@ class BajaSinOrigenAdapter extends TypeAdapter<BajaSinOrigen> {
     writer.writeString(obj.estado);
     writer.writeString(obj.token);
     writer.writeString(obj.codHabilitado);
+    writer.writeString(obj.idorganizacion);
   }
 } 
