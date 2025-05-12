@@ -3,55 +3,73 @@ import 'package:get/get.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ConsultasMenuView extends StatelessWidget {
-  const ConsultasMenuView({Key? key}) : super(key: key);
+  const ConsultasMenuView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Consultas'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 2, // 2 columnas
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.2, // Ajustar para el tamaño
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildMenuButton(
-              context: context,
-              label: 'Consultar Altas',
-              icon: FontAwesomeIcons.arrowUp,
-              onTap: () => Get.toNamed('/consultas/altas'), // Ruta específica
+            Text(
+              'Seleccione una opción',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
-            _buildMenuButton(
-              context: context,
-              label: 'Consultar Reposiciones',
-              icon: FontAwesomeIcons.refresh,
-              onTap: () => Get.toNamed('/consultas/repos'), // Nueva ruta
-            ),
-            _buildMenuButton(
-              context: context,
-              label: 'Consultar Bajas',
-              icon: FontAwesomeIcons.arrowAltCircleDown,
-              onTap: () => Get.toNamed('/consultas/bajas'), // Navegación real
+            const SizedBox(height: 16),
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.3,
+                children: [
+                  _ActionButton(
+                    label: 'Consultar Altas',
+                    imagePath: 'assets/images/consultaraltas.png',
+                    onTap: () => Get.toNamed('/consultas/altas'),
+                  ),
+                  _ActionButton(
+                    label: 'Consultar Bajas',
+                    imagePath: 'assets/images/consultarbajas.png',
+                    onTap: () => Get.toNamed('/consultas/bajas'),
+                  ),
+                  _ActionButton(
+                    label: 'Consultar Reposiciones',
+                    imagePath: 'assets/images/consultarrepo.png',
+                    onTap: () => Get.toNamed('/consultas/repos'),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildMenuButton({
-    required BuildContext context,
-    required String label,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final String imagePath;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.label,
+    required this.imagePath,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -72,12 +90,19 @@ class ConsultasMenuView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: theme.colorScheme.primary),
-            const SizedBox(height: 12),
+            Image.asset(
+              imagePath,
+              height: 48,
+              width: 48,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 8),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: theme.textTheme.titleSmall, // Un poco más grande que en home
+              style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface
+                  ),
             ),
           ],
         ),

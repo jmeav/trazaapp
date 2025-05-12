@@ -5,3 +5,4 @@ String urlogin = '$urlbasApi/login';
 String urlaltas = '$urlbasApi/alta';
 String urlreposicion = '$urlbasApi/reposicion';
 String urlbajabovino = '$urlbasApi/bajabovino';
+String urlbajassinorigen = '$urlbasApi/bajassinorigen';

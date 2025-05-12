@@ -6,6 +6,10 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart'; // Para formatear fechas
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:get/get.dart';
+import 'package:trazaapp/controller/catalogs_controller.dart';
+import 'package:trazaapp/data/models/razas/raza.dart';
 
 class PdfGenerator {
   static Future<String> generateFichaPdf(
@@ -29,6 +33,15 @@ class PdfGenerator {
     final logoIzquierdo = pw.MemoryImage(logoIzqData);
     final logoIPSA = pw.MemoryImage(logoDerData);
 
+    // Generar QR con el ID del alta
+    final qrImage = await QrPainter(
+      data: altaData['idAlta']?.toString() ?? '',
+      version: QrVersions.auto,
+    ).toImageData(200.0);
+
+    final qrBytes = qrImage!.buffer.asUint8List();
+    final qrPdfImage = pw.MemoryImage(qrBytes);
+
     // Extraer datos (con valores por defecto si son null)
     final nombreProductor = altaData['NombreProductor']?.toString() ?? 'N/A';
     final cupa = altaData['cupa']?.toString() ?? 'N/A'; // CUPA como Cédula/RUC
@@ -43,6 +56,7 @@ class PdfGenerator {
     final codigo = codHabilitado ?? appConfig?.codHabilitado ?? 'N/A';
     final nombreHb = nombreHabilitado ?? appConfig?.nombre ?? '';
     final cedulaHb = cedulaHabilitado ?? appConfig?.cedula ?? '';
+
     // Obtener la lista de bovinos (sin multiplicar)
     final List bovinos = altaData['detalleBovinos'] as List? ?? [];
     const int bovinosPorPagina = 23;
@@ -55,6 +69,10 @@ class PdfGenerator {
           ((bovinos.length - bovinosUltimaPagina) / bovinosPorPagina).ceil() +
               1;
     }
+
+    // Obtener el catálogo de razas
+    final catalogosController = Get.find<CatalogosController>();
+    final razas = catalogosController.razas;
 
     for (int pagina = 0; pagina < totalPaginas; pagina++) {
       int inicio, fin;
@@ -78,9 +96,8 @@ class PdfGenerator {
             return pw.Stack(
               children: [
                 pw.Positioned(
-                  // top: 10,
-                  right: 180,
-                  bottom:83,
+                  left: 10,
+                  bottom: 85,
                   child: pw.Text(
                     'NO REQUIERE SELLO NI FIRMA',
                     style: pw.TextStyle(
@@ -88,6 +105,15 @@ class PdfGenerator {
                       fontSize: 8,
                       fontWeight: pw.FontWeight.bold,
                     ),
+                  ),
+                ),
+                pw.Positioned(
+                  right: 10,
+                  bottom: 85,
+                  child: pw.Container(
+                    width: 50,
+                    height: 50,
+                    child: pw.Image(qrPdfImage),
                   ),
                 ),
                 pw.Column(
@@ -128,7 +154,7 @@ class PdfGenerator {
                                               'DIRECCION DE TRAZABILIDAD PECUARIA',
                                               style: pw.TextStyle(fontSize: 6)),
                                           pw.Text(
-                                              'DEPARTAMENTO DE TRAZABILIDAD DE RUMIANTES',
+                                              'DEPARTAMENTO DE TRAZABILIDAD EN PRODUCCIÓN PRIMARIA PECUARIA',
                                               style: pw.TextStyle(fontSize: 6)),
                                         ]),
                                   ]),
@@ -341,7 +367,7 @@ class PdfGenerator {
                                   child: pw.Column(
                                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                                     children: [
-                                      pw.Text('NOMBRE DEL ESTABLECIMIENTO',
+                                      pw.Text('NOMBRE ESTABLECIMIENTO',
                                           style: pw.TextStyle(
                                               fontSize: 8,
                                               fontWeight: pw.FontWeight.bold)),
@@ -351,6 +377,7 @@ class PdfGenerator {
                                     ],
                                   ),
                                 ),
+                                 pw.SizedBox(width: 1),
                                 // Departamento
                                 pw.Expanded(
                                   flex: 2,
@@ -363,7 +390,7 @@ class PdfGenerator {
                                               fontWeight: pw.FontWeight.bold)),
                                       pw.SizedBox(height: 2),
                                       pw.Text(
-                                          altaData['departamento']?.toString() ??
+                                          altaData['departamento']?.toString().toUpperCase() ??
                                               '',
                                           style: pw.TextStyle(fontSize: 8)),
                                     ],
@@ -381,7 +408,7 @@ class PdfGenerator {
                                               fontWeight: pw.FontWeight.bold)),
                                       pw.SizedBox(height: 2),
                                       pw.Text(
-                                          altaData['municipio']?.toString() ?? '',
+                                          altaData['municipio']?.toString().toUpperCase() ?? '',
                                           style: pw.TextStyle(fontSize: 8)),
                                     ],
                                   ),
@@ -391,20 +418,14 @@ class PdfGenerator {
                                   width: 155,
                                   child: pw.Row(
                                     children: [
-                                      pw.Text('CUE',
+                                      pw.Text('CUE:',
                                           style: pw.TextStyle(
                                               fontSize: 10,
                                               fontWeight: pw.FontWeight.bold)),
-                                      pw.SizedBox(width: 4),
-                                      ...cue.split('').map((c) => pw.Container(
-                                            width: 10,
-                                            height: 20,
-                                            alignment: pw.Alignment.center,
-                                            decoration: pw.BoxDecoration(
-                                                border: pw.Border.all(width: 1)),
-                                            child: pw.Text(c,
-                                                style: pw.TextStyle(fontSize: 6)),
-                                          )),
+                                              pw.SizedBox(width: 10),
+                                              pw.Text(cue,
+                                            style: pw.TextStyle(fontSize: 11)),
+                                     
                                     ],
                                   ),
                                 ),
@@ -464,17 +485,24 @@ class PdfGenerator {
     ];
 
     final List<List<String>> data = [];
+    final catalogosController = Get.find<CatalogosController>();
+    final razas = catalogosController.razas;
 
     if (bovinos != null && bovinos.isNotEmpty) {
       for (int i = 0; i < 23; i++) {
         if (i < bovinos.length) {
           final bovino = bovinos[i];
+          final razaId = bovino['raza']?.toString() ?? '';
+          final raza = razas.firstWhere(
+            (r) => r.id == razaId,
+            orElse: () => Raza(id: '', nombre: ''),
+          );
           data.add([
             (i + 1).toString(),
             bovino['arete']?.toString() ?? '',
             bovino['edad']?.toString() ?? '',
             bovino['sexo']?.toString() ?? '',
-            bovino['raza']?.toString() ?? '',
+            raza.nombre,
           ]);
         } else {
           data.add([(i + 1).toString(), '', '', '', '']);
@@ -548,27 +576,27 @@ class PdfGenerator {
               pw.Container(
                 padding: const pw.EdgeInsets.all(5),
                 child: pw.Center(
-                    child: pw.Text(row[0], style: pw.TextStyle(fontSize: 8))),
+                    child: pw.Text(row[0], style: pw.TextStyle(fontSize: 9))),
               ),
               pw.Container(
                 padding: const pw.EdgeInsets.all(5),
                 child: pw.Center(
-                    child: pw.Text(row[1], style: pw.TextStyle(fontSize: 8))),
+                    child: pw.Text(row[1], style: pw.TextStyle(fontSize: 9))),
               ),
               pw.Container(
                 padding: const pw.EdgeInsets.all(5),
                 child: pw.Center(
-                    child: pw.Text(row[2], style: pw.TextStyle(fontSize: 8))),
+                    child: pw.Text(row[2], style: pw.TextStyle(fontSize: 9))),
               ),
               pw.Container(
                 padding: const pw.EdgeInsets.all(5),
                 child: pw.Center(
-                    child: pw.Text(row[3], style: pw.TextStyle(fontSize: 8))),
+                    child: pw.Text(row[3], style: pw.TextStyle(fontSize: 9))),
               ),
               pw.Container(
                 padding: const pw.EdgeInsets.all(5),
                 child: pw.Center(
-                    child: pw.Text(row[4], style: pw.TextStyle(fontSize: 8))),
+                    child: pw.Text(row[4], style: pw.TextStyle(fontSize: 9))),
               ),
             ],
           ),
@@ -585,32 +613,7 @@ class PdfGenerator {
     required String codHabilitado,
   }) {
     return pw.Column(children: [
-      pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceAround, children: [
-        pw.Column(children: [
-          pw.SizedBox(height: 10),
-          pw.Text(nombreProductor, style: pw.TextStyle(fontSize: 10)),
-          pw.Container(
-            width: 200,
-            decoration: const pw.BoxDecoration(
-                border: pw.Border(bottom: pw.BorderSide())),
-          ),
-          pw.SizedBox(height: 5),
-          pw.Text('Propietario/Representante',
-              style: pw.TextStyle(fontSize: 10)),
-        ]),
-        pw.Column(children: [
-          pw.SizedBox(height: 10),
-          pw.Text(cupa, style: pw.TextStyle(fontSize: 10)),
-          pw.Container(
-            width: 200,
-            decoration: const pw.BoxDecoration(
-                border: pw.Border(bottom: pw.BorderSide())),
-          ),
-          pw.SizedBox(height: 5),
-          pw.Text('Firma y Cédula', style: pw.TextStyle(fontSize: 10)),
-        ]),
-      ]),
-      pw.SizedBox(height: 30),
+      pw.SizedBox(height: 10),
       pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceAround, children: [
         pw.Column(children: [
           pw.SizedBox(height: 10),
@@ -633,23 +636,11 @@ class PdfGenerator {
                 border: pw.Border(bottom: pw.BorderSide())),
           ),
           pw.SizedBox(height: 5),
-          pw.Text('Firma y Cédula', style: pw.TextStyle(fontSize: 10)),
+          pw.Text('Cédula', style: pw.TextStyle(fontSize: 10)),
         ]),
       ]),
-      pw.SizedBox(height: 20),
-      pw.Container(
-        padding: const pw.EdgeInsets.symmetric(vertical: 5),
-        decoration: pw.BoxDecoration(
-          border: pw.Border.all(),
-          color: PdfColors.grey200,
-        ),
-        child: pw.Center(
-          child: pw.Text(
-            'Nota: En el caso de los códigos se debe colocar 9 dígitos, contando después del 558 que corresponde al código del país.',
-            style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic),
-          ),
-        ),
-      ),
+      pw.SizedBox(height: 50),
+      
     ]);
   }
 }

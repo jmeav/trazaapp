@@ -715,7 +715,7 @@ class EntregaController extends GetxController {
       final repoActualizado = repo.copyWith(estadoRepo: 'Enviada');
       await repoBox.put(repoId, repoActualizado);
       // Recarga la lista para que desaparezca de "listas para enviar"
-      cargarReposListas();
+     cargarReposListas();
     } catch (e) {
       // El error ya se muestra en el repositorio
     }

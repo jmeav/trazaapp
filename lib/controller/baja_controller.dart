@@ -15,6 +15,7 @@ import 'package:trazaapp/utils/utils.dart';
 import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/data/repositories/baja/baja_repo.dart';
+import 'package:trazaapp/data/repositories/bajasinorigen/baja_sin_origen_repo.dart';
 import 'package:trazaapp/controller/arete_input_controller.dart';
 import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
 
@@ -231,100 +232,56 @@ class BajaController extends GetxController {
 
   Future<void> loadEvidencia() async {
     try {
-      final tipo = await Get.dialog<String>(
-        AlertDialog(
-          title: const Text('Seleccionar tipo de evidencia'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Tomar foto'),
-                onTap: () => Get.back(result: 'foto'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Seleccionar foto'),
-                onTap: () => Get.back(result: 'foto'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.picture_as_pdf),
-                title: const Text('Seleccionar PDF'),
-                onTap: () => Get.back(result: 'pdf'),
-              ),
-            ],
-          ),
-        ),
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
       );
 
-      if (tipo == null) return;
+      if (result != null) {
+        final filePath = result.files.single.path;
+        if (filePath == null) return;
 
-      tipoEvidencia.value = tipo;
-
-      if (tipo == 'foto') {
-        final ImagePicker picker = ImagePicker();
-        final XFile? image = await picker.pickImage(
-          source: ImageSource.camera,
-          imageQuality: 50,
-        );
-
-        if (image != null) {
-          final String base64Image = await Utils.imageToBase64(image.path);
-          evidenciaBase64.value = base64Image;
-          tipoEvidencia.value = 'foto';
-          evidenciaFileName.value = image.name;
-          evidenciaController.text = image.name;
+        pdfFileName.value = result.files.single.name;
+        final file = File(filePath);
+        final bytes = await file.readAsBytes();
+        
+        final fileSizeInMB = bytes.length / (1024 * 1024);
+        
+        if (fileSizeInMB > 5) {
+          Get.snackbar(
+            'Error',
+            'El archivo PDF es muy grande (${fileSizeInMB.toStringAsFixed(2)}MB). Máximo 5MB.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+          return;
         }
-      } else {
-        final result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['pdf'],
-        );
 
-        if (result != null) {
-          final filePath = result.files.single.path;
-          if (filePath == null) return;
-
-          pdfFileName.value = result.files.single.name;
-          final file = File(filePath);
-          final bytes = await file.readAsBytes();
-          
-          final fileSizeInMB = bytes.length / (1024 * 1024);
-          
-          if (fileSizeInMB > 5) {
-            Get.snackbar(
-              'Error',
-              'El archivo PDF es muy grande (${fileSizeInMB.toStringAsFixed(2)}MB). Máximo 5MB.',
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
-            );
-            return;
-          }
-
-          final base64String = base64Encode(bytes);
-          final base64SizeInMB = base64String.length / (1024 * 1024);
-          
-          if (base64SizeInMB > 2.5) {
-            Get.snackbar(
-              'Error',
-              'El archivo es demasiado grande después de la conversión.',
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
-            );
-            return;
-          }
-
-          evidenciaBase64.value = base64String;
-          tipoEvidencia.value = 'pdf';
-          evidenciaFileName.value = pdfFileName.value;
-          evidenciaController.text = pdfFileName.value;
+        final base64String = base64Encode(bytes);
+        final base64SizeInMB = base64String.length / (1024 * 1024);
+        
+        if (base64SizeInMB > 2.5) {
+          Get.snackbar(
+            'Error',
+            'El archivo es demasiado grande después de la conversión.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+          return;
         }
+
+        evidenciaBase64.value = base64String;
+        tipoEvidencia.value = 'pdf';
+        evidenciaFileName.value = pdfFileName.value;
+        evidenciaController.text = pdfFileName.value;
       }
     } catch (e) {
       Get.snackbar(
         'Error',
         'No se pudo cargar la evidencia: $e',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
   }
@@ -449,15 +406,24 @@ class BajaController extends GetxController {
         return;
       }
       
+      // Cargar bajas regulares
       final pendientes = bajaBox.values
           .where((baja) => baja.estado == 'pendiente')
           .toList();
            
       bajasPendientes.value = pendientes;
       
-      print('📦 Bajas pendientes cargadas: ${bajasPendientes.length}');
+      print('📦 Bajas regulares pendientes cargadas: ${bajasPendientes.length}');
       
-      if (bajasPendientes.isEmpty) {
+      // Cargar bajas sin origen
+      final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
+      final bajasSinOrigenPendientes = boxBajasSinOrigen.values
+          .where((baja) => baja.estado == 'pendiente')
+          .toList();
+      
+      print('📦 Bajas sin origen pendientes cargadas: ${bajasSinOrigenPendientes.length}');
+      
+      if (bajasPendientes.isEmpty && bajasSinOrigenPendientes.isEmpty) {
         print('⚠️ No hay bajas pendientes para enviar');
       }
     } catch (e) {
@@ -711,32 +677,68 @@ class BajaController extends GetxController {
 
   Future<void> enviarBajaSinOrigen(String id) async {
     try {
-      final box = Hive.box<BajaSinOrigen>('bajassinorigen');
-      final baja = box.get(id);
+      print('🔄 Iniciando envío de baja sin origen con ID: $id');
+      
+      final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
+      final baja = boxBajasSinOrigen.get(id);
       
       if (baja == null) {
-        Get.snackbar('Error', 'No se encontró la baja sin origen', backgroundColor: Colors.red, colorText: Colors.white);
+        print('❌ No se encontró la baja sin origen con ID: $id');
+        Get.snackbar('Error', 'No se encontró la baja sin origen con ID: $id');
         return;
       }
 
-      // TODO: Implementar lógica de envío al backend
-      // Por ahora solo marcamos como enviado
-      final bajaActualizada = baja.copyWith(enviado: true);
-      await box.put(id, bajaActualizada);
+      print('📤 Preparando envío de baja sin origen:');
+      print('Arete: ${baja.arete}');
+      print('Fecha: ${baja.fecha}');
+      print('Estado actual: ${baja.estado}');
+
+      final envioBajaSinOrigenRepository = EnvioBajaSinOrigenRepository();
+      final jsonEnvio = baja.toJsonEnvio();
       
-      Get.snackbar('Éxito', 'Baja sin origen enviada correctamente', backgroundColor: Colors.green, colorText: Colors.white);
+      print('📦 Datos a enviar:');
+      print(jsonEncode(jsonEnvio));
+      
+      await envioBajaSinOrigenRepository.enviarBajaSinOrigen(jsonEnvio);
+      
+      // Marcar como enviada y actualizar en Hive
+      final bajaEnviada = baja.copyWith(estado: 'enviada');
+      await boxBajasSinOrigen.put(id, bajaEnviada);
+      
+      print('✅ Baja sin origen enviada y actualizada correctamente');
+      
+      // Recargar la lista de bajas pendientes
+      cargarBajasPendientes();
     } catch (e) {
-      Get.snackbar('Error', 'Error al enviar la baja sin origen: $e', backgroundColor: Colors.red, colorText: Colors.white);
+      print('❌ Error al enviar baja sin origen: $e');
+      print('⚠️ Stack trace: ${StackTrace.current}');
+      Get.snackbar(
+        'Error',
+        'Error al enviar baja sin origen: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
   Future<void> eliminarBajaSinOrigen(String id) async {
     try {
-      final box = Hive.box<BajaSinOrigen>('bajassinorigen');
-      await box.delete(id);
-      Get.snackbar('Éxito', 'Baja sin origen eliminada correctamente', backgroundColor: Colors.green, colorText: Colors.white);
+      final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
+      await boxBajasSinOrigen.delete(id);
+      cargarBajasPendientes(); // Recargar la lista de pendientes
+      Get.snackbar(
+        'Eliminada', 
+        'Baja sin origen eliminada correctamente.', 
+        snackPosition: SnackPosition.BOTTOM
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Error al eliminar la baja sin origen: $e', backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        'Error', 
+        'Error al eliminar la baja sin origen: $e', 
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 } 

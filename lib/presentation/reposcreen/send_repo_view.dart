@@ -20,21 +20,21 @@ class SendRepoView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final args = Get.arguments;
-    if (args != null && args['showSuccess'] == true) {
-      Future.microtask(() {
-        Get.snackbar(
-          'Guardado',
-          'Reposición guardada y lista para enviar.',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-      });
-    }
-    // Cargar reposiciones listas al construir la vista, si no están cargando ya
-    // Esto asegura que se muestren si vienes directo del formulario
-    if (!controller.isLoading.value) {
-      Future.microtask(() => controller.cargarReposListas());
-    }
+    // if (args != null && args['showSuccess'] == true) {
+    //   Future.microtask(() {
+    //     Get.snackbar(
+    //       'Guardado',
+    //       'Reposición guardada y lista para enviar.',
+    //       backgroundColor: Colors.green,
+    //       colorText: Colors.white,
+    //     );
+    //   });
+    // }
+    // // Cargar reposiciones listas al construir la vista, si no están cargando ya
+    // // Esto asegura que se muestren si vienes directo del formulario
+    // if (!controller.isLoading.value) {
+    //   Future.microtask(() => controller.cargarReposListas());
+    // }
 
     return Scaffold(
       appBar: AppBar(

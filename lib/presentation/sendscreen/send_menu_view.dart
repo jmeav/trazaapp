@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/controller/baja_controller.dart';
 import 'package:hive/hive.dart';
@@ -11,7 +10,6 @@ class SendMenuView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final entregaController = Get.find<EntregaController>();
     final bajaController = Get.find<BajaController>();
 
@@ -33,24 +31,21 @@ class SendMenuView extends StatelessWidget {
             mainAxisSpacing: 16,
             childAspectRatio: 1.2,
             children: [
-              _buildMenuButton(
-                context: context,
+              _ActionButton(
                 label: 'Enviar Altas',
-                icon: FontAwesomeIcons.arrowCircleUp,
+                imagePath: 'assets/images/enviaralta.png',
                 onTap: () => Get.toNamed('/sendview'),
                 badgeCount: altasPendientes,
               ),
-              _buildMenuButton(
-                context: context,
+              _ActionButton(
                 label: 'Enviar Reposiciones',
-                icon: FontAwesomeIcons.refresh,
+                imagePath: 'assets/images/enviarrepo.png',
                 onTap: () => Get.toNamed('/sendrepo'),
                 badgeCount: reposPendientes,
               ),
-              _buildMenuButton(
-                context: context,
+              _ActionButton(
                 label: 'Enviar Bajas',
-                icon: FontAwesomeIcons.arrowAltCircleDown,
+                imagePath: 'assets/images/enviarbaja.png',
                 onTap: () => Get.toNamed('/baja/send'),
                 badgeCount: bajasPendientes,
               ),
@@ -60,14 +55,23 @@ class SendMenuView extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildMenuButton({
-    required BuildContext context,
-    required String label,
-    required IconData icon,
-    required VoidCallback onTap,
-    int badgeCount = 0,
-  }) {
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final String imagePath;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  const _ActionButton({
+    required this.label,
+    required this.imagePath,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
@@ -91,7 +95,12 @@ class SendMenuView extends StatelessWidget {
           children: [
             Stack(
               children: [
-                Icon(icon, size: 40, color: theme.colorScheme.primary),
+                Image.asset(
+                  imagePath,
+                  height: 48,
+                  width: 48,
+                  fit: BoxFit.contain,
+                ),
                 if (badgeCount > 0)
                   Positioned(
                     right: 0,

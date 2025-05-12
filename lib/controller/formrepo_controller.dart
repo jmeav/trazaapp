@@ -585,7 +585,7 @@ class FormRepoController extends GetxController {
 
   // --- guardarReposicion Modificado --- 
   Future<void> guardarReposicion() async {
-      isLoading.value = true;
+    isLoading.value = true;
     try {
       if (entrega.value == null || repoId == null) {
         throw Exception('Datos de entrega o ID de reposición no disponibles');
@@ -640,11 +640,19 @@ class FormRepoController extends GetxController {
       await entregaController.fetchEntregas();
       entregaController.refreshData();
 
-      // 3. NO actualizamos la entrega original aquí
-      // La actualización a 'completada' se hará al "enviar" desde la pantalla de SendRepoView
+      // Mostrar mensaje de éxito
+      Get.snackbar(
+        'Éxito',
+        'Reposición guardada correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+        snackPosition: SnackPosition.TOP,
+      );
 
-      // Navegar a la pantalla de envío de reposiciones y mostrar éxito
-      Get.offNamed('/sendrepo', arguments: {'showSuccess': true});
+      // Redirigir al home después de un breve delay
+      await Future.delayed(const Duration(milliseconds: 1500));
+      Get.offAllNamed('/home');
 
     } catch (e) {
       print('❌ Error al guardar reposición: $e');

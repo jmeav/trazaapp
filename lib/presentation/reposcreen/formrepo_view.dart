@@ -294,123 +294,6 @@ class FormRepoView extends GetView<FormRepoController> {
           ),
           const SizedBox(height: 16),
 
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  label: 'Edad (meses)',
-                  initialValue: bovino.edad > 0 ? bovino.edad.toString() : '',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(3),
-                  ],
-                  onChanged: (value) {
-                    int edad = int.tryParse(value) ?? 0;
-                    if (edad > 240) {
-                      edad = 240;
-                      Get.snackbar(
-                        'Límite de edad',
-                        'La edad máxima permitida es 240 meses.',
-                        backgroundColor: Colors.orange,
-                        colorText: Colors.white,
-                        duration: const Duration(seconds: 2),
-                      );
-                    }
-                    controller.updateEdad(index, edad);
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: CustomDropdown<String>(
-                  label: 'Sexo',
-                  value: bovino.sexo.isEmpty ? null : bovino.sexo,
-                  items: const ['M', 'H'],
-                  onChanged: (value) {
-                    if (value != null) {
-                      controller.updateSexo(index, value);
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-          Autocomplete<Raza>(
-            optionsBuilder: (TextEditingValue textEditingValue) {
-              if (textEditingValue.text == '') {
-                return controller.razas;
-              }
-              return controller.razas.where((Raza r) =>
-                  r.nombre.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-            },
-            displayStringForOption: (Raza option) => option.nombre,
-            initialValue: TextEditingValue(
-              text: bovino.razaId.isNotEmpty
-                  ? (controller.razas.firstWhereOrNull((r) => r.id == bovino.razaId)?.nombre ?? '')
-                  : '',
-            ),
-            onSelected: (Raza selection) {
-              controller.updateRaza(index, selection.id);
-            },
-            fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-              return TextField(
-                controller: textEditingController,
-                focusNode: focusNode,
-                decoration: const InputDecoration(
-                  labelText: 'Buscar raza',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.search),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 16),
-          CustomDropdown<String>(
-            label: 'Traza',
-            value: bovino.traza.isEmpty ? 'CRUCE' : bovino.traza,
-            items: const ['CRUCE', 'PURO'],
-            onChanged: (value) {
-              if (value != null) {
-                controller.updateTraza(index, value);
-              }
-            },
-          ),
-
-          // Si es PURO => genealogía
-          if (bovino.traza == 'PURO') ...[
-            const SizedBox(height: 16),
-            CustomTextField(
-              label: 'Arete Madre (obligatorio)',
-              initialValue: bovino.areteMadre,
-              keyboardType: TextInputType.number,
-              onChanged: (value) => controller.updateAreteMadre(index, value),
-            ),
-            const SizedBox(height: 8),
-            CustomTextField(
-              label: 'Arete Padre (obligatorio)',
-              initialValue: bovino.aretePadre,
-              keyboardType: TextInputType.number,
-              onChanged: (value) => controller.updateAretePadre(index, value),
-            ),
-            const SizedBox(height: 8),
-            CustomTextField(
-              label: 'Registro Madre (opcional)',
-              initialValue: bovino.regMadre,
-              onChanged: (value) => controller.updateRegMadre(index, value),
-            ),
-            const SizedBox(height: 8),
-            CustomTextField(
-              label: 'Registro Padre (opcional)',
-              initialValue: bovino.regPadre,
-              onChanged: (value) => controller.updateRegPadre(index, value),
-            ),
-          ],
-
-          const SizedBox(height: 16),
           Container(
             margin: const EdgeInsets.symmetric(vertical: 12),
             padding: const EdgeInsets.all(12),
@@ -490,6 +373,122 @@ class FormRepoView extends GetView<FormRepoController> {
                 ],
               ],
             ),
+          ] else if (bovino.estadoArete == 'Bueno') ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: CustomTextField(
+                    label: 'Edad (meses)',
+                    initialValue: bovino.edad > 0 ? bovino.edad.toString() : '',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(3),
+                    ],
+                    onChanged: (value) {
+                      int edad = int.tryParse(value) ?? 0;
+                      if (edad > 240) {
+                        edad = 240;
+                        Get.snackbar(
+                          'Límite de edad',
+                          'La edad máxima permitida es 240 meses.',
+                          backgroundColor: Colors.orange,
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                        );
+                      }
+                      controller.updateEdad(index, edad);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: CustomDropdown<String>(
+                    label: 'Sexo',
+                    value: bovino.sexo.isEmpty ? null : bovino.sexo,
+                    items: const ['M', 'H'],
+                    onChanged: (value) {
+                      if (value != null) {
+                        controller.updateSexo(index, value);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+            Autocomplete<Raza>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text == '') {
+                  return controller.razas;
+                }
+                return controller.razas.where((Raza r) =>
+                    r.nombre.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+              },
+              displayStringForOption: (Raza option) => option.nombre,
+              initialValue: TextEditingValue(
+                text: bovino.razaId.isNotEmpty
+                    ? (controller.razas.firstWhereOrNull((r) => r.id == bovino.razaId)?.nombre ?? '')
+                    : '',
+              ),
+              onSelected: (Raza selection) {
+                controller.updateRaza(index, selection.id);
+              },
+              fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Buscar raza',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+            CustomDropdown<String>(
+              label: 'Traza',
+              value: bovino.traza.isEmpty ? 'CRUCE' : bovino.traza,
+              items: const ['CRUCE', 'PURO'],
+              onChanged: (value) {
+                if (value != null) {
+                  controller.updateTraza(index, value);
+                }
+              },
+            ),
+
+            if (bovino.traza == 'PURO') ...[
+              const SizedBox(height: 16),
+              CustomTextField(
+                label: 'Arete Madre (obligatorio)',
+                initialValue: bovino.areteMadre,
+                keyboardType: TextInputType.number,
+                onChanged: (value) => controller.updateAreteMadre(index, value),
+              ),
+              const SizedBox(height: 8),
+              CustomTextField(
+                label: 'Arete Padre (obligatorio)',
+                initialValue: bovino.aretePadre,
+                keyboardType: TextInputType.number,
+                onChanged: (value) => controller.updateAretePadre(index, value),
+              ),
+              const SizedBox(height: 8),
+              CustomTextField(
+                label: 'Registro Madre (opcional)',
+                initialValue: bovino.regMadre,
+                onChanged: (value) => controller.updateRegMadre(index, value),
+              ),
+              const SizedBox(height: 8),
+              CustomTextField(
+                label: 'Registro Padre (opcional)',
+                initialValue: bovino.regPadre,
+                onChanged: (value) => controller.updateRegPadre(index, value),
+              ),
+            ],
           ],
         ],
       ),
@@ -794,17 +793,21 @@ class FormRepoView extends GetView<FormRepoController> {
 
     for (int i = 0; i < controller.bovinosRepo.length; i++) {
       final bovino = controller.bovinosRepo[i];
-      if (bovino.sexo.isEmpty || bovino.razaId.isEmpty || bovino.edad <= 0) {
-        datosCompletos = false;
-        mensajeError =
-            'El bovino \\${i + 1} no tiene todos los datos requeridos';
-        break;
+      
+      // Si el arete está dañado o no utilizado, solo verificamos la foto
+      if (bovino.estadoArete == 'Dañado' || bovino.estadoArete == 'No Utilizado') {
+        if (bovino.fotoArete.isEmpty) {
+          datosCompletos = false;
+          mensajeError = 'Debe tomar la foto del arete ${bovino.arete} que está ${bovino.estadoArete}';
+          break;
+        }
+        continue;
       }
 
-      if ((bovino.estadoArete == 'Dañado' || bovino.estadoArete == 'No Utilizado') && bovino.fotoArete.isEmpty) {
+      // Para aretes en buen estado, verificamos la información requerida
+      if (bovino.sexo.isEmpty || bovino.razaId.isEmpty || bovino.edad <= 0) {
         datosCompletos = false;
-        mensajeError =
-            'El bovino \\${i + 1} tiene arete ${bovino.estadoArete.toLowerCase()} pero no tiene foto';
+        mensajeError = 'El bovino ${i + 1} no tiene todos los datos requeridos';
         break;
       }
     }

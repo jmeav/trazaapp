@@ -139,9 +139,7 @@ void main() async {
 //  await Hive.box<Municipio>('municipios').clear();
 //  await Hive.box<BovinoRepo>('bovinosrepo').clear();
 //  await Hive.box<RepoEntrega>('repoentregas').clear();
-
- 
-  print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");
+  // print("🧹 Cajas limpiadas: entregas, altaentregas, repoentregas");
 
   // Inicializa controladores
   Get.put(LoginController());

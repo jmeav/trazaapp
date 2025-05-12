@@ -108,24 +108,24 @@ class _HomeViewState extends State<HomeView> {
                   if (showGestionarAretes)
                     _ActionButton(
                       label: 'Gestionar Aretes',
-                      icon: FontAwesomeIcons.tags,
+                      imagePath: 'assets/images/gestionararetes.png',
                       onTap: () => Get.toNamed('/managebag'),
                     ),
                   _ActionButton(
                     label: 'Registrar Alta',
-                    icon: FontAwesomeIcons.plusCircle,
+                    imagePath: 'assets/images/registraralta.png',
                     onTap: () => Get.toNamed('/entrega'),
                     badgeCount: entregasPendientes,
                   ),
                   _ActionButton(
-                  label: 'Registrar Repo', // Anterior: Reposiciones
-                  icon: FontAwesomeIcons.undo, // Icono cambiado
+                    label: 'Registrar Repo',
+                    imagePath: 'assets/images/registrarrepo.png',
                     onTap: () => Get.toNamed('/repo'),
                     badgeCount: reposPendientes,
                   ),
                   _ActionButton(
                     label: 'Registrar Baja',
-                    icon: FontAwesomeIcons.skullCrossbones,
+                    imagePath: 'assets/images/registrarbaja.png',
                     onTap: () => Get.toNamed('/baja/select'),
                   ),
                 ]);
@@ -145,13 +145,13 @@ class _HomeViewState extends State<HomeView> {
                 return _buildActionGrid([
                   _ActionButton(
                     label: 'Enviar Eventos',
-                    icon: FontAwesomeIcons.paperPlane,
+                    imagePath: 'assets/images/enviareventos.png',
                     onTap: () => Get.toNamed('/send/menu'),
                     badgeCount: eventosPendientes,
                   ),
                   _ActionButton(
                     label: 'Consultas',
-                    icon: FontAwesomeIcons.search,
+                    imagePath: 'assets/images/consultareventos.png',
                     onTap: () => Get.toNamed('/consultas/menu'),
                   ),
                 ]);
@@ -209,16 +209,15 @@ class _HomeViewState extends State<HomeView> {
   }
 }
 
-// _ActionButton no necesita cambios
 class _ActionButton extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final String imagePath;
   final VoidCallback onTap;
   final int badgeCount;
 
   const _ActionButton({
     required this.label,
-    required this.icon,
+    required this.imagePath,
     required this.onTap,
     this.badgeCount = 0,
   });
@@ -249,7 +248,12 @@ class _ActionButton extends StatelessWidget {
           children: [
             Stack(
               children: [
-                Icon(icon, size: 32, color: theme.colorScheme.primary),
+                Image.asset(
+                  imagePath,
+                  height: 48,
+                  width: 48,
+                  fit: BoxFit.contain,
+                ),
                 if (badgeCount > 0)
                   Positioned(
                     right: 0,

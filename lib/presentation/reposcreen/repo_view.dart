@@ -29,7 +29,7 @@ class RepoView extends GetView<EntregaController> {
       body: Obx(() {
         if (controller.isLoading.value) {
           return const LoadingWidget();
-        }
+        } 
 
         final reposiciones = controller.entregasConReposicionPendiente;
 
