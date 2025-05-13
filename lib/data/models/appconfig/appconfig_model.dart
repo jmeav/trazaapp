@@ -34,6 +34,14 @@ class AppConfig {
   String foto;
   @HiveField(15)
   String qr;
+  @HiveField(16)
+  String organizacion;
+  @HiveField(17)
+  String appVersion;
+  @HiveField(18)
+  String latestVersion;
+  @HiveField(19)
+  DateTime? lastVersionCheck;
 
   AppConfig({
     required this.imei,
@@ -52,6 +60,10 @@ class AppConfig {
     required this.fechaEmision,
     required this.foto,
     required this.qr,
+    required this.organizacion,
+    this.appVersion = '1.0.0',
+    this.latestVersion = '1.0.0',
+    this.lastVersionCheck,
   });
 
   /// **📌 Método `copyWith()` corregido**
@@ -72,6 +84,10 @@ class AppConfig {
     String? fechaEmision,
     String? foto,
     String? qr,
+    String? organizacion,
+    String? appVersion,
+    String? latestVersion,
+    DateTime? lastVersionCheck,
   }) {
     return AppConfig(
       imei: imei ?? this.imei,
@@ -90,6 +106,10 @@ class AppConfig {
       fechaEmision: fechaEmision ?? this.fechaEmision,
       foto: foto ?? this.foto,
       qr: qr ?? this.qr,
+      organizacion: organizacion ?? this.organizacion,
+      appVersion: appVersion ?? this.appVersion,
+      latestVersion: latestVersion ?? this.latestVersion,
+      lastVersionCheck: lastVersionCheck ?? this.lastVersionCheck,
     );
   }
 }

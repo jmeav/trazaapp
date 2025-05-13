@@ -299,7 +299,7 @@ class ConsultasRepoView extends StatelessWidget {
                     codhabilitado: codhabilitado,
                   );
                 },
-                child: const Text('Consultar Reposiciones'), // Texto actualizado
+                child: const Text('Consultar'), // Texto actualizado
               )),
         const SizedBox(height: 16),
         Obx(() => Wrap(

@@ -59,7 +59,7 @@ class BajaController extends GetxController {
     isLoading.value = true;
     
     try {
-      print('�� Inicializando BajaController...');
+      print('🔄 Inicializando BajaController...');
       bajaBox = await Hive.openBox<Baja>('bajas');
       configBox = await Hive.openBox<AppConfig>('appConfig');
       establecimientoBox = await Hive.openBox<Establecimiento>('establecimientos');
@@ -67,20 +67,16 @@ class BajaController extends GetxController {
       
       _initVariables();
       
+      // Cargar los motivos antes de marcar como inicializado
+      await _loadMotivosBajaBovino();
+      
       isInitialized.value = true;
       print('✅ BajaController inicializado correctamente');
       
       cargarBajasPendientes();
-      await _loadMotivosBajaBovino();
     } catch (e) {
       print('❌ Error al inicializar BajaController: $e');
       Future.microtask(() {
-        Get.snackbar(
-          'Error',
-          'Error al inicializar el controlador: $e',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
       });
     } finally {
       isLoading.value = false;
@@ -573,61 +569,44 @@ class BajaController extends GetxController {
       final catalogsController = Get.find<CatalogosController>();
       
       print('Catálogo controller - motivos bovino: ${catalogsController.motivosBajaBovino.length}');
-      if (catalogsController.motivosBajaBovino.isNotEmpty) {
-        print('Ejemplo primer motivo: ID=${catalogsController.motivosBajaBovino.first.id}, Nombre=${catalogsController.motivosBajaBovino.first.nombre}');
-      }
       
-      motivos.assignAll(catalogsController.motivosBajaBovino);
-      print('Motivos de baja bovino cargados: ${motivos.length}');
-      
-      if (motivos.isNotEmpty) {
-        if (motivos.first.id != 0 || motivos.first.nombre.isEmpty) {
-          for (var motivo in motivos) {
-            if (motivo.id > 0 && motivo.nombre.isNotEmpty) {
-              selectedMotivo.value = motivo.nombre;
-              selectedMotivoId.value = motivo.id;
-              print('Seleccionado motivo válido: ${motivo.nombre} (ID: ${motivo.id})');
-              return;
-            }
-          }
-        }
-        
-        selectedMotivo.value = motivos.first.nombre;
-        selectedMotivoId.value = motivos.first.id;
-        print('Primer motivo seleccionado: ${motivos.first.nombre} (ID: ${motivos.first.id})');
-      } else {
-        selectedMotivo.value = '';
-        selectedMotivoId.value = 0;
-        print('No se encontraron motivos de baja bovino');
-        
+      // Si el catálogo está vacío, intentar cargar desde la caja local
+      if (catalogsController.motivosBajaBovino.isEmpty) {
         var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
         if (box.isNotEmpty) {
-          print('La caja tiene ${box.length} motivos pero no se cargaron en el catálogo');
-          var motivosEnCaja = box.values.toList();
-          motivos.assignAll(motivosEnCaja);
-          if (motivos.isNotEmpty) {
-            selectedMotivo.value = motivos.first.nombre;
-            selectedMotivoId.value = motivos.first.id;
-            print('Motivo cargado desde caja: ${motivos.first.nombre} (ID: ${motivos.first.id})');
+          print('Cargando motivos desde caja local: ${box.length} motivos');
+          motivos.assignAll(box.values.toList());
+        } else {
+          print('⚠️ No hay motivos disponibles ni en el catálogo ni en la caja local');
+          throw Exception('No hay motivos disponibles');
+        }
+      } else {
+        motivos.assignAll(catalogsController.motivosBajaBovino);
+        print('Motivos de baja bovino cargados desde catálogo: ${motivos.length}');
+      }
+      
+      // Seleccionar el primer motivo válido
+      if (motivos.isNotEmpty) {
+        for (var motivo in motivos) {
+          if (motivo.id > 0 && motivo.nombre.isNotEmpty) {
+            selectedMotivo.value = motivo.nombre;
+            selectedMotivoId.value = motivo.id;
+            print('Seleccionado motivo válido: ${motivo.nombre} (ID: ${motivo.id})');
+            return;
           }
         }
       }
-    } catch (e) {
-      print('Error cargando los motivos de baja: $e');
+      
+      // Si no se encontró ningún motivo válido
       selectedMotivo.value = '';
       selectedMotivoId.value = 0;
+      print('⚠️ No se encontraron motivos válidos');
       
-      try {
-        if (!Hive.isBoxOpen('motivosbajabovino')) {
-          await Hive.openBox<MotivoBajaBovino>('motivosbajabovino');
-          print('Caja abierta después del error');
-        }
-        
-        var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
-        print('Estado de la caja motivosbajabovino: ${box.isOpen ? "abierta" : "cerrada"}, elementos: ${box.length}');
-      } catch (boxError) {
-        print('Error adicional al intentar verificar la caja: $boxError');
-      }
+    } catch (e) {
+      print('❌ Error cargando los motivos de baja: $e');
+      selectedMotivo.value = '';
+      selectedMotivoId.value = 0;
+      throw e; // Re-lanzar el error para manejarlo en onInit
     }
   }
 

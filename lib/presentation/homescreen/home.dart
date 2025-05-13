@@ -19,9 +19,44 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  int _selectedIndex = 0; // Índice para BottomNavigationBar
-  final EntregaController entregaController = Get.put(EntregaController());
-  final ManageBagController bagController = Get.put(ManageBagController());
+  int _selectedIndex = 0;
+  late final EntregaController entregaController;
+  late final ManageBagController bagController;
+  late final BajaController bajaController;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeControllers();
+  }
+
+  Future<void> _initializeControllers() async {
+    try {
+      entregaController = Get.put(EntregaController());
+      bagController = Get.put(ManageBagController());
+      bajaController = Get.put(BajaController(), permanent: true);
+
+      // Inicializar datos
+      await Future.wait([
+        entregaController.refreshData(),
+        bagController.loadBagData(),
+      ]);
+
+      // Verificar catálogos después de inicializar
+      checkCatalogData();
+      
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Error al cargar los datos: $e';
+        _isLoading = false;
+      });
+    }
+  }
 
   String getSaludo() {
     final hour = DateTime.now().hour;
@@ -36,8 +71,8 @@ class _HomeViewState extends State<HomeView> {
 
     if (entregasBox.isEmpty && bagBox.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) { // Verificar si el widget está montado
-        Get.offAllNamed('/catalogs');
+        if (mounted) {
+          Get.offAllNamed('/catalogs');
         }
       });
     }
@@ -49,20 +84,12 @@ class _HomeViewState extends State<HomeView> {
     });
     switch (index) {
       case 0:
-        // Ya estamos en Inicio, no hacemos nada o refrescamos
         break;
       case 1:
         Get.toNamed('/configs');
-        // Reset index a 0 para que Inicio quede seleccionado al volver
         Future.delayed(Duration.zero, () => setState(() => _selectedIndex = 0));
         break;
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    checkCatalogData();
   }
 
   @override
@@ -72,7 +99,48 @@ class _HomeViewState extends State<HomeView> {
     final theme = Theme.of(context);
     final bagBox = Hive.box<Bag>('bag');
     final showGestionarAretes = bagBox.isNotEmpty;
-    final bajaController = Get.put(BajaController(), permanent: true);
+
+    // if (_isLoading) {
+    //   return Scaffold(
+    //     body: Center(
+    //       child: Column(
+    //         mainAxisAlignment: MainAxisAlignment.center,
+    //         children: [
+    //           const CircularProgressIndicator(),
+    //           const SizedBox(height: 16),
+    //           Text(
+    //             'Cargando datos...',
+    //             style: theme.textTheme.bodyLarge,
+    //           ),
+    //         ],
+    //       ),
+    //     ),
+    //   );
+    // }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _initializeControllers,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -86,8 +154,8 @@ class _HomeViewState extends State<HomeView> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await entregaController.refreshData();
-          await bagController.loadBagData();
+          setState(() => _isLoading = true);
+          await _initializeControllers();
         },
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -96,9 +164,6 @@ class _HomeViewState extends State<HomeView> {
             children: [
               _buildSectionTitle(context, 'Registro de Eventos'),
               Obx(() {
-                if (!entregaController.isInitialized.value || !bajaController.isInitialized.value) {
-                  return Center(child: CircularProgressIndicator());
-                }
                 final entregasPendientes = entregaController.entregasPendientesCount;
                 final reposPendientes = entregaController.entregasConReposicionPendiente.length;
                 final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
@@ -133,9 +198,6 @@ class _HomeViewState extends State<HomeView> {
               const SizedBox(height: 24),
               _buildSectionTitle(context, 'Envíos y Consultas'),
               Obx(() {
-                if (!entregaController.isInitialized.value || !bajaController.isInitialized.value) {
-                  return Center(child: CircularProgressIndicator());
-                }
                 final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
                 final bajasSinOrigenPendientes = boxBajasSinOrigen.values.where((b) => b.estado == 'pendiente').length;
                 final eventosPendientes = entregaController.altasParaEnviarCount + 
@@ -250,8 +312,8 @@ class _ActionButton extends StatelessWidget {
               children: [
                 Image.asset(
                   imagePath,
-                  height: 48,
-                  width: 48,
+                  height: 70,
+                  width: 70,
                   fit: BoxFit.contain,
                 ),
                 if (badgeCount > 0)

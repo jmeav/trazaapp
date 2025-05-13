@@ -122,12 +122,6 @@
 
       } catch (e) {
         print('Error al inicializar FormBovinosController: $e');
-        Get.snackbar(
-          'Error',
-          'Error al inicializar el formulario: $e',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
       }
     }
 

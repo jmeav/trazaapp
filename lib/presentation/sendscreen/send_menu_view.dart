@@ -97,8 +97,8 @@ class _ActionButton extends StatelessWidget {
               children: [
                 Image.asset(
                   imagePath,
-                  height: 48,
-                  width: 48,
+                  height: 70,
+                  width: 70,
                   fit: BoxFit.contain,
                 ),
                 if (badgeCount > 0)

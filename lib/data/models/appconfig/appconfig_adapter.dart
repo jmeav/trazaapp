@@ -25,6 +25,10 @@ class AppConfigAdapter extends TypeAdapter<AppConfig> {
       fechaEmision: reader.readString(),
       foto: reader.readString(),
       qr: reader.readString(),
+      organizacion: reader.readString(),
+      appVersion: reader.readString(),
+      latestVersion: reader.readString(),
+      lastVersionCheck: reader.readBool() ? DateTime.fromMillisecondsSinceEpoch(reader.readInt()) : null,
     );
   }
 
@@ -46,6 +50,13 @@ class AppConfigAdapter extends TypeAdapter<AppConfig> {
     writer.writeString(obj.fechaEmision);
     writer.writeString(obj.foto);
     writer.writeString(obj.qr);
+    writer.writeString(obj.organizacion);
+    writer.writeString(obj.appVersion);
+    writer.writeString(obj.latestVersion);
+    writer.writeBool(obj.lastVersionCheck != null);
+    if (obj.lastVersionCheck != null) {
+      writer.writeInt(obj.lastVersionCheck!.millisecondsSinceEpoch);
+    }
   }
 }
 

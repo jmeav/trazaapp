@@ -109,7 +109,7 @@ class ProfileView extends StatelessWidget {
                   children: [
                     Text('Datos de la Aplicación', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
-                    _buildInfoRow(context, FontAwesomeIcons.buildingUser, 'Organización', user.idOrganizacion),
+                    _buildInfoRow(context, FontAwesomeIcons.buildingUser, 'Organización', user.organizacion),
                     _buildInfoRow(context, FontAwesomeIcons.tags, 'Categoría', user.categoria),
                     _buildInfoRow(context, Icons.vpn_key_outlined, 'Código Habilitado', user.codHabilitado),
                     _buildInfoRow(context, Icons.perm_device_information, 'IMEI', user.imei),
@@ -127,15 +127,23 @@ class ProfileView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
-              Text(value, style: Theme.of(context).textTheme.bodyLarge),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                ),
+              ],
+            ),
           )
         ],
       ),

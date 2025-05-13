@@ -45,6 +45,11 @@ class ConsultasMenuView extends StatelessWidget {
                     imagePath: 'assets/images/consultarrepo.png',
                     onTap: () => Get.toNamed('/consultas/repos'),
                   ),
+                  _ActionButton(
+                    label: 'Consultar Bajas sin Origen',
+                    imagePath: 'assets/images/consultarbajas.png',
+                    onTap: () => Get.toNamed('/consultabajassinorigen'),
+                  ),
                 ],
               ),
             ),
@@ -92,8 +97,8 @@ class _ActionButton extends StatelessWidget {
           children: [
             Image.asset(
               imagePath,
-              height: 48,
-              width: 48,
+              height: 70,
+              width: 70,
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 8),

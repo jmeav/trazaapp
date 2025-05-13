@@ -62,8 +62,6 @@ class LoginController extends GetxController {
         Get.offAllNamed('/home');
       }
     } catch (e) {
-      print("❌ Error en login: $e");
-      Get.snackbar('Error', 'No se pudo iniciar sesión');
     } finally {
       isLoading.value = false;
     }

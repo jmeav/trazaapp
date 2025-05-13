@@ -72,6 +72,22 @@ class CatalogosScreen extends StatelessWidget {
     return true;
   }
 
+  void _handleDownloadComplete() {
+    if (controller.isForcedDownload.value) {
+      // Si fue una descarga forzada, ir al home
+      Get.offAllNamed('/home');
+    } else {
+      // Si fue una actualización normal, mostrar mensaje y permitir volver
+      Get.snackbar(
+        '✅ Éxito',
+        'Catálogos actualizados correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final box = Hive.box<AppConfig>('appConfig');
@@ -95,14 +111,7 @@ class CatalogosScreen extends StatelessWidget {
             if (!isDownloading && controller.currentStep.value == controller.totalSteps) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!ScaffoldMessenger.of(context).mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✅ ¡Catálogos actualizados con éxito!'),
-                    backgroundColor: Colors.green,
-                    behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
+                _handleDownloadComplete();
               });
             }
 
@@ -191,7 +200,12 @@ class CatalogosScreen extends StatelessWidget {
                                     codhabilitado: config.codHabilitado,
                                   );
                                 } else {
-                                  Get.snackbar('Error', 'Configuración no encontrada');
+                                  Get.snackbar(
+                                    'Error',
+                                    'Configuración no encontrada',
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
                                 }
                               },
                             ),

@@ -6,3 +6,4 @@ String urlaltas = '$urlbasApi/alta';
 String urlreposicion = '$urlbasApi/reposicion';
 String urlbajabovino = '$urlbasApi/bajabovino';
 String urlbajassinorigen = '$urlbasApi/bajassinorigen';
+String urversion = '$urlbasApi/version';
