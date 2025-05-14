@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:trazaapp/controller/arete_input_controller.dart';
 import 'package:trazaapp/controller/baja_sin_origen_controller.dart';
+import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 
 class BajaFormAnyView extends StatefulWidget {
   const BajaFormAnyView({super.key});
@@ -56,8 +57,11 @@ class _BajaFormAnyViewState extends State<BajaFormAnyView> {
   }
 
   Future<void> _guardarBaja() async {
+    Get.dialog(
+    const SavingLoadingDialog(),
+    barrierDismissible: false,
+  );
     if (_formKey.currentState?.validate() != true) return;
-
     // Verificar GPS
     if (!bajaController.isGpsEnabled.value) {
       Get.snackbar(

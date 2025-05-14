@@ -7,7 +7,6 @@ import 'package:trazaapp/presentation/scanner/scanner_view.dart';
 import 'package:trazaapp/presentation/widgets/custom_button.dart';
 import 'package:trazaapp/presentation/widgets/custom_dropdown.dart';
 import 'package:trazaapp/presentation/widgets/custom_textfield.dart';
-import 'package:trazaapp/presentation/widgets/loading_widget.dart';
 import 'package:trazaapp/utils/utils.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
 
@@ -47,9 +46,6 @@ class FormRepoView extends GetView<FormRepoController> {
           title: const Text('Formulario de Reposición'),
         ),
         body: Obx(() {
-          if (controller.isLoading.value) {
-            return const LoadingWidget();
-          }
 
           if (controller.bovinosRepo.isEmpty) {
             return const Center(

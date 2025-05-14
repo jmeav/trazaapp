@@ -74,6 +74,7 @@ import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
 import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen_adapter.dart';
 import 'package:trazaapp/presentation/consultas/consultabajassinorigen_view.dart';
 import 'package:trazaapp/controller/consultasbajassinorigen_controller.dart';
+import 'package:trazaapp/controller/arete_input_controller.dart';
 
 
 void main() async {
@@ -184,13 +185,15 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/configs', page: () => ConfiguracionesScreen()),
           GetPage(name: '/verifycue', page: () => VerifyEstablishmentView()),
           GetPage(name: '/baja/select', page: () => const BajaSelectView()),
-          GetPage(
-            name: '/baja/form',
-            page: () => const BajaFormView(),
-            binding: BindingsBuilder(() {
-              Get.put(() => BajaController());
-            }),
-          ),
+          // GetPage(
+          //   name: '/baja/form',
+          //   page: () => const BajaFormView(),
+          //   binding: BindingsBuilder(() {
+          //     Get.lazyPut(() => BajaController(), fenix: true);
+          //     Get.lazyPut(() => AreteInputController(), tag: 'areteInput', fenix: true);
+          //   }),
+          // ),
+          GetPage(name: '/baja/form', page: () => BajaFormView()),
           GetPage(
             name: '/baja/send',
             page: () => const BajaSendView(),

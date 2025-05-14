@@ -36,6 +36,7 @@ class BajaFormView extends StatelessWidget {
                 TextButton(
                   onPressed: () {
                     controller.clearForm();
+                    controller.reinicializarControladores();
                     areteInput.clear();
                     Get.back(result: true);
                   },
@@ -47,12 +48,24 @@ class BajaFormView extends StatelessWidget {
           return result ?? false;
         }
         controller.clearForm();
+        controller.reinicializarControladores();
         areteInput.clear();
         return true;
       },
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Registro de Bajas'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                controller.clearForm();
+                controller.reinicializarControladores();
+                areteInput.clear();
+                Get.offAllNamed('/baja/form');
+              },
+            ),
+          ],
         ),
         body: Obx(() {
           if (controller.isLoading.value) {
@@ -69,15 +82,25 @@ class BajaFormView extends StatelessWidget {
           }
 
           if (!controller.isInitialized.value) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  SizedBox(height: 16),
-                  Text('Error al inicializar el formulario'),
-                  SizedBox(height: 8),
-                  Text('Por favor, intente nuevamente'),
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text('Error al inicializar el formulario'),
+                  const SizedBox(height: 8),
+                  const Text('Por favor, intente nuevamente'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      controller.clearForm();
+                      controller.reinicializarControladores();
+                      areteInput.clear();
+                      Get.offAllNamed('/baja/form');
+                    },
+                    child: const Text('Reintentar'),
+                  ),
                 ],
               ),
             );
@@ -152,6 +175,11 @@ class BajaFormView extends StatelessWidget {
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
                                     areteInput.isScanned.value = false;
+                                  },
+                                  onSubmitted: (value) {
+                                    if (value.trim().isNotEmpty) {
+                                      controller.guardarAreteActual();
+                                    }
                                   },
                                 ),
                               ),

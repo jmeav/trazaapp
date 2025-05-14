@@ -11,6 +11,7 @@ import 'package:trazaapp/data/models/baja/arete_baja.dart';
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
 import 'package:trazaapp/data/models/productores/productor.dart';
+import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 import 'package:trazaapp/utils/utils.dart';
 import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
@@ -21,7 +22,8 @@ import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
 
 class BajaController extends GetxController {
   final motivoController = TextEditingController();
-  final AreteInputController areteInput = Get.put(AreteInputController(), tag: 'areteInput');
+  final AreteInputController areteInput =
+      Get.put(AreteInputController(), tag: 'areteInput');
   final cueController = TextEditingController();
   final cupaController = TextEditingController();
   final fechaBajaController = TextEditingController();
@@ -55,29 +57,70 @@ class BajaController extends GetxController {
   @override
   void onInit() async {
     super.onInit();
-    
+
     isLoading.value = true;
-    
+    isInitialized.value = false;
+
     try {
       print('🔄 Inicializando BajaController...');
-      bajaBox = await Hive.openBox<Baja>('bajas');
-      configBox = await Hive.openBox<AppConfig>('appConfig');
-      establecimientoBox = await Hive.openBox<Establecimiento>('establecimientos');
-      productorBox = await Hive.openBox<Productor>('productores');
-      
+
+      // Asegurarnos que las cajas estén abiertas
+      if (!Hive.isBoxOpen('bajas')) {
+        bajaBox = await Hive.openBox<Baja>('bajas');
+      } else {
+        bajaBox = Hive.box<Baja>('bajas');
+      }
+
+      if (!Hive.isBoxOpen('appConfig')) {
+        configBox = await Hive.openBox<AppConfig>('appConfig');
+      } else {
+        configBox = Hive.box<AppConfig>('appConfig');
+      }
+
+      if (!Hive.isBoxOpen('establecimientos')) {
+        establecimientoBox =
+            await Hive.openBox<Establecimiento>('establecimientos');
+      } else {
+        establecimientoBox = Hive.box<Establecimiento>('establecimientos');
+      }
+
+      if (!Hive.isBoxOpen('productores')) {
+        productorBox = await Hive.openBox<Productor>('productores');
+      } else {
+        productorBox = Hive.box<Productor>('productores');
+      }
+
       _initVariables();
-      
-      // Cargar los motivos antes de marcar como inicializado
-      await _loadMotivosBajaBovino();
-      
+
+      // Intentar cargar los motivos hasta 3 veces con un retraso entre intentos
+      int intentos = 0;
+      bool motivosCargados = false;
+
+      while (intentos < 3 && !motivosCargados) {
+        try {
+          await _loadMotivosBajaBovino();
+          motivosCargados = true;
+        } catch (e) {
+          print('❌ Intento ${intentos + 1} fallido al cargar motivos: $e');
+          intentos++;
+          if (intentos < 3) {
+            await Future.delayed(const Duration(seconds: 1));
+          }
+        }
+      }
+
+      if (!motivosCargados) {
+        throw Exception(
+            'No se pudieron cargar los motivos después de 3 intentos');
+      }
+
       isInitialized.value = true;
       print('✅ BajaController inicializado correctamente');
-      
+
       cargarBajasPendientes();
     } catch (e) {
       print('❌ Error al inicializar BajaController: $e');
-      Future.microtask(() {
-      });
+      isInitialized.value = false;
     } finally {
       isLoading.value = false;
     }
@@ -87,15 +130,15 @@ class BajaController extends GetxController {
     // Inicializar fechas y campos relacionados
     fechaBaja.value = DateTime.now();
     fechaBajaController.text = _formatDate(fechaBaja.value);
-    
+
     // Inicializar cantidad
     cantidadController.text = "1";
     cantidadBajas.value = 1;
-    
+
     // Inicializar motivos
     selectedMotivo.value = '';
     selectedMotivoId.value = 0;
-    
+
     // Otros valores iniciales
     currentAreteIndex.value = 0;
   }
@@ -108,13 +151,36 @@ class BajaController extends GetxController {
 
   @override
   void onClose() {
-    motivoController.dispose();
-    cueController.dispose();
-    cupaController.dispose();
-    fechaBajaController.dispose();
-    evidenciaController.dispose();
-    cantidadController.dispose();
+    // No dispondremos los controladores aquí para evitar el error
+    // motivoController.dispose();
+    // cueController.dispose();
+    // cupaController.dispose();
+    // fechaBajaController.dispose();
+    // evidenciaController.dispose();
+    // cantidadController.dispose();
     super.onClose();
+  }
+
+  void reinicializarControladores() {
+    // Reinicializar los controladores si es necesario
+    if (motivoController.hasListeners) {
+      motivoController.clear();
+    }
+    if (cueController.hasListeners) {
+      cueController.clear();
+    }
+    if (cupaController.hasListeners) {
+      cupaController.clear();
+    }
+    if (fechaBajaController.hasListeners) {
+      fechaBajaController.clear();
+    }
+    if (evidenciaController.hasListeners) {
+      evidenciaController.clear();
+    }
+    if (cantidadController.hasListeners) {
+      cantidadController.clear();
+    }
   }
 
   String generateBajaId() {
@@ -140,7 +206,7 @@ class BajaController extends GetxController {
   void setCantidadBajas(int cantidad) {
     cantidadBajas.value = cantidad;
     cantidadController.text = cantidad.toString();
-    
+
     detalleAretes.clear();
     currentAreteIndex.value = 0;
   }
@@ -151,29 +217,39 @@ class BajaController extends GetxController {
 
   void agregarArete(String arete, String motivoId) {
     final bajaId = generateBajaId();
-    
-    detalleAretes.add(
-      AreteBaja(
-        arete: arete,
-        motivoId: motivoId,
-        bajaId: bajaId,
-      )
-    );
+
+    detalleAretes.add(AreteBaja(
+      arete: arete,
+      motivoId: motivoId,
+      bajaId: bajaId,
+    ));
   }
 
   void guardarAreteActual() {
-    if (areteInput.areteController.text.isEmpty) {
-      Get.snackbar('Error', 'Debe ingresar un número de arete.');
+    final areteText = areteInput.areteController.text.trim();
+
+    if (areteText.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Debe ingresar un número de arete.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
     if (selectedMotivoId.value == 0) {
-      Get.snackbar('Error', 'Debe seleccionar un motivo de baja.');
+      Get.snackbar(
+        'Error',
+        'Debe seleccionar un motivo de baja.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
     final areteBaja = AreteBaja(
-      arete: areteInput.areteController.text,
+      arete: areteText,
       motivoId: selectedMotivoId.value.toString(),
       bajaId: 'temp',
     );
@@ -186,12 +262,19 @@ class BajaController extends GetxController {
     }
 
     areteInput.clear();
+    selectedMotivoId.value = 0;
+    selectedMotivo.value = '';
 
     if (index < cantidadBajas.value - 1) {
       currentAreteIndex.value++;
       cargarAreteActual();
     } else {
-      Get.snackbar('Éxito', 'Último arete guardado.');
+      Get.snackbar(
+        'Éxito',
+        'Último arete guardado.',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -199,7 +282,7 @@ class BajaController extends GetxController {
     if (currentAreteIndex.value < detalleAretes.length) {
       final arete = detalleAretes[currentAreteIndex.value];
       areteInput.areteController.text = arete.arete;
-      
+
       final motivoIdInt = int.tryParse(arete.motivoId) ?? 0;
       selectedMotivoId.value = motivoIdInt;
 
@@ -240,9 +323,9 @@ class BajaController extends GetxController {
         pdfFileName.value = result.files.single.name;
         final file = File(filePath);
         final bytes = await file.readAsBytes();
-        
+
         final fileSizeInMB = bytes.length / (1024 * 1024);
-        
+
         if (fileSizeInMB > 5) {
           Get.snackbar(
             'Error',
@@ -255,7 +338,7 @@ class BajaController extends GetxController {
 
         final base64String = base64Encode(bytes);
         final base64SizeInMB = base64String.length / (1024 * 1024);
-        
+
         if (base64SizeInMB > 2.5) {
           Get.snackbar(
             'Error',
@@ -287,27 +370,27 @@ class BajaController extends GetxController {
       Get.snackbar('Error', 'Debe registrar todos los aretes');
       return false;
     }
-    
+
     if (cueController.text.isEmpty) {
       Get.snackbar('Error', 'El CUE es obligatorio');
       return false;
     }
-    
+
     if (cupaController.text.isEmpty) {
       Get.snackbar('Error', 'La CUPA es obligatoria');
       return false;
     }
-    
+
     if (evidenciaBase64.value.isEmpty) {
       Get.snackbar('Error', 'La evidencia es obligatoria');
       return false;
     }
-    
+
     if (tipoEvidencia.value.isEmpty) {
       Get.snackbar('Error', 'Debe seleccionar tipo de evidencia');
       return false;
     }
-    
+
     return true;
   }
 
@@ -315,16 +398,19 @@ class BajaController extends GetxController {
     if (!validateForm()) return;
 
     try {
+      Get.dialog(
+        const SavingLoadingDialog(),
+        barrierDismissible: false,
+      );
       final config = configBox.get('config');
       if (config == null) {
         throw Exception('No se encontró la configuración del usuario.');
       }
 
       final bajaId = generateBajaId();
-      
-      final updatedAretes = detalleAretes.map((arete) => 
-        arete.copyWith(bajaId: bajaId)
-      ).toList();
+
+      final updatedAretes =
+          detalleAretes.map((arete) => arete.copyWith(bajaId: bajaId)).toList();
 
       final baja = Baja(
         bajaId: bajaId,
@@ -342,22 +428,22 @@ class BajaController extends GetxController {
 
       await bajaBox.put(bajaId, baja);
       clearForm();
-      
+
       Get.snackbar(
-        'Éxito', 
+        'Éxito',
         'Baja de ${updatedAretes.length} aretes registrada correctamente',
         backgroundColor: Colors.green,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
         snackPosition: SnackPosition.TOP,
       );
-      
+
       Future.delayed(const Duration(milliseconds: 1500), () {
         Get.offAllNamed('/home');
       });
     } catch (e) {
       Get.snackbar(
-        'Error', 
+        'Error',
         'Error al guardar la baja: $e',
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -390,36 +476,38 @@ class BajaController extends GetxController {
 
   void cargarBajasPendientes() {
     if (!isInitialized.value) {
-      print('⚠️ Intentando cargar bajas pendientes antes de inicializar. Operación ignorada.');
+      print(
+          '⚠️ Intentando cargar bajas pendientes antes de inicializar. Operación ignorada.');
       return;
     }
-    
+
     isLoading.value = true;
-    
+
     try {
       if (!bajaBox.isOpen) {
         print('❌ Error: bajaBox no está inicializada o no está abierta');
         isLoading.value = false;
         return;
       }
-      
+
       // Cargar bajas regulares
-      final pendientes = bajaBox.values
-          .where((baja) => baja.estado == 'pendiente')
-          .toList();
-           
+      final pendientes =
+          bajaBox.values.where((baja) => baja.estado == 'pendiente').toList();
+
       bajasPendientes.value = pendientes;
-      
-      print('📦 Bajas regulares pendientes cargadas: ${bajasPendientes.length}');
-      
+
+      print(
+          '📦 Bajas regulares pendientes cargadas: ${bajasPendientes.length}');
+
       // Cargar bajas sin origen
       final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
       final bajasSinOrigenPendientes = boxBajasSinOrigen.values
           .where((baja) => baja.estado == 'pendiente')
           .toList();
-      
-      print('📦 Bajas sin origen pendientes cargadas: ${bajasSinOrigenPendientes.length}');
-      
+
+      print(
+          '📦 Bajas sin origen pendientes cargadas: ${bajasSinOrigenPendientes.length}');
+
       if (bajasPendientes.isEmpty && bajasSinOrigenPendientes.isEmpty) {
         print('⚠️ No hay bajas pendientes para enviar');
       }
@@ -439,13 +527,13 @@ class BajaController extends GetxController {
   }
 
   Future<void> buscarEstablecimientoYProductor(String cue) async {
-    final establecimiento = establecimientoBox.values
-        .firstWhere((e) => e.establecimiento == cue,
-            orElse: () => throw Exception('CUE no encontrado'));
+    final establecimiento = establecimientoBox.values.firstWhere(
+        (e) => e.establecimiento == cue,
+        orElse: () => throw Exception('CUE no encontrado'));
 
-    final productor = productorBox.values
-        .firstWhere((p) => p.productor == establecimiento.productor,
-            orElse: () => throw Exception('Productor no encontrado'));
+    final productor = productorBox.values.firstWhere(
+        (p) => p.productor == establecimiento.productor,
+        orElse: () => throw Exception('Productor no encontrado'));
 
     cueController.text = establecimiento.establecimiento;
     cupaController.text = productor.productor;
@@ -476,7 +564,7 @@ class BajaController extends GetxController {
   Future<void> enviarBajasPendientes() async {
     if (bajasPendientes.isEmpty) {
       Get.snackbar(
-        'Información', 
+        'Información',
         'No hay bajas pendientes para enviar',
         backgroundColor: Colors.blue,
         colorText: Colors.white,
@@ -497,30 +585,29 @@ class BajaController extends GetxController {
       for (var i = 0; i < bajasPendientes.length; i++) {
         final baja = bajasPendientes[i];
         final bajaActualizada = baja.copyWith(estado: 'enviado');
-        
-        final index = bajaBox.values.toList().indexWhere(
-          (b) => b.bajaId == baja.bajaId
-        );
-        
+
+        final index =
+            bajaBox.values.toList().indexWhere((b) => b.bajaId == baja.bajaId);
+
         if (index != -1) {
           await bajaBox.putAt(index, bajaActualizada);
         }
       }
-      
+
       Get.back();
 
       Get.snackbar(
-        'Éxito', 
+        'Éxito',
         'Bajas enviadas correctamente',
         backgroundColor: Colors.green,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
       );
-      
+
       cargarBajasPendientes();
     } catch (e) {
       Get.back();
-      
+
       Get.snackbar(
         'Error',
         'Error al enviar las bajas: $e',
@@ -532,30 +619,30 @@ class BajaController extends GetxController {
 
   Future<List<Establecimiento>> buscarEstablecimientos(String query) async {
     if (query.isEmpty) return [];
-    
+
     final box = Hive.box<Establecimiento>('establecimientos');
     final establecimientos = box.values.toList();
-    
+
     return establecimientos.where((establecimiento) {
       final nombreLower = establecimiento.nombreEstablecimiento.toLowerCase();
       final cueLower = establecimiento.establecimiento.toLowerCase();
       final queryLower = query.toLowerCase();
-      
+
       return nombreLower.contains(queryLower) || cueLower.contains(queryLower);
     }).toList();
   }
 
   Future<List<Productor>> buscarProductores(String query) async {
     if (query.isEmpty) return [];
-    
+
     final box = Hive.box<Productor>('productores');
     final productores = box.values.toList();
-    
+
     return productores.where((productor) {
       final nombreLower = productor.nombreProductor.toLowerCase();
       final cupaLower = productor.productor.toLowerCase();
       final queryLower = query.toLowerCase();
-      
+
       return nombreLower.contains(queryLower) || cupaLower.contains(queryLower);
     }).toList();
   }
@@ -565,11 +652,12 @@ class BajaController extends GetxController {
       if (!Hive.isBoxOpen('motivosbajabovino')) {
         await Hive.openBox<MotivoBajaBovino>('motivosbajabovino');
       }
-      
+
       final catalogsController = Get.find<CatalogosController>();
-      
-      print('Catálogo controller - motivos bovino: ${catalogsController.motivosBajaBovino.length}');
-      
+
+      print(
+          'Catálogo controller - motivos bovino: ${catalogsController.motivosBajaBovino.length}');
+
       // Si el catálogo está vacío, intentar cargar desde la caja local
       if (catalogsController.motivosBajaBovino.isEmpty) {
         var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
@@ -577,54 +665,55 @@ class BajaController extends GetxController {
           print('Cargando motivos desde caja local: ${box.length} motivos');
           motivos.assignAll(box.values.toList());
         } else {
-          print('⚠️ No hay motivos disponibles ni en el catálogo ni en la caja local');
-          throw Exception('No hay motivos disponibles');
+          print(
+              '⚠️ No hay motivos disponibles ni en el catálogo ni en la caja local');
+          throw Exception(
+              'No hay motivos de baja bovino disponibles. Por favor, actualice los catálogos desde el menú principal.');
         }
       } else {
         motivos.assignAll(catalogsController.motivosBajaBovino);
-        print('Motivos de baja bovino cargados desde catálogo: ${motivos.length}');
+        print(
+            'Motivos de baja bovino cargados desde catálogo: ${motivos.length}');
       }
-      
+
       // Seleccionar el primer motivo válido
       if (motivos.isNotEmpty) {
         for (var motivo in motivos) {
           if (motivo.id > 0 && motivo.nombre.isNotEmpty) {
             selectedMotivo.value = motivo.nombre;
             selectedMotivoId.value = motivo.id;
-            print('Seleccionado motivo válido: ${motivo.nombre} (ID: ${motivo.id})');
+            print(
+                'Seleccionado motivo válido: ${motivo.nombre} (ID: ${motivo.id})');
             return;
           }
         }
       }
-      
+
       // Si no se encontró ningún motivo válido
       selectedMotivo.value = '';
       selectedMotivoId.value = 0;
       print('⚠️ No se encontraron motivos válidos');
-      
     } catch (e) {
       print('❌ Error cargando los motivos de baja: $e');
       selectedMotivo.value = '';
       selectedMotivoId.value = 0;
-      throw e; // Re-lanzar el error para manejarlo en onInit
+      throw e;
     }
   }
 
   Future<void> eliminarBaja(String bajaId) async {
     try {
-      final index = bajaBox.values.toList().indexWhere((b) => b.bajaId == bajaId);
+      final index =
+          bajaBox.values.toList().indexWhere((b) => b.bajaId == bajaId);
       if (index != -1) {
         await bajaBox.deleteAt(index);
         cargarBajasPendientes(); // Recargar la lista de pendientes
-        Get.snackbar(
-          'Eliminada', 
-          'Baja $bajaId eliminada correctamente.', 
-          snackPosition: SnackPosition.BOTTOM
-        );
+        Get.snackbar('Eliminada', 'Baja $bajaId eliminada correctamente.',
+            snackPosition: SnackPosition.BOTTOM);
       } else {
-         Get.snackbar(
-          'Error', 
-          'No se encontró la baja con ID $bajaId para eliminar.', 
+        Get.snackbar(
+          'Error',
+          'No se encontró la baja con ID $bajaId para eliminar.',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.orange,
           colorText: Colors.white,
@@ -632,8 +721,8 @@ class BajaController extends GetxController {
       }
     } catch (e) {
       Get.snackbar(
-        'Error', 
-        'Error al eliminar la baja: $e', 
+        'Error',
+        'Error al eliminar la baja: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -658,10 +747,10 @@ class BajaController extends GetxController {
   Future<void> enviarBajaSinOrigen(String id) async {
     try {
       print('🔄 Iniciando envío de baja sin origen con ID: $id');
-      
+
       final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
       final baja = boxBajasSinOrigen.get(id);
-      
+
       if (baja == null) {
         print('❌ No se encontró la baja sin origen con ID: $id');
         Get.snackbar('Error', 'No se encontró la baja sin origen con ID: $id');
@@ -675,30 +764,21 @@ class BajaController extends GetxController {
 
       final envioBajaSinOrigenRepository = EnvioBajaSinOrigenRepository();
       final jsonEnvio = baja.toJsonEnvio();
-      
+
       print('📦 Datos a enviar:');
       print(jsonEncode(jsonEnvio));
-      
+
       await envioBajaSinOrigenRepository.enviarBajaSinOrigen(jsonEnvio);
-      
+
       // Marcar como enviada y actualizar en Hive
       final bajaEnviada = baja.copyWith(estado: 'enviada');
       await boxBajasSinOrigen.put(id, bajaEnviada);
-      
+
       print('✅ Baja sin origen enviada y actualizada correctamente');
-      
+
       // Recargar la lista de bajas pendientes
       cargarBajasPendientes();
-    } catch (e) {
-      print('❌ Error al enviar baja sin origen: $e');
-      print('⚠️ Stack trace: ${StackTrace.current}');
-      Get.snackbar(
-        'Error',
-        'Error al enviar baja sin origen: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
+    } catch (e) {}
   }
 
   Future<void> eliminarBajaSinOrigen(String id) async {
@@ -706,19 +786,16 @@ class BajaController extends GetxController {
       final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
       await boxBajasSinOrigen.delete(id);
       cargarBajasPendientes(); // Recargar la lista de pendientes
-      Get.snackbar(
-        'Eliminada', 
-        'Baja sin origen eliminada correctamente.', 
-        snackPosition: SnackPosition.BOTTOM
-      );
+      Get.snackbar('Eliminada', 'Baja sin origen eliminada correctamente.',
+          snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
       Get.snackbar(
-        'Error', 
-        'Error al eliminar la baja sin origen: $e', 
+        'Error',
+        'Error al eliminar la baja sin origen: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     }
   }
-} 
+}

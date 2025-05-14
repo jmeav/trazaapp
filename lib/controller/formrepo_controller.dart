@@ -9,6 +9,7 @@ import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
 import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
 import 'package:trazaapp/data/models/bovinos/bovino.dart';
+import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 import 'package:trazaapp/utils/utils.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -587,6 +588,10 @@ class FormRepoController extends GetxController {
   Future<void> guardarReposicion() async {
     isLoading.value = true;
     try {
+       Get.dialog(
+    const SavingLoadingDialog(),
+    barrierDismissible: false,
+  );
       if (entrega.value == null || repoId == null) {
         throw Exception('Datos de entrega o ID de reposición no disponibles');
       }

@@ -90,15 +90,7 @@ class _BajaSendViewState extends State<BajaSendView> {
                 ),
                 const SizedBox(height: 8),
                 Text('Registra nuevas bajas para enviar', style: TextStyle(color: Colors.grey[600])),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () => Get.toNamed('/baja/form'),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Registrar Baja'),
-                  style: ElevatedButton.styleFrom(
-                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)
-                  ),
-                ),
+                const SizedBox(height: 24),             
               ],
             ),
           );

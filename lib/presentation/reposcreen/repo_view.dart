@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
 import 'package:trazaapp/presentation/widgets/custom_button.dart';
-import 'package:trazaapp/presentation/widgets/loading_widget.dart';
 import 'package:trazaapp/utils/utils.dart';
 import 'package:intl/intl.dart';
 
@@ -27,10 +26,6 @@ class RepoView extends GetView<EntregaController> {
         ],
       ),
       body: Obx(() {
-        if (controller.isLoading.value) {
-          return const LoadingWidget();
-        } 
-
         final reposiciones = controller.entregasConReposicionPendiente;
 
         return Column(

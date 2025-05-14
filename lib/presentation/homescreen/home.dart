@@ -36,7 +36,7 @@ class _HomeViewState extends State<HomeView> {
     try {
       entregaController = Get.put(EntregaController());
       bagController = Get.put(ManageBagController());
-      bajaController = Get.put(BajaController(), permanent: true);
+      bajaController = Get.put(BajaController());
 
       // Inicializar datos
       await Future.wait([

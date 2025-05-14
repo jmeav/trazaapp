@@ -450,27 +450,34 @@ Future<void> downloadAllCatalogsSequential({
     required String codhabilitado,
   }) async {
     try {
-      print('Iniciando descarga de motivos de baja bovino...');
-      if (!Hive.isBoxOpen('motivosbajabovino')) {
-        print('Abriendo caja motivosbajabovino...');
-        await Hive.openBox<MotivoBajaBovino>('motivosbajabovino');
-      }
+      print('🔄 Iniciando descarga de motivos de baja bovino...');
+      progressText.value = 'Descargando motivos de baja bovino...';
       
-      var box = Hive.box<MotivoBajaBovino>('motivosbajabovino');
-      
-      await _downloadCatalog(
-        title: "MotivosBajaBovino",
-        fetchFunction: (t, c) => _motivosBajaBovinoRepo.fetchMotivosBajaBovino(token: t, codhabilitado: c),
-        box: box,
-        list: motivosBajaBovino,
-        lastUpdate: lastUpdateMotivosBajaBovino,
+      final motivosBovino = await _motivosBajaBovinoRepo.fetchMotivosBajaBovino(
         token: token,
         codhabilitado: codhabilitado,
       );
-      print('Finalizada descarga de motivos de baja bovino: ${motivosBajaBovino.length} registros');
+      
+      if (motivosBovino.isNotEmpty) {
+        // Actualizar la lista en memoria
+        motivosBajaBovino.assignAll(motivosBovino);
+        
+        // Guardar fecha de actualización
+        if (!Hive.isBoxOpen('catalog_updates')) {
+          await Hive.openBox('catalog_updates');
+        }
+        var updatesBox = Hive.box('catalog_updates');
+        await updatesBox.put('MotivosBajaBovino', DateTime.now().toString());
+        lastUpdateMotivosBajaBovino.value = DateTime.now().toString();
+        
+        print('✅ Motivos de baja bovino descargados exitosamente: ${motivosBovino.length} registros');
+      } else {
+        print('⚠️ No se encontraron motivos de baja bovino para descargar');
+        throw Exception('No se encontraron motivos de baja bovino para descargar');
+      }
     } catch (e) {
-      print('Error al descargar motivos de baja bovino: $e');
-      rethrow;
+      print('❌ Error al descargar motivos de baja bovino: $e');
+      throw Exception('Error al descargar motivos de baja bovino: $e');
     }
   }
 }

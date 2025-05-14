@@ -11,8 +11,17 @@ class AreteInputController extends GetxController {
   }
 
   void clear() {
-    areteController.clear();
+    if (areteController.hasListeners) {
+      areteController.clear();
+    }
     isScanned.value = false;
+  }
+
+  @override
+  void onClose() {
+    // No dispondremos el controlador aquí para evitar el error
+    // areteController.dispose();
+    super.onClose();
   }
 
   Future<void> escanearArete() async {
