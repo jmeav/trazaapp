@@ -113,7 +113,7 @@ class BajaSinOrigenController extends GetxController {
         motivo: 'sin origen',
         evidencia: evidenciaBase64.value,
         estado: 'pendiente',
-        token: config.token,
+        token: config.imei,
         codHabilitado: config.codHabilitado,
         idorganizacion: config.idOrganizacion,
       );
@@ -124,13 +124,13 @@ class BajaSinOrigenController extends GetxController {
       await box.put(baja.id, baja);
       
       print('✅ Baja guardada exitosamente');
-      isLoading.value = false;
       return true;
     } catch (e) {
       print('❌ Error al guardar la baja: $e');
-      isLoading.value = false;
       Get.snackbar('Error', 'Error al guardar la baja: $e', backgroundColor: Colors.red, colorText: Colors.white);
       return false;
+    } finally {
+      isLoading.value = false;
     }
   }
 } 

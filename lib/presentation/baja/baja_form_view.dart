@@ -4,6 +4,7 @@ import 'package:trazaapp/controller/baja_controller.dart';
 import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
 import 'package:trazaapp/data/models/productores/productor.dart';
 import 'package:trazaapp/controller/arete_input_controller.dart';
+import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 
 class BajaFormView extends StatelessWidget {
   const BajaFormView({super.key});
@@ -447,7 +448,26 @@ class BajaFormView extends StatelessWidget {
                     child: Obx(() => ElevatedButton(
                           onPressed: controller.detalleAretes.length ==
                                   controller.cantidadBajas.value
-                              ? controller.saveBaja
+                              ? () async {
+                                  if (!controller.validateForm()) return;
+                                  
+                                  // Mostrar diálogo de carga
+                                  Get.dialog(
+                                    const SavingLoadingDialog(),
+                                    barrierDismissible: false,
+                                  );
+                                  
+                                  try {
+                                    await controller.saveBaja();
+                                  } catch (e) {
+                                    // En caso de error, cerrar el diálogo
+                                    if (Get.isDialogOpen ?? false) {
+                                      Get.back();
+                                    }
+                                    
+                                    print('Error al guardar baja: $e');
+                                  }
+                                }
                               : null,
                           child: Text(
                               'Guardar Baja (${controller.detalleAretes.length}/${controller.cantidadBajas.value})'),

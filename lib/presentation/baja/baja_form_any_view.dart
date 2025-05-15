@@ -57,11 +57,8 @@ class _BajaFormAnyViewState extends State<BajaFormAnyView> {
   }
 
   Future<void> _guardarBaja() async {
-    Get.dialog(
-    const SavingLoadingDialog(),
-    barrierDismissible: false,
-  );
     if (_formKey.currentState?.validate() != true) return;
+    
     // Verificar GPS
     if (!bajaController.isGpsEnabled.value) {
       Get.snackbar(
@@ -96,14 +93,21 @@ class _BajaFormAnyViewState extends State<BajaFormAnyView> {
       return;
     }
 
+    // Una vez validado, mostrar el diálogo de carga
+    Get.dialog(
+      const SavingLoadingDialog(),
+      barrierDismissible: false,
+    );
+
     try {
       bajaController.arete.value = areteInput.areteController.text;
       
-    
       final success = await bajaController.guardarBaja();
       
       // Cerrar el diálogo de carga
-      Get.back();
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
       
       if (success) {
         Get.snackbar(

@@ -307,14 +307,10 @@ class FormBovinosController extends GetxController {
 
     try {
       sendingData.value = true;
-      Get.dialog(
-        const SavingLoadingDialog(),
-        barrierDismissible: false,
-      );
+      
       // Primero, validamos
       if (!validateBeforeSave()) {
         sendingData.value = false;
-        Get.back(); // Cerrar diálogo de carga
         return;
       }
 
@@ -411,7 +407,6 @@ class FormBovinosController extends GetxController {
       await entregaController.fetchEntregas();
       entregaController.cargarAltasListas();
 
-      Get.back(); // Cerrar diálogo de carga
       Get.snackbar(
         'Éxito',
         'Información registrada correctamente',
@@ -420,9 +415,9 @@ class FormBovinosController extends GetxController {
       );
       Get.offAllNamed('/home');
     } catch (e) {
-      Get.back(); // Cerrar diálogo de carga
       Get.snackbar('Error', 'Error al guardar AltaEntrega: $e');
       print('❌ Error en saveFinalData: $e');
+      throw e; // Re-lanzar excepción para que sea capturada por la vista
     } finally {
       sendingData.value = false;
     }

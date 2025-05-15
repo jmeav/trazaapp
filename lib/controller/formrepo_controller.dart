@@ -588,10 +588,6 @@ class FormRepoController extends GetxController {
   Future<void> guardarReposicion() async {
     isLoading.value = true;
     try {
-       Get.dialog(
-    const SavingLoadingDialog(),
-    barrierDismissible: false,
-  );
       if (entrega.value == null || repoId == null) {
         throw Exception('Datos de entrega o ID de reposición no disponibles');
       }
@@ -667,6 +663,7 @@ class FormRepoController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+      throw e; // Re-lanzar excepción para que sea capturada por la vista
     } finally {
       isLoading.value = false;
     }

@@ -9,6 +9,7 @@ import 'package:trazaapp/presentation/widgets/custom_dropdown.dart';
 import 'package:trazaapp/presentation/widgets/custom_textfield.dart';
 import 'package:trazaapp/utils/utils.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
+import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 
 class FormRepoView extends GetView<FormRepoController> {
   FormRepoView({Key? key}) : super(key: key);
@@ -91,14 +92,14 @@ class FormRepoView extends GetView<FormRepoController> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  FloatingActionButton.small(
-                    heroTag: 'llenado_rapido',
-                    onPressed: () {
-                      _showQuickFillDialog(context);
-                    },
-                    child: const Icon(Icons.flash_on),
-                  ),
-                  const SizedBox(width: 16),
+                  // FloatingActionButton.small(
+                  //   heroTag: 'llenado_rapido',
+                  //   onPressed: () {
+                  //     _showQuickFillDialog(context);
+                  //   },
+                  //   child: const Icon(Icons.flash_on),
+                  // ),
+                  // const SizedBox(width: 16),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
@@ -836,8 +837,23 @@ class FormRepoView extends GetView<FormRepoController> {
       return;
     }
 
-    // Si todo está completo, guardar la reposición
-    controller.guardarReposicion();
+    // Si todo está completo, mostrar diálogo de carga y guardar la reposición
+    Get.dialog(
+      const SavingLoadingDialog(),
+      barrierDismissible: false,
+    );
+
+    try {
+      // Guardar la reposición
+      controller.guardarReposicion();
+    } catch (e) {
+      // En caso de error, cerrar el diálogo
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      
+      print('Error al guardar reposición: $e');
+    }
   }
 
   // Navegador de bovinos

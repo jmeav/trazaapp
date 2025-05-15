@@ -6,10 +6,13 @@ import 'package:trazaapp/data/models/repo/bovinorepo.dart';
 import 'package:trazaapp/data/models/razas/raza.dart'; // Importar Raza para obtener nombre
 import 'package:hive/hive.dart'; // Importar Hive para buscar razas
 import 'package:trazaapp/utils/utils.dart'; // Para mostrar imágenes base64
+import 'package:trazaapp/controller/entrega_controller.dart';
+import 'package:trazaapp/presentation/widgets/edit_bovino_dialog.dart';
 
 class ResumenRepoView extends StatelessWidget {
   final RepoEntrega repo;
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+  final EntregaController _entregaController = Get.find<EntregaController>();
 
   ResumenRepoView({required this.repo, Key? key}) : super(key: key);
 
@@ -67,8 +70,22 @@ class ResumenRepoView extends StatelessWidget {
                       children: [
                         Text('Bovino ${index + 1}: Arete Nuevo ${bovino.arete}', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                         _buildDetailRow(theme, 'Arete Anterior', bovino.areteAnterior),
-                        _buildDetailRow(theme, 'Edad', '${bovino.edad} meses'),
-                        _buildDetailRow(theme, 'Sexo', bovino.sexo),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDetailRow(theme, 'Edad', '${bovino.edad} meses'),
+                            ),
+                            Expanded(
+                              child: _buildDetailRow(theme, 'Sexo', bovino.sexo),
+                            ),
+                            // Botón de edición
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _mostrarDialogoEdicion(context, bovino),
+                              tooltip: 'Editar edad y sexo',
+                            ),
+                          ],
+                        ),
                         _buildDetailRow(theme, 'Raza', _getNombreRaza(bovino.razaId)),
                         _buildDetailRow(theme, 'Traza', bovino.traza),
                         _buildDetailRow(theme, 'Estado Arete', bovino.estadoArete),
@@ -170,6 +187,24 @@ class ResumenRepoView extends StatelessWidget {
                   child: const Text('Cerrar'))
            ]
         ),
+      ),
+    );
+  }
+
+  // Método para mostrar el diálogo de edición
+  void _mostrarDialogoEdicion(BuildContext context, BovinoRepo bovino) {
+    showDialog(
+      context: context,
+      builder: (context) => EditBovinoDialog(
+        arete: bovino.arete,
+        sexo: bovino.sexo,
+        edad: bovino.edad,
+        onSave: (sexo, edad) {
+          _entregaController.actualizarBovinoRepo(repo.idRepo, bovino.arete, sexo, edad).then((_) {
+            // Recargar la página para mostrar los cambios
+            Get.off(() => ResumenRepoView(repo: repo));
+          });
+        },
       ),
     );
   }

@@ -398,10 +398,6 @@ class BajaController extends GetxController {
     if (!validateForm()) return;
 
     try {
-      Get.dialog(
-        const SavingLoadingDialog(),
-        barrierDismissible: false,
-      );
       final config = configBox.get('config');
       if (config == null) {
         throw Exception('No se encontró la configuración del usuario.');
@@ -449,6 +445,7 @@ class BajaController extends GetxController {
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
       );
+      throw e; // Re-lanzar excepción para que sea capturada por la vista
     }
   }
 

@@ -1,17 +1,18 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
 import 'package:collection/collection.dart';
 import 'package:trazaapp/controller/managebag_controller.dart';
+import 'package:trazaapp/data/models/repo/repoentrega.dart';
+import 'package:trazaapp/data/models/repo/bovinorepo.dart';
 import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
 import 'package:trazaapp/data/models/bovinos/bovino.dart';
 import 'package:trazaapp/data/models/entregas/entregas.dart';
-import 'package:trazaapp/data/models/repo/repoentrega.dart';
 import 'package:trazaapp/utils/util.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/remote/endpoints.dart';
@@ -859,4 +860,152 @@ class EntregaController extends GetxController {
   List<RepoEntrega> get reposicionesPendientes => repoBox.values
       .where((repo) => repo.estadoRepo.trim().toLowerCase() == 'pendiente' || repo.estadoRepo.trim().toLowerCase() == 'pendiente')
       .toList();
+
+  // Método para actualizar un bovino en reposición
+  Future<void> actualizarBovinoRepo(String repoId, String areteId, String sexo, int edad) async {
+    try {
+      final repoBox = Hive.box<RepoEntrega>('repoentregas');
+      final bovinosBox = Hive.box<BovinoRepo>('bovinosrepo');
+      
+      // Obtener la reposición
+      final repo = repoBox.get(repoId);
+      if (repo == null) {
+        throw Exception('No se encontró la reposición');
+      }
+      
+      // Buscar el bovino por arete
+      BovinoRepo? bovino;
+      for (var b in bovinosBox.values) {
+        if (b.repoId == repoId && b.arete == areteId) {
+          bovino = b;
+          break;
+        }
+      }
+      
+      if (bovino == null) {
+        throw Exception('No se encontró el bovino');
+      }
+      
+      // Actualizar los datos del bovino
+      final bovinoActualizado = bovino.copyWith(
+        sexo: sexo,
+        edad: edad,
+      );
+      
+      // Guardar en Hive
+      await bovinosBox.put(bovino.id, bovinoActualizado);
+      
+      // Actualizar la lista local de reposiciones
+      final index = reposListas.indexWhere((r) => r.idRepo == repoId);
+      if (index >= 0) {
+        // Obtener la lista de bovinos
+        List<BovinoRepo> bovinosActualizados = List<BovinoRepo>.from(reposListas[index].detalleBovinos);
+        
+        // Buscar el bovino por arete en la lista
+        for (int i = 0; i < bovinosActualizados.length; i++) {
+          if (bovinosActualizados[i].arete == areteId) {
+            bovinosActualizados[i] = bovinoActualizado;
+            break;
+          }
+        }
+        
+        // Actualizar la reposición con la lista actualizada
+        reposListas[index] = reposListas[index].copyWith(detalleBovinos: bovinosActualizados);
+      }
+      
+      Get.snackbar(
+        'Éxito',
+        'Bovino actualizado correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      print('Error al actualizar bovino en reposición: $e');
+      Get.snackbar(
+        'Error',
+        'No se pudo actualizar el bovino: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      rethrow;
+    }
+  }
+
+  // Método para actualizar un bovino en alta
+  Future<void> actualizarBovinoAlta(String altaId, String areteId, String sexo, int edad) async {
+    try {
+      final altaBox = Hive.box<AltaEntrega>('altaentregas');
+      
+      // Obtener el alta
+      final alta = altaBox.get(altaId);
+      if (alta == null) {
+        throw Exception('No se encontró el alta');
+      }
+      
+      // Crear una lista nueva con los bovinos actualizados
+      List<BovinoResumen> bovinosActualizados = [];
+      bool bovinoEncontrado = false;
+      
+      for (var bovino in alta.detalleBovinos) {
+        if (bovino.arete == areteId) {
+          // Crear un bovino actualizado
+          BovinoResumen bovinoActualizado = BovinoResumen(
+            arete: bovino.arete,
+            edad: edad,
+            sexo: sexo,
+            raza: bovino.raza,
+            traza: bovino.traza,
+            estadoArete: bovino.estadoArete,
+            fechaNacimiento: DateTime.now().subtract(Duration(days: edad * 30)),
+            fotoArete: bovino.fotoArete,
+            areteMadre: bovino.areteMadre,
+            aretePadre: bovino.aretePadre,
+            regMadre: bovino.regMadre,
+            regPadre: bovino.regPadre,
+            motivoEstadoAreteId: bovino.motivoEstadoAreteId,
+          );
+          bovinosActualizados.add(bovinoActualizado);
+          bovinoEncontrado = true;
+        } else {
+          bovinosActualizados.add(bovino);
+        }
+      }
+      
+      if (!bovinoEncontrado) {
+        throw Exception('No se encontró el bovino con arete $areteId');
+      }
+      
+      // Crear una alta actualizada
+      final altaActualizada = alta.copyWith(
+        detalleBovinos: bovinosActualizados,
+      );
+      
+      // Guardar en Hive
+      await altaBox.put(altaId, altaActualizada);
+      
+      // Actualizar la lista local
+      final index = altasListas.indexWhere((a) => a.idAlta == altaId);
+      if (index >= 0) {
+        altasListas[index] = altaActualizada;
+      }
+      
+      Get.snackbar(
+        'Éxito',
+        'Bovino actualizado correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      print('Error al actualizar bovino en alta: $e');
+      Get.snackbar(
+        'Error',
+        'No se pudo actualizar el bovino: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      rethrow;
+    }
+  }
 }

@@ -102,14 +102,14 @@ class ConfiguracionesScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // 🔓 Sección de Sesión
-            _buildSectionTitle("Sesión"),
-            _buildButton(
-              context: context,
-              icon: Icons.logout,
-              text: "Cerrar sesión",
-              onPressed: _logout,
-            ),
+            // // 🔓 Sección de Sesión
+            // _buildSectionTitle("Sesión"),
+            // _buildButton(
+            //   context: context,
+            //   icon: Icons.logout,
+            //   text: "Cerrar sesión",
+            //   onPressed: _logout,
+            // ),
           ],
         ),
       ),

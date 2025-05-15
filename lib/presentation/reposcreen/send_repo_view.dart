@@ -39,21 +39,6 @@ class SendRepoView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Enviar Reposiciones'),
-        actions: [
-          Obx(() => controller.isLoading.value
-              ? const Padding(
-                  padding: EdgeInsets.only(right: 16.0),
-                  child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2)),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: controller.refreshData, // Llama a refreshData que incluye cargarReposListas
-                  tooltip: 'Actualizar lista',
-                ))
-        ],
       ),
       body: Obx(() {
         if (controller.isLoading.value && controller.reposListas.isEmpty) {
@@ -95,9 +80,9 @@ class SendRepoView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${controller.reposListas.length} Reposiciones listas para enviar',
+                    '${controller.reposListas.length} Reposiciones listas',
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                  ),
+                  ),            
                 ],
               ),
             ),
@@ -156,7 +141,7 @@ class SendRepoView extends StatelessWidget {
                               _buildActionButton(
                                 context: context,
                                 icon: Icons.preview_outlined,
-                                label: 'Revisar',
+                                label: 'Revisar/Editar',
                                 color: theme.colorScheme.secondary,
                                 onPressed: () => Get.to(() => ResumenRepoView(repo: repo)),
                               ),

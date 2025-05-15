@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:trazaapp/controller/formbovinos_controller.dart';
 import 'package:trazaapp/data/models/razas/raza.dart';
 import 'package:flutter/services.dart';
+import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 
 class FormBovinosView extends StatelessWidget {
   final FormBovinosController controller = Get.put(FormBovinosController());
@@ -116,17 +117,17 @@ class FormBovinosView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   // // 1) Botón "Llenado Rápido"
-                  FloatingActionButton.small(
-                    heroTag: 'llenado_rapido',
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => _buildQuickFillDialog(context),
-                      );
-                    },
-                    child: const Icon(Icons.flash_on),
-                  ),
-                  const SizedBox(width: 16),
+                  // FloatingActionButton.small(
+                  //   heroTag: 'llenado_rapido',
+                  //   onPressed: () {
+                  //     showDialog(
+                  //       context: context,
+                  //       builder: (_) => _buildQuickFillDialog(context),
+                  //     );
+                  //   },
+                  //   child: const Icon(Icons.flash_on),
+                  // ),
+                  // const SizedBox(width: 16),
 
                   // 2) Botón "Ver Bovinos"
                   ElevatedButton.icon(
@@ -601,8 +602,30 @@ class FormBovinosView extends StatelessWidget {
                     vertical: 15,
                   ),
                 ),
-                onPressed: () {
-                  controller.saveFinalData();
+                onPressed: () async {
+                  // Primero validamos los datos
+                  if (!controller.validateBeforeSave()) {
+                    return;
+                  }
+                  
+                  // Si la validación es exitosa, mostramos el diálogo de carga
+                  Get.dialog(
+                    const SavingLoadingDialog(),
+                    barrierDismissible: false,
+                  );
+                  
+                  try {
+                    // Intentamos guardar los datos
+                    await controller.saveFinalData();
+                  } catch (e) {
+                    // En caso de error, cerramos el diálogo
+                    if (Get.isDialogOpen ?? false) {
+                      Get.back();
+                    }
+                    
+                    // El snackbar de error ya se muestra en el controlador
+                    print('Error al guardar: $e');
+                  }
                 },
                 child: const Text(
                   "Finalizar",
