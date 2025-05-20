@@ -19,11 +19,11 @@ import 'package:file_picker/file_picker.dart';
 
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
-import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
-import 'package:trazaapp/data/models/bovinos/bovino.dart';
-import 'package:trazaapp/data/models/entregas/entregas.dart';
-import 'package:trazaapp/data/models/razas/raza.dart';
+import 'package:trazaapp/data/local/models/altaentrega/altaentrega.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/bovinos/bovino.dart';
+import 'package:trazaapp/data/local/models/entregas/entregas.dart';
+import 'package:trazaapp/data/local/models/razas/raza.dart';
 import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 import 'package:trazaapp/utils/utils.dart';
 

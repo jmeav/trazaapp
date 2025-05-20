@@ -3,9 +3,9 @@ import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:trazaapp/controller/verifycue_controller.dart';
-import 'package:trazaapp/data/models/departamentos/departamento.dart';
-import 'package:trazaapp/data/models/municipios/municipio.dart';
-import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
+import 'package:trazaapp/data/local/models/departamentos/departamento.dart';
+import 'package:trazaapp/data/local/models/municipios/municipio.dart';
+import 'package:trazaapp/data/local/models/establecimiento/establecimiento.dart';
 
 class VerifyEstablishmentView extends StatelessWidget {
   final VerifyEstablishmentController controller = Get.put(VerifyEstablishmentController());

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/formbovinos_controller.dart';
-import 'package:trazaapp/data/models/razas/raza.dart';
+import 'package:trazaapp/data/local/models/razas/raza.dart';
 import 'package:flutter/services.dart';
 import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 

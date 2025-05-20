@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
+import 'package:trazaapp/data/local/models/altaentrega/altaentrega.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';

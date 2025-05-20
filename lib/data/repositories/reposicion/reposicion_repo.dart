@@ -51,47 +51,48 @@ class EnvioReposicionRepository {
       print("Headers: ${response.headers}");
       print("Body: ${response.body}");
 
-      Get.back(); // Cerrar diálogo de carga SIEMPRE
-
       if (response.statusCode == 201) {
-        Get.snackbar(
-          'Éxito',
-          'Reposición enviada correctamente',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
+        Get.back(); // Cerrar diálogo de carga
+        // Get.snackbar(
+        //   'Éxito',
+        //   'Reposición enviada correctamente',
+        //   backgroundColor: Colors.green,
+        //   colorText: Colors.white,
+        // );
         print("✅ Reposición enviada con éxito: ${response.body}");
       } else {
-        Get.snackbar(
-          'Error',
-          'Error al enviar reposición: ${response.statusCode}',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        print("❌ Error al enviar reposición: ${response.statusCode}");
+        Get.back(); // Cerrar diálogo de carga
         try {
           var jsonResponse = jsonDecode(response.body);
-          print("🔹 Respuesta del servidor: $jsonResponse");
+          if (response.statusCode == 500 && 
+              jsonResponse['error'] == 'Error en la base de datos' &&
+              jsonResponse['detalle'].toString().contains('Duplicate entry')) {
+            print("❌ Error de duplicado detectado");
+            throw Exception('DUPLICATE_ENTRY');
+          }
+          throw Exception(jsonResponse['detalle'] ?? 'Error al enviar reposición');
         } catch (e) {
+          if (e.toString() == 'Exception: DUPLICATE_ENTRY') {
+            print("❌ Propagando error de duplicado");
+            rethrow;
+          }
           print("⚠️ No se pudo parsear la respuesta del servidor: $e");
           print("⚠️ Respuesta raw: ${response.body}");
           if (response.body.contains('<html>')) {
-            throw Exception("El servidor ha rechazado la solicitud. Por favor, verifica la configuración del servidor o contacta al administrador.");
+            throw Exception("SERVER_ERROR");
           }
+          throw Exception("UNKNOWN_ERROR");
         }
-        throw Exception("Error al enviar reposición.");
       }
     } catch (e) {
-      Get.back(); // Cerrar diálogo de carga si hay excepción
-      Get.snackbar(
-        'Error',
-        'Excepción al enviar reposición: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      print("⚠️ Excepción en enviarReposicion: $e");
-      print("⚠️ Stack trace: ${StackTrace.current}");
-      rethrow;
+      if (Get.isDialogOpen ?? false) {
+        Get.back(); // Cerrar diálogo de carga si está abierto
+      }
+      if (e.toString().contains('Failed host lookup') || 
+          e.toString().contains('SocketException')) {
+        throw Exception('CONNECTION_ERROR');
+      }
+      rethrow; // Asegurarnos de que el error se propague
     }
   }
 } 

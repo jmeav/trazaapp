@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/controller/baja_controller.dart';
 import 'package:hive/hive.dart';
-import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
+import 'package:trazaapp/data/local/models/bajasinorigen/baja_sin_origen.dart';
 
 class SendMenuView extends StatelessWidget {
   const SendMenuView({Key? key}) : super(key: key);

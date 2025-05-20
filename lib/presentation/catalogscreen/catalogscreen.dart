@@ -3,9 +3,9 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:lottie/lottie.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
-import 'package:trazaapp/data/models/bag/bag_operadora.dart';
-import 'package:trazaapp/data/models/entregas/entregas.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/bag/bag_operadora.dart';
+import 'package:trazaapp/data/local/models/entregas/entregas.dart';
 
 class CatalogosScreen extends StatelessWidget {
   final CatalogosController controller = Get.put(CatalogosController());

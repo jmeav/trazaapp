@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
-import 'package:trazaapp/data/models/entregas/entregas.dart';
+import 'package:trazaapp/data/local/models/entregas/entregas.dart';
 import 'package:trazaapp/presentation/widgets/custom_button.dart';
 import 'package:trazaapp/utils/utils.dart';
 import 'package:intl/intl.dart';

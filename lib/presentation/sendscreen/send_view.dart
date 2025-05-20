@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/presentation/sendscreen/resumen_view.dart';
-import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
+import 'package:trazaapp/data/local/models/altaentrega/altaentrega.dart';
 
 class EnviarView extends StatefulWidget {
   EnviarView({Key? key}) : super(key: key);
@@ -123,7 +123,7 @@ class _EnviarViewState extends State<EnviarView> {
                                   _buildActionButton(
                                     context: context,
                                     icon: Icons.preview_outlined,
-                                    label: 'Revisar/Editar',
+                                    label: 'Revisar',
                                     color: theme.colorScheme.secondary,
                                     onPressed: () {
                                       Get.to(() => ResumenAltaView(alta: alta));
@@ -204,12 +204,31 @@ class _EnviarViewState extends State<EnviarView> {
     try {
       await controller.enviarAlta(idAlta);
     } catch (e) {
-      // Puedes mostrar un snackbar de error aquí si quieres
+      String mensajeError = 'Error al enviar la alta';
+      String tituloError = 'Error';
+      
+      if (e.toString().contains('DUPLICATE_ENTRY')) {
+        tituloError = 'Error de Duplicado';
+        mensajeError = 'Esta alta ya fue enviada anteriormente';
+      } else if (e.toString().contains('CONNECTION_ERROR')) {
+        tituloError = 'Error de Conexión';
+        mensajeError = 'No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente';
+      } else if (e.toString().contains('SERVER_ERROR')) {
+        tituloError = 'Error del Servidor';
+        mensajeError = 'El servidor ha rechazado la solicitud. Por favor, contacta al administrador';
+      }
+      
+      Get.snackbar(
+        tituloError,
+        mensajeError,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
     } finally {
       setState(() {
         isLoading = false;
       });
-      // Si hay un diálogo abierto, ciérralo
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }

@@ -62,36 +62,32 @@ class EnvioBajaRepository {
         print("✅ Baja enviada con éxito: ${response.body}");
       } else {
         Get.back(); // Cerrar diálogo de carga
-        Get.snackbar(
-          'Error',
-          'Error al enviar baja: ${response.statusCode}',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        print("❌ Error al enviar baja: ${response.statusCode}");
         try {
           var jsonResponse = jsonDecode(response.body);
-          print("🔹 Respuesta del servidor: $jsonResponse");
+          if (response.statusCode == 500 && 
+              jsonResponse['error'] == 'Error en la base de datos' &&
+              jsonResponse['detalle'].toString().contains('Duplicate entry')) {
+            throw Exception('DUPLICATE_ENTRY');
+          }
+          throw Exception(jsonResponse['detalle'] ?? 'Error al enviar baja');
         } catch (e) {
+          if (e.toString() == 'Exception: DUPLICATE_ENTRY') {
+            rethrow;
+          }
           print("⚠️ No se pudo parsear la respuesta del servidor: $e");
           print("⚠️ Respuesta raw: ${response.body}");
-          
           if (response.body.contains('<html>')) {
-            throw Exception("El servidor ha rechazado la solicitud. Por favor, verifica la configuración del servidor o contacta al administrador.");
+            throw Exception("SERVER_ERROR");
           }
+          throw Exception("UNKNOWN_ERROR");
         }
-        throw Exception("Error al enviar baja.");
       }
     } catch (e) {
       Get.back(); // Cerrar diálogo de carga
-      Get.snackbar(
-        'Error',
-        'Excepción al enviar baja: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      print("⚠️ Excepción en enviarBaja: $e");
-      print("⚠️ Stack trace: ${StackTrace.current}");
+      if (e.toString().contains('Failed host lookup') || 
+          e.toString().contains('SocketException')) {
+        throw Exception('CONNECTION_ERROR');
+      }
       rethrow;
     }
   }

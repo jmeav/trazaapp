@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
-import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/bajasinorigen/baja_sin_origen.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
 
 class BajaSinOrigenController extends GetxController {
   final RxString arete = ''.obs;

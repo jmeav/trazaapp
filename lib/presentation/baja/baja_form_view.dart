@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/baja_controller.dart';
-import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
-import 'package:trazaapp/data/models/productores/productor.dart';
+import 'package:trazaapp/data/local/models/establecimiento/establecimiento.dart';
+import 'package:trazaapp/data/local/models/productores/productor.dart';
 import 'package:trazaapp/controller/arete_input_controller.dart';
 import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 

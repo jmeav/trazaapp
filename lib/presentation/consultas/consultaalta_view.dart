@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/consultasaltas_controller.dart';
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
 import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

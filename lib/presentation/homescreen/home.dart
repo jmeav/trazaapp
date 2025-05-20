@@ -4,11 +4,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
 import 'package:trazaapp/controller/entrega_controller.dart';
 import 'package:trazaapp/controller/managebag_controller.dart';
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
-import 'package:trazaapp/data/models/bag/bag_operadora.dart';
-import 'package:trazaapp/data/models/entregas/entregas.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/bag/bag_operadora.dart';
+import 'package:trazaapp/data/local/models/entregas/entregas.dart';
 import 'package:trazaapp/controller/baja_controller.dart';
-import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
+import 'package:trazaapp/data/local/models/bajasinorigen/baja_sin_origen.dart';
 
 // Convertido a StatefulWidget para manejar BottomNavigationBar
 class HomeView extends StatefulWidget {

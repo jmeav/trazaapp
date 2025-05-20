@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
-import 'package:trazaapp/data/models/departamentos/departamento.dart';
-import 'package:trazaapp/data/models/municipios/municipio.dart';
-import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
+import 'package:trazaapp/data/local/models/departamentos/departamento.dart';
+import 'package:trazaapp/data/local/models/municipios/municipio.dart';
+import 'package:trazaapp/data/local/models/establecimiento/establecimiento.dart';
 
 class VerifyEstablishmentController extends GetxController {
   // Controladores de texto

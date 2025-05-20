@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/controller/managebag_controller.dart';
-import 'package:trazaapp/data/models/departamentos/departamento.dart';
-import 'package:trazaapp/data/models/municipios/municipio.dart';
-import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
-import 'package:trazaapp/data/models/productores/productor.dart';
+import 'package:trazaapp/data/local/models/departamentos/departamento.dart';
+import 'package:trazaapp/data/local/models/municipios/municipio.dart';
+import 'package:trazaapp/data/local/models/establecimiento/establecimiento.dart';
+import 'package:trazaapp/data/local/models/productores/productor.dart';
 
 class ManageBagView extends StatelessWidget {
   final ManageBagController controller = Get.put(ManageBagController());

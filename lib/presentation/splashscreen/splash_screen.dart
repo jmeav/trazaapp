@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:trazaapp/login/controller/login_controller.dart';
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
 
 class SplashScreen extends StatelessWidget {
   final LoginController loginController = Get.put(LoginController());

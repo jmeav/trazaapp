@@ -5,11 +5,11 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart'; // Para formatear fechas
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:get/get.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
-import 'package:trazaapp/data/models/razas/raza.dart';
+import 'package:trazaapp/data/local/models/razas/raza.dart';
 
 class PdfGenerator {
   static Future<String> generateFichaPdf(

@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:trazaapp/data/repositories/consultas/consultasalta_repo.dart';
 import 'package:trazaapp/utils/pdf_generator.dart';
 import 'package:trazaapp/presentation/pdf_viewer/pdf_viewer_screen.dart';
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
 import 'package:hive/hive.dart';
 
 class ConsultasController extends GetxController {

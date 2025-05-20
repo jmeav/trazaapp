@@ -6,19 +6,19 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:trazaapp/data/models/baja/baja_model.dart';
-import 'package:trazaapp/data/models/baja/arete_baja.dart';
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
-import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
-import 'package:trazaapp/data/models/productores/productor.dart';
+import 'package:trazaapp/data/local/models/baja/baja_model.dart';
+import 'package:trazaapp/data/local/models/baja/arete_baja.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/establecimiento/establecimiento.dart';
+import 'package:trazaapp/data/local/models/productores/productor.dart';
 import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 import 'package:trazaapp/utils/utils.dart';
-import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
+import 'package:trazaapp/data/local/models/motivosbajabovino/motivosbajabovino.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
 import 'package:trazaapp/data/repositories/baja/baja_repo.dart';
 import 'package:trazaapp/data/repositories/bajasinorigen/baja_sin_origen_repo.dart';
 import 'package:trazaapp/controller/arete_input_controller.dart';
-import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
+import 'package:trazaapp/data/local/models/bajasinorigen/baja_sin_origen.dart';
 
 class BajaController extends GetxController {
   final motivoController = TextEditingController();
@@ -728,54 +728,105 @@ class BajaController extends GetxController {
   }
 
   Future<void> enviarBaja(String bajaId) async {
-    final envioBajaRepository = EnvioBajaRepository();
-    final baja = bajaBox.get(bajaId);
-    if (baja == null) {
-      Get.snackbar('Error', 'No se encontró la baja con ID: $bajaId');
-      return;
+    try {
+      final envioBajaRepository = EnvioBajaRepository();
+      final baja = bajaBox.get(bajaId);
+      if (baja == null) {
+        Get.snackbar('Error', 'No se encontró la baja con ID: $bajaId');
+        return;
+      }
+
+      await envioBajaRepository.enviarBaja(baja.toJsonEnvio());
+      
+      // Marcar como enviada y actualizar en Hive
+      final bajaEnviada = baja.copyWith(estado: 'enviada');
+      await bajaBox.put(bajaId, bajaEnviada);
+      cargarBajasPendientes();
+
+      // Get.snackbar(
+      //   'Éxito',
+      //   'Baja enviada correctamente',
+      //   backgroundColor: Colors.green,
+      //   colorText: Colors.white,
+      // );
+    } catch (e) {
+      String mensajeError = 'Error al enviar la baja';
+      String tituloError = 'Error';
+      
+      if (e.toString().contains('DUPLICATE_ENTRY')) {
+        tituloError = 'Error de Duplicado';
+        mensajeError = 'Esta baja ya fue enviada anteriormente';
+        
+        // Si es un error de duplicado, eliminamos la baja
+        await bajaBox.delete(bajaId);
+        await bajaBox.flush();
+        cargarBajasPendientes();
+      } else if (e.toString().contains('CONNECTION_ERROR')) {
+        tituloError = 'Error de Conexión';
+        mensajeError = 'No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente';
+      } else if (e.toString().contains('SERVER_ERROR')) {
+        tituloError = 'Error del Servidor';
+        mensajeError = 'El servidor ha rechazado la solicitud. Por favor, contacta al administrador';
+      }
+      rethrow;
     }
-    await envioBajaRepository.enviarBaja(baja.toJsonEnvio());
-    // Marcar como enviada y actualizar en Hive
-    final bajaEnviada = baja.copyWith(estado: 'enviada');
-    await bajaBox.put(bajaId, bajaEnviada);
-    cargarBajasPendientes();
   }
 
   Future<void> enviarBajaSinOrigen(String id) async {
     try {
-      print('🔄 Iniciando envío de baja sin origen con ID: $id');
-
       final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
       final baja = boxBajasSinOrigen.get(id);
 
       if (baja == null) {
-        print('❌ No se encontró la baja sin origen con ID: $id');
         Get.snackbar('Error', 'No se encontró la baja sin origen con ID: $id');
         return;
       }
 
-      print('📤 Preparando envío de baja sin origen:');
-      print('Arete: ${baja.arete}');
-      print('Fecha: ${baja.fecha}');
-      print('Estado actual: ${baja.estado}');
-
       final envioBajaSinOrigenRepository = EnvioBajaSinOrigenRepository();
-      final jsonEnvio = baja.toJsonEnvio();
-
-      print('📦 Datos a enviar:');
-      print(jsonEncode(jsonEnvio));
-
-      await envioBajaSinOrigenRepository.enviarBajaSinOrigen(jsonEnvio);
+      await envioBajaSinOrigenRepository.enviarBajaSinOrigen(baja.toJsonEnvio());
 
       // Marcar como enviada y actualizar en Hive
       final bajaEnviada = baja.copyWith(estado: 'enviada');
       await boxBajasSinOrigen.put(id, bajaEnviada);
-
-      print('✅ Baja sin origen enviada y actualizada correctamente');
-
-      // Recargar la lista de bajas pendientes
       cargarBajasPendientes();
-    } catch (e) {}
+
+      // Get.snackbar(
+      //   'Éxito',
+      //   'Baja sin origen enviada correctamente',
+      //   backgroundColor: Colors.green,
+      //   colorText: Colors.white,
+      // );
+    } catch (e) {
+      String mensajeError = 'Error al enviar la baja sin origen';
+      String tituloError = 'Error';
+      
+      if (e.toString().contains('DUPLICATE_ENTRY')) {
+        tituloError = 'Error de Duplicado';
+        mensajeError = 'Esta baja sin origen ya fue enviada anteriormente';
+        
+        // Si es un error de duplicado, eliminamos la baja
+        final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
+        await boxBajasSinOrigen.delete(id);
+        await boxBajasSinOrigen.flush();
+        cargarBajasPendientes();
+      } else if (e.toString().contains('CONNECTION_ERROR')) {
+        tituloError = 'Error de Conexión';
+        mensajeError = 'No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente';
+      } else if (e.toString().contains('SERVER_ERROR')) {
+        tituloError = 'Error del Servidor';
+        mensajeError = 'El servidor ha rechazado la solicitud. Por favor, contacta al administrador';
+      }
+      
+      Get.snackbar(
+        tituloError,
+        mensajeError,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+        snackPosition: SnackPosition.TOP,
+      );
+      rethrow;
+    }
   }
 
   Future<void> eliminarBajaSinOrigen(String id) async {
@@ -783,8 +834,13 @@ class BajaController extends GetxController {
       final boxBajasSinOrigen = Hive.box<BajaSinOrigen>('bajassinorigen');
       await boxBajasSinOrigen.delete(id);
       cargarBajasPendientes(); // Recargar la lista de pendientes
-      Get.snackbar('Eliminada', 'Baja sin origen eliminada correctamente.',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Eliminada', 
+        'Baja sin origen eliminada correctamente.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
     } catch (e) {
       Get.snackbar(
         'Error',

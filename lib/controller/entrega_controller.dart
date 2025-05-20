@@ -6,15 +6,15 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
 import 'package:collection/collection.dart';
 import 'package:trazaapp/controller/managebag_controller.dart';
-import 'package:trazaapp/data/models/repo/repoentrega.dart';
-import 'package:trazaapp/data/models/repo/bovinorepo.dart';
-import 'package:trazaapp/data/models/altaentrega/altaentrega.dart';
-import 'package:trazaapp/data/models/bovinos/bovino.dart';
-import 'package:trazaapp/data/models/entregas/entregas.dart';
+import 'package:trazaapp/data/local/models/reposicion/repoentrega.dart';
+import 'package:trazaapp/data/local/models/reposicion/bovinorepo.dart';
+import 'package:trazaapp/data/local/models/altaentrega/altaentrega.dart';
+import 'package:trazaapp/data/local/models/bovinos/bovino.dart';
+import 'package:trazaapp/data/local/models/entregas/entregas.dart';
 import 'package:trazaapp/utils/util.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:trazaapp/data/models/appconfig/appconfig_model.dart';
+import 'package:trazaapp/data/local/models/appconfig/appconfig_model.dart';
 import 'package:trazaapp/data/remote/endpoints.dart';
 import 'package:trazaapp/data/repositories/reposicion/reposicion_repo.dart';
 
@@ -55,28 +55,62 @@ class EntregaController extends GetxController {
       print('📦 Abriendo caja repoentregas...');
       repoBox = await Hive.openBox<RepoEntrega>('repoentregas');
       
-      // Verificar estado de las cajas
-      print('📊 Estado inicial de las cajas:');
-      print('- Entregas: ${entregasBox.length} elementos');
-      print('- Altas: ${altaEntregaBox.length} elementos');
-      print('- Repos: ${repoBox.length} elementos');
+      // Ensure entregasBox is open
+      if (!entregasBox.isOpen) {
+         print("Advertencia: entregasBox no está abierta en onInit. Intentando abrir...");
+         await Hive.openBox<Entregas>('entregas'); 
+      }
+
+      // Obtener la configuración actual
+      final configBox = Hive.box<AppConfig>('appConfig');
+      final config = configBox.get('config');
       
-      // Verificar si hay entregas que deberían ser eliminadas
-      final entregasAEliminar = entregasBox.values.where((entrega) => 
-        entrega.reposicion && 
-        entrega.estadoReposicion.toLowerCase() == 'enviada'
+      if (config != null && config.cleanIds.isNotEmpty) {
+        print('🧹 Limpiando entregas marcadas para eliminación...');
+        print('📋 IDs a eliminar: ${config.cleanIds.join(', ')}');
+        
+        // Eliminar las entregas marcadas
+        await entregasBox.deleteAll(config.cleanIds);
+        await entregasBox.flush();
+        
+        // Limpiar la lista de IDs
+        final configActualizado = config.copyWith(cleanIds: []);
+        await configBox.put('config', configActualizado);
+        await configBox.flush();
+        
+        print('✅ Entregas eliminadas y lista de IDs limpiada');
+      }
+
+      // Limpiar entregas que coincidan con reposiciones procesadas
+      print('🧹 Limpiando entregas con reposiciones procesadas...');
+      final reposProcesadas = repoBox.values.where((repo) => 
+        repo.estadoRepo.toLowerCase() == 'procesado'
       ).toList();
       
-      if (entregasAEliminar.isNotEmpty) {
-        print('⚠️ Encontradas entregas que deberían ser eliminadas:');
-        for (var entrega in entregasAEliminar) {
-          print('  - ID: ${entrega.entregaId}');
-          await entregasBox.delete(entrega.entregaId);
-          print('  ✅ Eliminada');
+      for (var repo in reposProcesadas) {
+        // Eliminar la entrega con ID _repo
+        final entregaRepoId = '${repo.entregaIdOrigen}_repo';
+        final entregaRepo = entregasBox.get(entregaRepoId);
+        if (entregaRepo != null) {
+          print('🗑️ Eliminando entrega de reposición: $entregaRepoId');
+          await entregasBox.delete(entregaRepoId);
         }
-        await entregasBox.flush();
+
+        // Actualizar estado de la entrega original
+        final entregaOriginal = entregasBox.get(repo.entregaIdOrigen);
+        if (entregaOriginal != null) {
+          print('📝 Actualizando estado de entrega original: ${repo.entregaIdOrigen}');
+          final entregaActualizada = entregaOriginal.copyWith(
+            estado: 'procesado',
+            estadoReposicion: 'procesado'
+          );
+          await entregasBox.put(repo.entregaIdOrigen, entregaActualizada);
+        }
       }
-      
+      await entregasBox.flush();
+      print('✅ Proceso de limpieza y actualización de estados completado');
+
+      // Now load the remaining deliveries into the observable list
       await fetchUserLocation();
       await fetchEntregas();
       _listenLocationChanges();
@@ -84,7 +118,7 @@ class EntregaController extends GetxController {
       cargarReposListas();
       
       print('📊 Estado final de las cajas después de cargar:');
-      print('- Entregas: ${entregasBox.length} elementos');
+      print('- Entregas: ' + entregasBox.length.toString() + ' elementos');
       print('- Altas: ${altaEntregaBox.length} elementos');
       print('- Repos: ${repoBox.length} elementos');
       
@@ -92,10 +126,12 @@ class EntregaController extends GetxController {
       print('✅ EntregaController inicializado correctamente');
     } catch (e) {
       print("❌ Error en onInit EntregaController: $e");
-      // Intentar recuperar el estado
       try {
         if (!repoBox.isOpen) {
           repoBox = await Hive.openBox<RepoEntrega>('repoentregas');
+        }
+        if (!entregasBox.isOpen) {
+          await Hive.openBox<Entregas>('entregas');
         }
         await fetchEntregas();
         cargarAltasListas();
@@ -137,7 +173,10 @@ class EntregaController extends GetxController {
     try {
        reposListas.assignAll(
          repoBox.values
-             .where((repo) => repo.estadoRepo.trim().toLowerCase() == 'lista')
+             .where((repo) => 
+               repo.estadoRepo.trim().toLowerCase() == 'lista' && 
+               repo.estadoRepo.trim().toLowerCase() != 'enviada'
+             )
              .toList(),
        );
        print("Reposiciones listas cargadas: ${reposListas.length}");
@@ -208,14 +247,14 @@ class EntregaController extends GetxController {
         final values = entregasBox.values.toList();
         print('📋 Valores encontrados en entregasBox: ${values.length}');
         
-        // Imprimir detalles de cada entrega
-        for (var entrega in values) {
-          print('📄 Entrega encontrada:');
-          print('  - ID: ${entrega.entregaId}');
-          print('  - Estado: ${entrega.estado}');
-          print('  - Reposición: ${entrega.reposicion}');
-          print('  - Estado Reposición: ${entrega.estadoReposicion}');
-        }
+        // Imprimir detalles de cada entrega (debugging)
+        // for (var entrega in values) {
+        //   print('📄 Entrega encontrada:');
+        //   print('  - ID: ${entrega.entregaId}');
+        //   print('  - Estado: ${entrega.estado}');
+        //   print('  - Reposición: ${entrega.reposicion}');
+        //   print('  - Estado Reposición: ${entrega.estadoReposicion}');
+        // }
 
         // Eliminar duplicados por entregaId (conservando el último)
         final mapaUnico = <String, Entregas>{};
@@ -224,29 +263,13 @@ class EntregaController extends GetxController {
         }
         print('🔄 Entregas únicas después de eliminar duplicados: ${mapaUnico.length}');
 
-        // Verificar si hay entregas que deberían ser eliminadas
-        final entregasAEliminar = mapaUnico.values.where((entrega) => 
-          entrega.reposicion && 
-          entrega.estadoReposicion.toLowerCase() == 'enviada'
+        // Filter out reposiciones marked as 'enviada'
+        final filteredEntregas = mapaUnico.values.where((entrega) => 
+            !(entrega.reposicion && entrega.estadoReposicion.toLowerCase() == 'enviada')
         ).toList();
         
-        if (entregasAEliminar.isNotEmpty) {
-          print('⚠️ Encontradas entregas que deberían ser eliminadas:');
-          for (var entrega in entregasAEliminar) {
-            print('  - ID: ${entrega.entregaId}');
-            await entregasBox.delete(entrega.entregaId);
-            print('  ✅ Eliminada');
-          }
-          await entregasBox.flush();
-          print('🔄 Actualizando mapa después de eliminaciones...');
-          mapaUnico.clear();
-          for (var entrega in entregasBox.values) {
-            mapaUnico[entrega.entregaId] = entrega;
-          }
-        }
-
-        entregas.assignAll(mapaUnico.values.toList());
-        print("✅ Entregas cargadas: ${entregas.length}");
+        entregas.assignAll(filteredEntregas);
+        print("✅ Entregas cargadas (filtrando enviadas): ${entregas.length}");
 
         updateDistances();
     } catch (e) {
@@ -462,9 +485,6 @@ class EntregaController extends GetxController {
         throw Exception('No se encontró la alta con ID: $idAlta');
       }
 
-      // NO creamos un diálogo aquí para evitar duplicación
-      // Ya que el código que llama a esta función (en send_view.dart) ya muestra su propio diálogo
-
       // Config
       final configBox = Hive.box<AppConfig>('appConfig');
       final config = configBox.get('config');
@@ -490,32 +510,53 @@ class EntregaController extends GetxController {
         // Refrescar lista
         cargarAltasListas();
 
-        // NO cerramos ningún diálogo aquí
-        // La función que llamó a este método debe encargarse de cerrar su propio diálogo
-
-        Get.snackbar(
-          'Éxito',
-          'Alta enviada correctamente',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-        return; // Retornamos éxito
+        // Get.snackbar(
+        //   'Éxito',
+        //   'Alta enviada correctamente',
+        //   backgroundColor: Colors.green,
+        //   colorText: Colors.white,
+        // );
+        return;
       } else {
-        throw Exception(
-            'Error al enviar alta: ${response.statusCode} - ${response.body}');
+        try {
+          var jsonResponse = jsonDecode(response.body);
+          if (response.statusCode == 500 && 
+              jsonResponse['error'] == 'Error en la base de datos' &&
+              jsonResponse['detalle'].toString().contains('Duplicate entry')) {
+            throw Exception('DUPLICATE_ENTRY');
+          }
+          throw Exception(jsonResponse['detalle'] ?? 'Error al enviar alta');
+        } catch (e) {
+          if (e.toString() == 'Exception: DUPLICATE_ENTRY') {
+            rethrow;
+          }
+          if (response.body.contains('<html>')) {
+            throw Exception("SERVER_ERROR");
+          }
+          throw Exception("UNKNOWN_ERROR");
+        }
       }
     } catch (e) {
-      // NO cerramos ningún diálogo aquí
-      // La función que llamó a este método debe encargarse de cerrar su propio diálogo
+      String mensajeError = 'Error al enviar la alta';
+      String tituloError = 'Error';
       
-      Get.snackbar(
-        'Error',
-        'Error al enviar alta: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      print('❌ Error en enviarAlta: $e');
-      throw e; // Re-lanzamos la excepción para que el llamador sepa que falló
+      if (e.toString().contains('DUPLICATE_ENTRY')) {
+        tituloError = 'Error de Duplicado';
+        mensajeError = 'Esta alta ya fue enviada anteriormente';
+        
+        // Si es un error de duplicado, eliminamos la alta
+        await altaEntregaBox.delete(idAlta);
+        await altaEntregaBox.flush();
+        cargarAltasListas();
+      } else if (e.toString().contains('CONNECTION_ERROR')) {
+        tituloError = 'Error de Conexión';
+        mensajeError = 'No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente';
+      } else if (e.toString().contains('SERVER_ERROR')) {
+        tituloError = 'Error del Servidor';
+        mensajeError = 'El servidor ha rechazado la solicitud. Por favor, contacta al administrador';
+      }
+      
+      rethrow;
     }
   }
   
@@ -678,13 +719,13 @@ class EntregaController extends GetxController {
       .where((entrega) => 
         entrega.reposicion && 
         entrega.estadoReposicion.toLowerCase() == 'pendiente' &&
-        // Excluir las que ya tienen un RepoEntrega con estado 'lista'
-        !_tieneRepoListaAsociada(entrega.entregaId)
+        // Excluir las que ya tienen un RepoEntrega con estado 'lista' o 'enviada'
+        !_tieneRepoListaOEnviadaAsociada(entrega.entregaId)
       )
       .toList();
 
-  // Método auxiliar para verificar si existe una RepoEntrega asociada con estado 'lista'
-  bool _tieneRepoListaAsociada(String entregaId) {
+  // Método auxiliar para verificar si existe una RepoEntrega asociada con estado 'lista' o 'enviada'
+  bool _tieneRepoListaOEnviadaAsociada(String entregaId) {
     if (!repoBox.isOpen) return false; // Si no está abierto aún, asumir que no existe
     
     // Extraer el ID base de la entrega (quitar el sufijo _repo si existe)
@@ -692,10 +733,10 @@ class EntregaController extends GetxController {
         ? entregaId.substring(0, entregaId.length - 5)
         : entregaId;
     
-    // Verificar si existe alguna RepoEntrega con este entregaIdOrigen y estado 'lista'
+    // Verificar si existe alguna RepoEntrega con este entregaIdOrigen y estado 'lista' o 'enviada'
     return repoBox.values.any((repo) => 
         repo.entregaIdOrigen == idBase && 
-        repo.estadoRepo.trim().toLowerCase() == 'lista'
+        (repo.estadoRepo.trim().toLowerCase() == 'lista' || repo.estadoRepo.trim().toLowerCase() == 'enviada')
     );
   }
 
@@ -802,57 +843,96 @@ class EntregaController extends GetxController {
       Get.snackbar('Error', 'No se encontró la reposición con ID: $repoId');
       return;
     }
+
     try {
       print('📤 Enviando reposición al servidor...');
       await envioReposicionRepository.enviarReposicion(repo.toJsonEnvio());
       print('✅ Reposición enviada exitosamente al servidor');
       
-      // Si el envío fue exitoso, eliminamos la reposición de la base de datos local
-      print('🗑️ Eliminando reposición de repoBox...');
-      await repoBox.delete(repoId);
-      await repoBox.flush(); // Forzar la persistencia
-      print('✅ Reposición eliminada de repoBox');
+// Eliminar todas las entregas relacionadas
+      await _eliminarEntregasRelacionadas(repoId, repo.entregaIdOrigen);
+      // Actualizar estado de la reposición a "procesado"
+      final repoActualizado = repo.copyWith(estadoRepo: 'procesado');
+      await repoBox.put(repoId, repoActualizado);
+      await repoBox.flush();
+      print('✅ Estado de reposición actualizado a "procesado"');
+
+      // Agregar IDs a la lista de limpieza
+      await _agregarIdsParaLimpieza(repo.entregaIdOrigen);
       
-      // Eliminar tanto la entrega de reposición como la original si está en estado fullrepo
-      final entregaRepoId = '${repo.entregaIdOrigen}_repo';
-      final entregaOriginalId = repo.entregaIdOrigen;
-      
-      print('🔍 Verificando entregas a eliminar:');
-      print('- Entrega reposición ID: $entregaRepoId');
-      print('- Entrega original ID: $entregaOriginalId');
-      
-      // Verificar y eliminar la entrega de reposición
-      final entregaRepo = entregasBox.get(entregaRepoId);
-      if (entregaRepo != null) {
-        print('🗑️ Eliminando entrega de reposición...');
-        await entregasBox.delete(entregaRepoId);
-        print('✅ Entrega de reposición eliminada');
-      }
-      
-      // Verificar y eliminar la entrega original si está en estado fullrepo
-      final entregaOriginal = entregasBox.get(entregaOriginalId);
-      if (entregaOriginal != null && entregaOriginal.estado.toLowerCase() == 'fullrepo') {
-        print('🗑️ Eliminando entrega original en estado fullrepo...');
-        await entregasBox.delete(entregaOriginalId);
-        print('✅ Entrega original eliminada');
-      }
-      
-      await entregasBox.flush(); // Forzar la persistencia
-      
-      // Recarga las listas para que desaparezca de "listas para enviar"
-      print('🔄 Recargando listas...');
-      cargarReposListas();
-      await fetchEntregas();
-      
-      // Verificación final
-      print('📊 Estado final de las cajas:');
-      print('- Entregas en entregasBox: ${entregasBox.length}');
-      print('- Reposiciones en repoBox: ${repoBox.length}');
-      
-      print('✅ Proceso de envío y eliminación completado');
+      Get.snackbar(
+        'Éxito',
+        'Reposición enviada correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
     } catch (e) {
       print('❌ Error en enviarReposicion: $e');
-      // El error ya se muestra en el repositorio
+      
+      String mensajeError = 'Error al enviar la reposición';
+      String tituloError = 'Error';
+      
+      if (e.toString().contains('DUPLICATE_ENTRY')) {
+        tituloError = 'Error de Duplicado';
+        mensajeError = 'Esta reposición ya fue enviada anteriormente';
+        
+        // Eliminar todas las entregas relacionadas
+      await _eliminarEntregasRelacionadas(repoId, repo.entregaIdOrigen);
+        // Si es un error de duplicado, también agregamos los IDs para limpieza
+        await _agregarIdsParaLimpieza(repo.entregaIdOrigen);
+
+          // Actualizar estado de la reposición a "procesado"
+      final repoActualizado = repo.copyWith(estadoRepo: 'procesado');
+      await repoBox.put(repoId, repoActualizado);
+      await repoBox.flush();
+      print('✅ Estado de reposición actualizado a "procesado"');
+
+      } else if (e.toString().contains('CONNECTION_ERROR')) {
+        tituloError = 'Error de Conexión';
+        mensajeError = 'No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente';
+      } else if (e.toString().contains('SERVER_ERROR')) {
+        tituloError = 'Error del Servidor';
+        mensajeError = 'El servidor ha rechazado la solicitud. Por favor, contacta al administrador';
+      } else {
+        mensajeError = 'Ocurrió un error inesperado: ${e.toString()}';
+      }
+      
+      Get.snackbar(
+        tituloError,
+        mensajeError,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+        snackPosition: SnackPosition.TOP,
+      );
+
+      if (!e.toString().contains('DUPLICATE_ENTRY') && !e.toString().contains('CONNECTION_ERROR')) {
+        rethrow;
+      }
+    }
+  }
+
+  // Método auxiliar para agregar IDs a la lista de limpieza
+  Future<void> _agregarIdsParaLimpieza(String entregaIdOrigen) async {
+    try {
+      final configBox = Hive.box<AppConfig>('appConfig');
+      final config = configBox.get('config');
+      
+      if (config != null) {
+        final idsParaLimpiar = List<String>.from(config.cleanIds);
+        // Agregar el ID original y el ID de la reposición
+        idsParaLimpiar.add(entregaIdOrigen);
+        idsParaLimpiar.add('${entregaIdOrigen}_repo');
+        
+        // Actualizar la configuración
+        final configActualizado = config.copyWith(cleanIds: idsParaLimpiar);
+        await configBox.put('config', configActualizado);
+        await configBox.flush();
+        
+        print('✅ IDs agregados para limpieza: $entregaIdOrigen y ${entregaIdOrigen}_repo');
+      }
+    } catch (e) {
+      print('❌ Error al agregar IDs para limpieza: $e');
     }
   }
 
@@ -1007,5 +1087,54 @@ class EntregaController extends GetxController {
       );
       rethrow;
     }
+  }
+
+  // Método auxiliar para eliminar entregas relacionadas
+  Future<void> _eliminarEntregasRelacionadas(String repoId, String entregaIdOrigen) async {
+    print('🗑️ Eliminando entregas relacionadas...');
+
+    // Asegurar que las cajas estén abiertas
+    if (!repoBox.isOpen) repoBox = await Hive.openBox<RepoEntrega>('repoentregas');
+    if (!entregasBox.isOpen) await Hive.openBox<Entregas>('entregas');
+
+    // Eliminar la reposición de la caja 'repoentregas'
+    await repoBox.delete(repoId);
+    await repoBox.flush();
+    print('✅ Reposición (' + repoId + ') eliminada de repoBox');
+
+    // Eliminar la entrega de reposición de la caja 'entregas'
+    final entregaRepoId = '${entregaIdOrigen}_repo';
+    final entregaRepo = entregasBox.get(entregaRepoId);
+    if (entregaRepo != null) {
+      print('🗑️ Eliminando entrega de reposición (' + entregaRepoId + ') de entregasBox...');
+      await entregasBox.delete(entregaRepoId);
+      print('✅ Entrega de reposición eliminada');
+    } else {
+       print('▶️ Entrega de reposición (' + entregaRepoId + ') no encontrada en entregasBox. No se eliminó.');
+    }
+
+    // Eliminar la entrega original de la caja 'entregas'
+    final entregaOriginal = entregasBox.get(entregaIdOrigen);
+    if (entregaOriginal != null) {
+      print('🗑️ Eliminando entrega original (' + entregaIdOrigen + ') de entregasBox...');
+      await entregasBox.delete(entregaIdOrigen);
+      print('✅ Entrega original eliminada');
+    } else {
+        print('▶️ Entrega original (' + entregaIdOrigen + ') no encontrada en entregasBox. No se eliminó.');
+    }
+
+    await entregasBox.flush(); // Ensure changes to entregasBox are written
+
+    // Recargar listas para actualizar la UI
+    print('🔄 Recargando listas...');
+    cargarReposListas();
+    await fetchEntregas();
+
+    // Verificación final
+    print('📊 Estado final de las cajas después de eliminación:');
+    print('- Entregas en entregasBox: ${entregasBox.length}');
+    print('- Reposiciones en repoBox: ${repoBox.length}');
+
+    print('✅ Proceso de eliminación completado');
   }
 }

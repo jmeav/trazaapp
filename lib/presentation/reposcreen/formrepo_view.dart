@@ -8,7 +8,7 @@ import 'package:trazaapp/presentation/widgets/custom_button.dart';
 import 'package:trazaapp/presentation/widgets/custom_dropdown.dart';
 import 'package:trazaapp/presentation/widgets/custom_textfield.dart';
 import 'package:trazaapp/utils/utils.dart';
-import 'package:trazaapp/data/models/razas/raza.dart';
+import 'package:trazaapp/data/local/models/razas/raza.dart';
 import 'package:trazaapp/presentation/widgets/custom_saving.dart';
 
 class FormRepoView extends GetView<FormRepoController> {

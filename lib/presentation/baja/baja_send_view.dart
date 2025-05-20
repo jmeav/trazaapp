@@ -6,9 +6,9 @@ import 'package:intl/intl.dart'; // Importar para formatear fecha
 import 'package:collection/collection.dart'; // Importar para firstWhereOrNull
 import 'package:trazaapp/controller/baja_controller.dart';
 import 'package:trazaapp/controller/catalogs_controller.dart';
-import 'package:trazaapp/data/models/baja/baja_model.dart'; // Importar Baja
-import 'package:trazaapp/data/models/motivosbajabovino/motivosbajabovino.dart';
-import 'package:trazaapp/data/models/bajasinorigen/baja_sin_origen.dart';
+import 'package:trazaapp/data/local/models/baja/baja_model.dart'; // Importar Baja
+import 'package:trazaapp/data/local/models/motivosbajabovino/motivosbajabovino.dart';
+import 'package:trazaapp/data/local/models/bajasinorigen/baja_sin_origen.dart';
 import 'package:hive/hive.dart';
 
 class BajaSendView extends StatefulWidget {
@@ -210,7 +210,38 @@ class _BajaSendViewState extends State<BajaSendView> {
                   icon: Icons.send,
                   label: 'Enviar',
                   color: Colors.green,
-                  onPressed: () => controller.enviarBaja(baja.bajaId),
+                  onPressed: () async {
+                    try {
+                      await controller.enviarBaja(baja.bajaId);
+                      Get.snackbar(
+                        'Éxito',
+                        'Baja enviada correctamente',
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
+                      );
+                    } catch (e) {
+                      String mensajeError = 'Error al enviar la baja';
+                      String tituloError = 'Error';
+                      
+                      if (e.toString().contains('DUPLICATE_ENTRY')) {
+                        tituloError = 'Error de Duplicado';
+                        mensajeError = 'Esta baja ya fue enviada anteriormente';
+                      } else if (e.toString().contains('CONNECTION_ERROR')) {
+                        tituloError = 'Error de Conexión';
+                        mensajeError = 'No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente';
+                      } else if (e.toString().contains('SERVER_ERROR')) {
+                        tituloError = 'Error del Servidor';
+                        mensajeError = 'El servidor ha rechazado la solicitud. Por favor, contacta al administrador';
+                      }               
+                      // Get.snackbar(
+                      //   tituloError,
+                      //   mensajeError,
+                      //   backgroundColor: Colors.red,
+                      //   colorText: Colors.white,
+                      //   duration: const Duration(seconds: 5),
+                      // );
+                    }
+                  },
                 ),
               ],
             ),
@@ -273,7 +304,39 @@ class _BajaSendViewState extends State<BajaSendView> {
                     icon: Icons.send,
                     label: 'Enviar',
                     color: Colors.green,
-                    onPressed: () => controller.enviarBajaSinOrigen(baja.id),
+                    onPressed: () async {
+                      try {
+                        await controller.enviarBajaSinOrigen(baja.id);
+                        Get.snackbar(
+                          'Éxito',
+                          'Baja sin origen enviada correctamente',
+                          backgroundColor: Colors.green,
+                          colorText: Colors.white,
+                        );
+                      } catch (e) {
+                        String mensajeError = 'Error al enviar la baja sin origen';
+                        String tituloError = 'Error';
+                        
+                        if (e.toString().contains('DUPLICATE_ENTRY')) {
+                          tituloError = 'Error de Duplicado';
+                          mensajeError = 'Esta baja ya fue enviada anteriormente';
+                        } else if (e.toString().contains('CONNECTION_ERROR')) {
+                          tituloError = 'Error de Conexión';
+                          mensajeError = 'No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente';
+                        } else if (e.toString().contains('SERVER_ERROR')) {
+                          tituloError = 'Error del Servidor';
+                          mensajeError = 'El servidor ha rechazado la solicitud. Por favor, contacta al administrador';
+                        }
+                        
+                        // Get.snackbar(
+                        //   tituloError,
+                        //   mensajeError,
+                        //   backgroundColor: Colors.red,
+                        //   colorText: Colors.white,
+                        //   duration: const Duration(seconds: 5),
+                        // );
+                      }
+                    },
                   ),
                 ],
               ),

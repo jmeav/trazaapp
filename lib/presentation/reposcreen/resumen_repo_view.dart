@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:trazaapp/data/models/repo/repoentrega.dart';
-import 'package:trazaapp/data/models/repo/bovinorepo.dart';
-import 'package:trazaapp/data/models/razas/raza.dart'; // Importar Raza para obtener nombre
+import 'package:trazaapp/data/local/models/reposicion/repoentrega.dart';
+import 'package:trazaapp/data/local/models/reposicion/bovinorepo.dart';
+import 'package:trazaapp/data/local/models/razas/raza.dart'; // Importar Raza para obtener nombre
 import 'package:hive/hive.dart'; // Importar Hive para buscar razas
 import 'package:trazaapp/utils/utils.dart'; // Para mostrar imágenes base64
 import 'package:trazaapp/controller/entrega_controller.dart';

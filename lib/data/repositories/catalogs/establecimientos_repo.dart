@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
-import 'package:trazaapp/data/models/establecimiento/establecimiento.dart';
+import 'package:trazaapp/data/local/models/establecimiento/establecimiento.dart';
 import 'package:trazaapp/data/remote/endpoints.dart';
 
 class EstablecimientosRepository {
